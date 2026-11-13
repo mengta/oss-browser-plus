@@ -1,0 +1,8 @@
+{
+  "version": "1.19.0",
+  "package_url": "https://oss-browser-attachment.oss-cn-hangzhou.aliyuncs.com/",
+  "package_urls": [
+    "https://oss-browser-attachment.oss-cn-hangzhou.aliyuncs.com/"
+  ],
+  "files": ["app.asar"]
+}

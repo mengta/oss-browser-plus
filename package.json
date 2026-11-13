@@ -1,0 +1,92 @@
+{
+  "name": "oss-browser",
+  "version": "1.19.1",
+  "main": "dist/main.js",
+  "scripts": {
+    "test": "ava test",
+    "dev": "./node_modules/.bin/npm-run-all --parallel build watch dev:run",
+    "dev:run": "./node_modules/.bin/cross-env NODE_ENV=development electron .",
+    "dev:run:proxy": "./node_modules/.bin/cross-env http_proxy=http://127.0.0.1:9090 https_proxy=http://127.0.0.1:9090 NODE_ENV=development electron .",
+    "postbuild": "node gen",
+    "prod": "./node_modules/.bin/cross-env NODE_ENV=production cd dist && electron .",
+    "watch": "./node_modules/.bin/gulp watch --custom=$custom",
+    "build": "./node_modules/.bin/gulp build --custom=$custom",
+    "rcedit": "cp tools/rcedit-x64.exe node_modules/rcedit/bin/rcedit.exe",
+    "lint": "eslint --fix app"
+  },
+  "engines": {
+    "node": "8.2.1"
+  },
+  "devDependencies": {
+    "@alicloud/eslint-config": "^1.2.23",
+    "angular": "1.5.8",
+    "angular-bootstrap-contextmenu": "^1.1.0",
+    "angular-sanitize": "1.5.8",
+    "angular-ui-bootstrap": "^2.3.1",
+    "angular-ui-codemirror": "0.3.0",
+    "angular-ui-router": "0.2.18",
+    "ava": "^0.20.0",
+    "babel-core": "^6.24.1",
+    "babel-eslint": "^10.1.0",
+    "babel-preset-es2015": "^6.24.1",
+    "bootstrap": "3.3.6",
+    "bower": "~1.7.9",
+    "clipboard": "^1.7.1",
+    "codemirror": "^5.19.0",
+    "commander": "~2.9.0",
+    "cross-env": "^3.1.4",
+    "del": "^4.1.1",
+    "electron": "1.8.4",
+    "electron-packager": "7.1.0",
+    "eslint": "^7.1.0",
+    "font-awesome": "^4.7.0",
+    "gulp": "~3.5.5",
+    "gulp-angular-templatecache": "^1.1.0",
+    "gulp-babel": "~6.1.2",
+    "gulp-concat": "~2.1.7",
+    "gulp-connect": "^1.0.7",
+    "gulp-jshint": "~1.5.0",
+    "gulp-load-plugins": "~0.4.0",
+    "husky": "^4.2.3",
+    "jquery": "^2.2.3",
+    "jquery.qrcode": "^1.0.3",
+    "karma": "^0.12.1",
+    "karma-chrome-launcher": "^0.1.2",
+    "karma-jasmine": "^0.1.5",
+    "lint-staged": "^10.1.2",
+    "minimist": "^1.2.0",
+    "mocha": "~2.4.5",
+    "moment": "^2.19.2",
+    "npm-run-all": "^4.0.2",
+    "shelljs": "~0.7.0",
+    "should": "~9.0.0",
+    "showdown": "^1.4.2",
+    "spectron": "^3.7.2"
+  },
+  "dependencies": {
+    "ali-oss": "^6.13.2",
+    "aliyun-sdk": "^1.12.3",
+    "clipboard": "^1.7.1",
+    "electron-log": "1.3.0",
+    "emoji-regex": "^9.0.0",
+    "koa": "^2.3.0",
+    "koa-convert": "^1.2.0",
+    "koa-static-server": "^1.2.1",
+    "mime": "^1.3.6",
+    "nodemailer": "4.0.1",
+    "nodemailer-smtp-transport": "2.7.4",
+    "platform": "^1.3.5",
+    "request": "^2.83.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "app/**/*.js": [
+      "eslint --fix",
+      "git add"
+    ]
+  }
+}

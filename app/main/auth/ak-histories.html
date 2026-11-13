@@ -1,0 +1,97 @@
+<div class="modal-header">
+  <button type="button" class="close" ng-click="cancel()">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  <h4 class="modal-title">
+    <i class="fa fa-history text-info"></i>
+    {{'auth.akHistories'|translate}}
+    <span class="badge" ng-if="his.length">{{his.length}}</span>
+  </h4>
+</div>
+<div class="modal-body form-horizontal">
+  <div class="row form-group" ng-if="his.length">
+    <div class="col-sm-7">
+      <div class="input-group input-group-sm">
+        <input
+          type="text"
+          class="form-control"
+          ng-model="keyword"
+          cleanable-input
+          placeholder="search"
+        />
+        <span class="input-group-btn">
+          <a class="btn btn-info"><i class="fa fa-search"></i></a>
+        </span>
+      </div>
+    </div>
+    <div class="col-sm-5 text-right">
+      <a class="btn btn-danger btn-sm" ng-click="cleanAll()">
+        <i class="fa fa-trash"></i>
+        {{'auth.clearHistories'|translate}}
+      </a>
+    </div>
+  </div>
+
+  <div ng-if="!his.length" class="text-center text-muted" style="padding: 40px 0">
+    <i class="fa fa-inbox fa-3x"></i>
+    <h4>{{'nodata'|translate}}</h4>
+    <p class="small">{{'auth.akHistories.emptyHint'|translate}}</p>
+  </div>
+
+  <table
+    ng-if="his.length"
+    class="mg0 table table-bordered table-striped table-condensed"
+  >
+    <tr>
+      <th style="width: 40px">#</th>
+      <th>AccessKeyId</th>
+      <th>AccessKeySecret</th>
+      <th>{{'auth.description'|translate}}</th>
+      <th>{{'region'|translate}}</th>
+      <th>{{'auth.presetOssPath'|translate}}</th>
+      <th>{{'actions'|translate}}</th>
+    </tr>
+    <tr ng-repeat="h in his|filter:keyword">
+      <td>{{$index+1}}</td>
+      <td>
+        <span>{{h.id}}</span>
+        <span class="label label-info" ng-if="h.stoken">STS</span>
+        <span class="label label-warning" ng-if="h.requestpaystatus=='YES'">
+          {{'requestPay'|translate}}
+        </span>
+      </td>
+      <td ng-if="h.secret">
+        <code>{{showSecrets[h.id] ? h.secret : (h.secret|hideSecret)}}</code>
+        <a
+          href=""
+          uib-tooltip="{{(showSecrets[h.id] ? 'hide' : 'show')|translate}}"
+          ng-click="toggleSecret(h)"
+        >
+          <i
+            class="fa"
+            ng-class="{'fa-eye':!showSecrets[h.id], 'fa-eye-slash':showSecrets[h.id]}"
+          ></i>
+        </a>
+      </td>
+      <td ng-if="!h.secret" class="text-muted">-</td>
+      <td>{{h.desc || '-'}}</td>
+      <td>
+        <div>{{regionText(h)}}</div>
+        <small class="text-muted">{{h.eptplcname || h.privateLink || h.eptpl}}</small>
+      </td>
+      <td>{{h.osspath || '-'}}</td>
+      <td>
+        <a href="" ng-click="use(h)">{{'use'|translate}}</a> |
+        <a href="" class="text-danger" ng-click="remove(h)"
+          >{{'delete'|translate}}</a
+        >
+      </td>
+    </tr>
+  </table>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-default btn-sm" ng-click="cancel()">
+    <i class="glyphicon glyphicon-remove"></i>
+    {{'close'|translate}}
+  </button>
+</div>

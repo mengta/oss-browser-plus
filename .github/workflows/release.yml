@@ -1,0 +1,107 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag, e.g. v1.19.0'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.optional == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, platform: win32, arch: x64 }
+          - { os: windows-latest, platform: win32, arch: ia32 }
+          - { os: ubuntu-22.04, platform: linux, arch: x64 }
+          - { os: ubuntu-22.04, platform: linux, arch: ia32 }
+          - { os: macos-14, platform: darwin, arch: x64, optional: true }
+    env:
+      ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+      npm_config_registry: https://registry.npmmirror.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '8.2.1'
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts --registry=https://registry.npmmirror.com
+
+      - name: Install yarn
+        run: npm install --no-save --ignore-scripts yarn@1.22.19 --registry=https://registry.npmmirror.com
+
+      - name: Fix rcedit on Windows
+        if: matrix.platform == 'win32'
+        shell: pwsh
+        run: Copy-Item tools/rcedit-x64.exe node_modules/rcedit/bin/rcedit.exe -Force
+
+      - name: Build
+        run: npm run build
+
+      - name: Package
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          mkdir -p "releases/$VERSION"
+
+          ICON=""
+          if [ "$PLATFORM" = "win32" ]; then ICON="--icon=custom/icon.ico"; fi
+          if [ "$PLATFORM" = "darwin" ]; then ICON="--icon=custom/icon.icns"; fi
+
+          node node_modules/electron-packager/cli.js ./dist oss-browser \
+            --asar --asar-unpack=*.node --overwrite --out=build \
+            --version 1.8.4 --app-version "$VERSION" \
+            --platform="$PLATFORM" --arch="$ARCH" $ICON
+
+          APP_DIR="build/oss-browser-${PLATFORM}-${ARCH}"
+          if [ "$PLATFORM" = "darwin" ]; then
+            cp -rf custom "$APP_DIR/oss-browser.app/Contents/Resources"
+          else
+            cp -rf custom "$APP_DIR/resources"
+          fi
+
+          cd build
+          if [ "$PLATFORM" = "win32" ]; then
+            node ../zip.js "../releases/$VERSION/oss-browser-${PLATFORM}-${ARCH}.zip" \
+              "oss-browser-${PLATFORM}-${ARCH}/"
+          else
+            zip -r "../releases/$VERSION/oss-browser-${PLATFORM}-${ARCH}.zip" \
+              "oss-browser-${PLATFORM}-${ARCH}"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oss-browser-${{ matrix.platform }}-${{ matrix.arch }}
+          path: releases/**/*.zip
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          files: artifacts/**/*.zip
+          generate_release_notes: true

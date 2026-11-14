@@ -1165,17 +1165,17 @@ git tag -f rollback/P{n}-{主题词}
 | P2-10 | crc64 原生模块处置 | 已完成 | 2026-11-14 | Electron 45 下 prebuild ABI 失效自动回退 pure-js（WASM 兜底）；校验值与 Node 基线一致（12766275973417293146），R-07 触发但缓解有效 |
 | P2-11 | Chromium 渲染兼容验证 | 已完成 | 2026-11-14 | 45.3.2 启动无渲染 JS 错误；module 暂存 hack 保持（nodeIntegration 显式 true 下仍必要，理由已记录） |
 | P2-12 | userData 与本地数据兼容评估 | 已完成 | 2026-11-14 | Global.config_path 保持 ~/.oss-browser（index.html:124 原状），R-09 未触发 |
-| P3-01 | angular 1.5.8 → 1.8.3 与 angular-sanitize 同步升级 | 未开始 | | |
-| P3-02 | angular-ui-router 0.2.18 → 0.4.3 兼容版升级 | 未开始 | | |
-| P3-03 | angular-ui-bootstrap 2.3.1 → 2.5.6 升级 | 未开始 | | |
-| P3-04 | angular-ui-codemirror 与 codemirror → 5.65.21 升级 | 未开始 | | |
-| P3-05 | jquery 2.2.3 → 3.7.1 升级 | 未开始 | | |
-| P3-06 | bootstrap 3.3.6 → 3.4.1 升级 | 未开始 | | |
-| P3-07 | font-awesome 4.7.0 图标类名兼容核对 | 未开始 | | |
-| P3-08 | moment 2.19.2 → 2.31.0 升级 | 未开始 | | |
-| P3-09 | showdown 1.4.2 升级核对 | 未开始 | | |
-| P3-10 | lib.js vendor 清单同步与 angular-translate 升级 | 未开始 | | |
-| P3-11 | 前端回归验证 | 未开始 | | |
+| P3-01 | angular 1.5.8 → 1.8.3 与 angular-sanitize 同步升级 | 已完成 | 2026-11-14 | ^1.8.3 安装，1.x 内向后兼容，启动无模块加载错误 |
+| P3-02 | angular-ui-router 0.2.18 → 0.4.3 兼容版升级 | 已完成 | 2026-11-14 | ^0.4.3 安装；$stateChangeSuccess（app/main/main.js:36）在 0.4.x 保留，启动回归通过 |
+| P3-03 | angular-ui-bootstrap 2.3.1 → 2.5.6 升级 | 已完成 | 2026-11-14 | ^2.5.6 安装，$uibModal 命名空间稳定，dialog.s.js 单测覆盖模态调用 |
+| P3-04 | angular-ui-codemirror 与 codemirror → 5.65.21 升级 | 已完成 | 2026-11-14 | ^5.65.21 安装；ui-codemirror 0.3.0 保留（无新版）；6.x 豁免理由已入第 8 章 |
+| P3-05 | jquery 2.2.3 → 3.7.1 升级 | 已完成 | 2026-11-14 | ^3.7.1 安装；废弃 API grep 唯一命中为自定义服务方法误报（main.js:29 autoUpgradeSvs.load），jquery API 调用点人工核对为零 |
+| P3-06 | bootstrap 3.3.6 → 3.4.1 升级 | 已完成 | 2026-11-14 | 3.4.1（3.x 最终维护版）；5.x 不兼容 ui-bootstrap 豁免理由已入第 8 章 |
+| P3-07 | font-awesome 4.7.0 图标类名兼容核对 | 已完成 | 2026-11-14 | 实测 50 个 fa fa-* 类名清单（4.x 体系），与 6+/7.x 类名结构不兼容，豁免保留 4.7.0 并在第 8 章记录 |
+| P3-08 | moment 2.19.2 → 2.31.0 升级 | 已完成 | 2026-11-14 | 2.31.0 安装；formater 单测 10 用例（moment 真实依赖）全绿 |
+| P3-09 | showdown 1.4.2 升级核对 | 已完成 | 2026-11-14 | 2.1.0 安装；2 处 new showdown.Converter() 调用点，2.x API 保留兼容 |
+| P3-10 | lib.js vendor 清单同步与 angular-translate 升级 | 已完成 | 2026-11-14 | VENDOR-PATH-OK（全部 node_modules 包路径在新版本下存在）；vendor/angular-translate.min.js 手工文件保留原状（2.x 与 angular 1.8.3 兼容），替换列入第 11 章 |
+| P3-11 | 前端回归验证 | 已完成 | 2026-11-14 | 构建完整 + npm test 96 用例全绿 + Electron 45 启动无渲染错误 |
 | P4-01 | request 调用点复核与替换 | 未开始 | | |
 | P4-02 | nodemailer 升级与 nodemailer-smtp-transport 移除 | 未开始 | | |
 | P4-03 | electron-log 1.3.0 → 5.4.4 升级 | 未开始 | | |
@@ -1230,6 +1230,11 @@ agent 每次续作（新会话或中断恢复）先执行基线核对：核对�
 | 2026-11-14 | R-14 改造 | cipher.js 由 createCipher/createDecipher（Node 22+ 移除）改为 createCipheriv/createDecipheriv + EVP_BytesToKey(MD5 无盐单轮) 等价实现；单测密文锚点断言通过（与 Electron 1.8.4 旧 API 输出一致 b3bdfaf3…），存量登录态兼容保持；new Buffer 同步改 Buffer.from |
 | 2026-11-14 | P2-10 实测 | Electron 45 加载 node/crc64：prebuild（Electron 1.8.4 ABI）加载失败自动回退 pure-js（WASM）；固定样本校验值与 Node 基线一致 12766275973417293146；R-07 触发但 pure-js 兜底缓解，功能不中断 |
 | 2026-11-14 | T-P2-GATE-02 | P2 收口：A1 启动正常、A2 四项 grep 零残留、A3 crc64 一致、A4 TLS 开关审计实测通过；npm test 96 用例全绿（R-14 改造后回归） |
+| 2026-11-14 | T-P3-GATE-01 | P3 门禁：rollback/P2-electron 存在、npm test 96 用例全绿、D3 确认栏已签署（P3-GATE-OK） |
+| 2026-11-14 | P3-01~09 | 前端框架与 UI 库批量升级：angular 1.8.3 + sanitize 1.8.3、ui-router 0.4.3（$stateChangeSuccess 0.4.x 保留，app/main/main.js:36）、ui-bootstrap 2.5.6、codemirror 5.65.21、jquery 3.7.1、bootstrap 3.4.1、moment 2.31.0、showdown 2.1.0 |
+| 2026-11-14 | P3-05 实测 | jquery 废弃 API grep（.load/.unload/.bind）唯一命中 app/main/main.js:29 autoUpgradeSvs.load（自定义服务方法，模式误报人工排除），jquery API 调用点人工核对为零 |#
+| 2026-11-14 | P3-07 实测 | fa fa-* 类名清单实测 50 个（4.x 体系），与 font-awesome 6+/7.x 类名结构不兼容：豁免保留 4.7.0，替换列入第 11 章 |#
+| 2026-11-14 | T-P3-GATE-02 | P3 收口：A1 build 完整 + Electron 45 启动正常、A2 npm test 96 用例全绿、A3 UI 渲染回归通过（启动无 JS 错误；右键菜单/模态框/i18n 视觉项绑定 P5 E2E） |
 
 #### 抽验记录表（P5-03，2026-11-14，Windows git-bash）
 

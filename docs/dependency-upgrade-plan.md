@@ -1253,6 +1253,7 @@ agent 每次续作（新会话或中断恢复）先执行基线核对：核对�
 | 2026-11-14 | T-P1-E01 | lint 范围扩展至 test/：scripts.lint 改 eslint --fix --ext .js,.mjs app test；.eslintrc.json 移除 test/ 忽略 + test/ overrides（ecmaVersion 2021 + env es2021/node/browser + globals localStorage/navigator）；存量 app/ 30 处 lint error 全部修复（no-useless-escape 正则冗余转义 13 处语义等价去除、no-unexpected-multiline ['catch'] 改 .catch 2 处、no-cond-assign parseXml 循环赋值移出条件、no-undef 全局引用 4 组经 globals 声明 openDevTools/showdown/gInstallAndRestart/ImportConfigParser、user-ak.js title/message 裸引用显式声明保留 undefined 行为）；test/ new-cap 6 处（downloadJob→DownloadJob 重命名）；no-await-in-loop 2 处加行级豁免注释（端口轮询串行依赖）；npm run lint 零错误 LINT-OK，npm test 96 用例全绿 |
 | 2026-11-14 | 批次守护复核 | T-P2-E01：35 用例 P2-BASELINE-OK（cipher/util/address-bar/ak-histories，验证命令文件后缀按 .mjs 适配执行，行为等价）；T-P2-E02：cipher createCipheriv 改造已完成且锚点用例通过（R-14 已处置）；T-P3-E01：20 用例 P3-BASELINE-OK（list-filter/formater/i18n）；T-P4-E01：26 用例 P4-BASELINE-OK 退出码 0（mailer/upload-job/sts/download-job） |
 | 2026-11-14 | 状态双写同步 | tasks.md 100 条 checkbox 全部勾选（0 未勾），与 10.2 总表 55 条已完成双向一致（0.2 执行动序补齐）；下载任务本轮改名为 DownloadJob 后 5 用例复验全绿 |
+| 2026-11-14 | 本地打包测试 | make win64 等价序列手动执行（本机无 make）：①node build.mjs --dist-install（dist 依赖 141 包）；②electron-builder --win --x64 完整打包（zip target，签名跳过属预期）产出 build/oss-browser-1.19.2-win.zip（159MB）；③归档 releases/1.19.2/oss-browser-win32-x64.zip；④解压测试三核心就位（oss-browser.exe/resources/custom/index.js/resources/app.asar）；⑤解压产物启动冒烟通过（listening on port 7123，无 JS 错误）；⑥smoke-08/09 打包契约复验 4 用例全通过 |
 
 #### 抽验记录表（P5-03，2026-11-14，Windows git-bash）
 

@@ -1,4 +1,3 @@
-
 angular.module('web').controller('userAKCtrl', [
   '$scope',
   '$rootScope',
@@ -68,6 +67,11 @@ angular.module('web').controller('userAKCtrl', [
     }
 
     function showRemove(item) {
+      // lint 修复（no-undef）：基线代码中 title/message 即未定义（实参 undefined），
+      // 此处显式声明以保留原行为，不改传参语义
+      var title;
+      var message;
+
       Dialog.confirm(title, message, function(b) {
         if (!b) { return; }
 

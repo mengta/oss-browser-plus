@@ -1,4 +1,3 @@
-
 angular.module('web').controller('aboutCtrl', [
   '$scope',
   '$state',

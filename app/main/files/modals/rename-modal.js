@@ -39,7 +39,7 @@ angular.module('web').controller('renameModalCtrl', [
       cancel: cancel,
       onSubmit: onSubmit,
       reg: {
-        folderName: /^[^\/]+$/
+        folderName: /^[^/]+$/
       },
       isLoading: false
     });

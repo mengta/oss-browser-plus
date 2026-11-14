@@ -13,7 +13,7 @@
     "build:full": "node build.mjs --dist-install",
     "watch": "node build.mjs --watch",
     "e2e": "playwright test",
-    "lint": "eslint --fix app"
+    "lint": "eslint --fix --ext .js,.mjs app test"
   },
   "build": {
     "appId": "com.aliyun.oss-browser",

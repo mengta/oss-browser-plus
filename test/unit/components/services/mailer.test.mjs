@@ -86,8 +86,7 @@ test('send 失败时 reject 错误', async (t) => {
   const { Mailer } = setupMailer();
 
   const err = await t.throwsAsync(() =>
-    Mailer.send({ to: 'u@example.com', subject: '__FAIL__' })
-  );
+    Mailer.send({ to: 'u@example.com', subject: '__FAIL__' }));
 
   t.is(err.message, 'send failed');
 });

@@ -109,7 +109,6 @@ test('prepareChunks：按尺寸切分并保留最后一片余量', (t) => {
 
   return new Promise((resolve) => {
     jobUtil.prepareChunks(tmp, {}, (err, cp) => {
-
       t.is(err, null);
       t.is(cp.chunks.length, 3);
       t.is(cp.chunks[0].start, 0);

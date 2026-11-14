@@ -38,7 +38,7 @@ angular.module('web').controller('grantTokenModalCtrl', [
         privType: 'readOnly'
       },
       openExternal: openExternal,
-      policyNameReg: /^[a-z0-9A-Z\-]{1,128}$/,
+      policyNameReg: /^[a-z0-9A-Z-]{1,128}$/,
       message5: {
         object: item.name,
         type: item.isBucket ? 'Bucket' : T('folder'),

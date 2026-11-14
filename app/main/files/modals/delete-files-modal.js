@@ -57,7 +57,7 @@ angular.module('web').controller('deleteFilesModalCtrl', [
             $scope.step = 3;
             callback();
           })
-          ['catch']((e) => {
+          .catch((e) => {
             $scope.step = 3;
             // item: {isFolder,  path }
             // error message

@@ -34,8 +34,8 @@ function setupDownloadPartSize(value) {
   delete require.cache[require.resolve('../../../node/ossstore/lib/util.js')];
   delete require.cache[require.resolve('../../../node/ossstore/lib/download-job-util.js')];
   delete require.cache[require.resolve('../../../node/ossstore/lib/download-job.js')];
-  const downloadJob = require('../../../node/ossstore/lib/download-job.js');
-  return { downloadJob, storage };
+  const DownloadJob = require('../../../node/ossstore/lib/download-job.js');
+  return { DownloadJob, storage };
 }
 
 test.afterEach(() => {
@@ -46,8 +46,8 @@ test.afterEach(() => {
 // 在“源文件零改动”约束下不单测私有函数，其行为经 DownloadJob 公有流程间接覆盖。
 
 test('DownloadJob 构造：解析 from/to 并初始化状态与恢复字段', (t) => {
-  const { downloadJob } = setupDownloadPartSize();
-  const job = new downloadJob({ fake: 'oss' }, {
+  const { DownloadJob } = setupDownloadPartSize();
+  const job = new DownloadJob({ fake: 'oss' }, {
     from: 'oss://bucket-b/key/a.jpg',
     to: '/home/admin/a.jpg',
     region: 'oss-cn-hangzhou',
@@ -74,8 +74,8 @@ test('DownloadJob 构造：解析 from/to 并初始化状态与恢复字段', (t
 });
 
 test('DownloadJob 缺省 config：prog/status/stopFlag 默认值与 checkPoints 透传', (t) => {
-  const { downloadJob } = setupDownloadPartSize();
-  const job = new downloadJob({}, { from: 'oss://b/c', to: '/tmp/c' });
+  const { DownloadJob } = setupDownloadPartSize();
+  const job = new DownloadJob({}, { from: 'oss://b/c', to: '/tmp/c' });
 
   t.deepEqual(job.prog, { loaded: 0, total: 0 });
   t.is(job.status, 'waiting');
@@ -86,23 +86,23 @@ test('DownloadJob 缺省 config：prog/status/stopFlag 默认值与 checkPoints 
 test('存量瑕疵锁定：maxConcurrency 读取拼写错误键名 downloadConcurrecyPartSize', (t) => {
   // 存量瑕疵，非本次修复范围（design 1.2.4-2）：键名缺 y（Concurrecy），升级后必须保持读取同一键名，
   // 否则用户已保存的下载并发设置失效
-  const { downloadJob } = setupDownloadPartSize(7);
-  const job = new downloadJob({}, { from: 'oss://b/c', to: '/tmp/c' });
+  const { DownloadJob } = setupDownloadPartSize(7);
+  const job = new DownloadJob({}, { from: 'oss://b/c', to: '/tmp/c' });
 
   t.is(job.maxConcurrency, 7);
 });
 
 test('maxConcurrency 未设置时默认 5', (t) => {
-  const { downloadJob } = setupDownloadPartSize();
-  const job = new downloadJob({}, { from: 'oss://b/c', to: '/tmp/c' });
+  const { DownloadJob } = setupDownloadPartSize();
+  const job = new DownloadJob({}, { from: 'oss://b/c', to: '/tmp/c' });
 
   t.is(job.maxConcurrency, 5);
 });
 
 test('DownloadJob 缺 from 或 to 时仅生成 id 且不解析路径', (t) => {
-  const { downloadJob } = setupDownloadPartSize();
-  const jobNoFrom = new downloadJob({}, { to: '/tmp/x' });
-  const jobNoTo = new downloadJob({}, { from: 'oss://b/c' });
+  const { DownloadJob } = setupDownloadPartSize();
+  const jobNoFrom = new DownloadJob({}, { to: '/tmp/x' });
+  const jobNoTo = new DownloadJob({}, { from: 'oss://b/c' });
 
   t.truthy(jobNoFrom.id);
   t.is(jobNoFrom.from, undefined);

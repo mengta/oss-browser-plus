@@ -85,7 +85,7 @@ angular.module('web').controller('setSymlinkModalCtrl', [
                   cancel();
                 });
           })
-          ['catch']((err) => {
+          .catch((err) => {
             Toast.error(err);
           });
     }

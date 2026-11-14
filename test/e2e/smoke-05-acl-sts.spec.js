@@ -13,7 +13,8 @@ const { hasOssCredentials, getOssCredentials } = require('./fixtures/credentials
 
 test.skip(!hasOssCredentials(), '需真实凭证：注入 OSS_E2E_AK / OSS_E2E_SK / OSS_E2E_BUCKET 后执行（方法见 test/e2e/README.md）');
 
-let app, page;
+let app,
+page;
 
 test.beforeEach(async () => {
   ({ app, page } = await launchApp());

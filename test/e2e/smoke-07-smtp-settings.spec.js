@@ -19,7 +19,8 @@ test.skip(
   '需真实凭证：注入 OSS_E2E_* 与 SMTP_E2E_* 后执行（方法见 test/e2e/README.md）'
 );
 
-let app, page;
+let app,
+page;
 
 test.beforeEach(async () => {
   ({ app, page } = await launchApp());

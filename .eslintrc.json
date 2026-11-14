@@ -45,12 +45,32 @@
     "brace-style": 0
   },
   "extends": ["@alicloud/eslint-config/es5"],
-  "ignorePatterns": ["static/", "vendor/", "dist/", "node_modules/", "test/"],
+  "ignorePatterns": ["static/", "vendor/", "dist/", "node_modules/", "test-results/", "playwright-report/", "build/"],
   "env": {
     "es6": true,
     "browser": true,
     "node": true
   },
+  "overrides": [
+    {
+      "files": ["test/**/*.js", "test/**/*.mjs"],
+      "parserOptions": {
+        "ecmaVersion": 2022,
+        "sourceType": "module"
+      },
+      "env": {
+        "node": true,
+        "es2021": true,
+        "browser": true
+      },
+      "globals": {
+        "angular": "readonly",
+        "moment": "readonly",
+        "localStorage": "readonly",
+        "navigator": "readonly"
+      }
+    }
+  ],
   "globals": {
     "angular": "readonly",
     "moment": "readonly",
@@ -65,6 +85,10 @@
     "request": "readonly",
     "custom": "writable",
     "OSS": "readonly",
-    "ALY": "readonly"
+    "ALY": "readonly",
+    "showdown": "readonly",
+    "openDevTools": "readonly",
+    "gInstallAndRestart": "readonly",
+    "ImportConfigParser": "readonly"
   }
 }

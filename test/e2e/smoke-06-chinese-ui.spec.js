@@ -7,7 +7,8 @@ const { test, expect } = require('@playwright/test');
 const { launchApp } = require('./helpers/launch.js');
 const SEL = require('./helpers/selectors.js');
 
-let app, page;
+let app,
+page;
 
 test.beforeEach(async () => {
   ({ app, page } = await launchApp());

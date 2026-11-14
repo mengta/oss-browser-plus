@@ -11,7 +11,7 @@ angular.module('web').controller('addFolderModalCtrl', [
       cancel: cancel,
       onSubmit: onSubmit,
       reg: {
-        folderName: /^[^\/]+$/
+        folderName: /^[^/]+$/
       }
     });
 

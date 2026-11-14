@@ -60,11 +60,11 @@ angular.module('web').controller('batchRestoreModalCtrl', [
     }
 
     function parseRestoreInfo(s) {
-      var arr = s.match(/([\w\-]+)=\"([^\"]+)\"/g);
+      var arr = s.match(/([\w-]+)="([^"]+)"/g);
       var m = {};
 
       angular.forEach(arr, function(n) {
-        var kv = n.match(/([\w\-]+)=\"([^\"]+)\"/);
+        var kv = n.match(/([\w-]+)="([^"]+)"/);
 
         m[kv[1]] = kv[2];
       });

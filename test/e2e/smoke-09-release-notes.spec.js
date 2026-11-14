@@ -14,7 +14,8 @@ const SEL = require('./helpers/selectors.js');
 const PORTS = [7123, 7124, 7125, 7126];
 const ROOT = path.resolve(__dirname, '..', '..');
 
-let app, page;
+let app,
+page;
 
 test.beforeEach(async () => {
   ({ app, page } = await launchApp());
@@ -30,8 +31,11 @@ test('应用静态服务可达（dist/static 资源 HTTP 200 且非空）', asyn
   let ok = false;
   for (const port of PORTS) {
     try {
+      // 端口轮询为串行依赖（后一端口尝试取决于前一失败），循环内 await 为正当用法
+      // eslint-disable-next-line no-await-in-loop
       const res = await page.request.get(`http://127.0.0.1:${port}/jquery.min.js`);
       if (res.ok()) {
+        // eslint-disable-next-line no-await-in-loop
         const body = await res.text();
         if (body && body.length > 0) {
           ok = true;

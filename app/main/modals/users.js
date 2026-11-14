@@ -1,4 +1,3 @@
-
 angular.module('web').controller('usersCtrl', [
   '$scope',
   '$rootScope',

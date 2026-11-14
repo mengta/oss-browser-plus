@@ -45,7 +45,7 @@
   function normalizeKey(key) {
     return String(key)
         .toLowerCase()
-        .replace(/[\s"'`_.:\-]/g, '');
+        .replace(/[\s"'`_.:-]/g, '');
   }
 
   function cleanValue(value) {
@@ -134,10 +134,13 @@
     var re = /<([\w:.-]+)(?:\s[^>]*)?>\s*([^<]*?)\s*<\/\1>/g;
     var m;
 
-    while ((m = re.exec(text)) !== null) {
+    // lint 修复（no-cond-assign）：赋值移出循环条件，行为等价
+    m = re.exec(text);
+    while (m !== null) {
       var value = unescapeXml(m[2]);
 
       if (value) { kv[m[1]] = value; }
+      m = re.exec(text);
     }
 
     return kv;

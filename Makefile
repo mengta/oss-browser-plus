@@ -3,7 +3,7 @@ VERSION=1.19.0
 NAME=oss-browser
 CUSTOM=./custom
 
-GULP=node ./node_modules/gulp/bin/gulp.js
+
 PKGER=node node_modules/electron-packager/cli.js
 ZIP=node ../zip.js
 
@@ -27,9 +27,9 @@ run:
 prod:
 	npm run prod
 watch:
-	$(GULP) watch --custom=$(CUSTOM)
+	node build.mjs --watch
 build:
-	$(GULP) build --custom=$(CUSTOM)
+	node build.mjs --dist-install
 	node gen.js
 
 win64:

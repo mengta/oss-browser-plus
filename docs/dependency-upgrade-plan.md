@@ -1142,17 +1142,17 @@ git tag -f rollback/P{n}-{主题词}
 | P0-04 | 核心功能冒烟清单建立 | 已完成 | 2026-11-14 | 断点续传计数 5（≥2），清单文本与第 9 章共用 |
 | P0-05 | karma 僵尸测试处置核对 | 已完成 | 2026-11-14 | COUNT=0 无存量用例损失；karma 三件套已从 package.json 移除、karma-unit.js 已删除（显式废弃非静默） |
 | P0-06 | spectron E2E 冻结声明 | 已完成 | 2026-11-14 | test/index.js 保持原状（spectron 引用计数 1），冻结至 Phase 5 Playwright 重写 |
-| P0-07 | 创建阶段回滚点与依赖快照 | 未开始 | | |
-| P1-01 | esbuild 构建脚本实现 app.js 产物 | 未开始 | | |
-| P1-02 | templates.js 产物生成 | 未开始 | | |
-| P1-03 | lib.js vendor 拼接 | 未开始 | | |
-| P1-04 | css 产物与字体图标拷贝 | 未开始 | | |
-| P1-05 | gen-package 等价改造 | 未开始 | | |
-| P1-06 | remove-redundant 等价 | 未开始 | | |
-| P1-07 | watch/dev 等价复刻 | 未开始 | | |
-| P1-08 | package.json scripts 与构建期依赖清理 | 未开始 | | |
-| P1-09 | Makefile 构建调用替换与 vendor 保留 | 未开始 | | |
-| P1-10 | 产物布局契约逐文件核对 | 未开始 | | |
+| P0-07 | 创建阶段回滚点与依赖快照 | 已完成 | 2026-11-14 | 提交 8759c2d，标签 rollback/P0-baseline，快照刷新 diff 为空 |
+| P1-01 | esbuild 构建脚本实现 app.js 产物 | 已完成 | 2026-11-14 | build.mjs（esbuild 0.28.2，target esnext 不转译），85 文件拼接 |
+| P1-02 | templates.js 产物生成 | 已完成 | 2026-11-14 | $templateCache standalone 等价，52 条目，index.html 正确排除 |
+| P1-03 | lib.js vendor 拼接 | 已完成 | 2026-11-14 | 18 项清单顺序复刻 + codemirror modes fs.readdirSync 动态扫描，138 文件；merge.js 原路径缺失与 gulp3 行为一致（warn 记录） |
+| P1-04 | css 产物与字体图标拷贝 | 已完成 | 2026-11-14 | app.css(8)/css/lib.css(3)/fonts/icons |
+| P1-05 | gen-package 等价改造 | 已完成 | 2026-11-14 | GENPKG-OK；dist 安装改 npm install --omit=dev（--dist-install 标志，构建性能决策见 10.4） |
+| P1-06 | remove-redundant 等价 | 已完成 | 2026-11-14 | protobufjs/aliyun-sdk dist 子目录删除逻辑就位（dist-install 后生效） |
+| P1-07 | watch/dev 等价复刻 | 已完成 | 2026-11-14 | fs.watch（win32 recursive），scripts 全部去除 POSIX 路径前缀 |
+| P1-08 | package.json scripts 与构建期依赖清理 | 已完成 | 2026-11-14 | CLEANUP-OK：gulp 系 7 项+babel 2 项+bower/shelljs/del 移除；engines.node ">=22" |
+| P1-09 | Makefile 构建调用替换与 vendor 保留 | 已完成 | 2026-11-14 | watch/build 目标改 node build.mjs；GULP 变量移除；vendor 3 手工文件入 dist（VENDOR-OK） |
+| P1-10 | 产物布局契约逐文件核对 | 已完成 | 2026-11-14 | LAYOUT-CHECK-DONE 零 MISSING，隐式契约未变化 |
 | P2-01 | Electron 版本查询与 D1 决策复核 | 未开始 | | |
 | P2-02 | 目标 Electron 内置 Node 版本核对 | 未开始 | | |
 | P2-03 | 两步走升级第一步（中间版本验证） | 未开始 | | |
@@ -1215,6 +1215,12 @@ agent 每次续作（新会话或中断恢复）先执行基线核对：核对�
 | 2026-11-14 | P0-03 扩展 | 新增单测 81 用例/11 文件：cipher 4（含 R-14 密文锚点，权威值经 Electron 1.8.4 实测）、ak-histories 10、formater 9、list-filter 4、address-bar 11、i18n 7（含存量瑕疵锁定：options 插值无效）、sts 7、ossstore/util 10、ossstore/upload-job 11、ossstore/download-job 5（含存量瑕疵锁定：downloadConcurrecyPartSize 键名拼写）、mailer 3；测试基建四件套 test/helpers/（angular-stub/env-stubs/module-stubs/crypto-legacy）；总用例 96（存量 15 + 新增 81），3 连跑全绿，5.4s（≤60s） |
 | 2026-11-14 | P0-05 | karma 僵尸处置：app 内 test 文件 COUNT=0，无存量用例损失；三件套与 karma-unit.js 显式废弃移除 |
 | 2026-11-14 | P0-06 | spectron 冻结：test/index.js 原状保留（引用计数 1），npm test 入口经 ava files 白名单隔离不触发 E2E |
+| 2026-11-14 | T-P0-GATE-02 | P0 收口：A1 快照 diff 空、A2 npm test 96 用例全绿（3 连跑 5.4s）、A3 冒烟清单在位、A4 karma 废弃记录在案、凭证扫描零命中；提交 8759c2d + 标签 rollback/P0-baseline |
+| 2026-11-14 | T-P1-GATE-01 | P1 门禁：rollback/P0-baseline 存在、npm test 96 用例全绿（P1-GATE-OK） |
+| 2026-11-14 | P1-01~10 | esbuild 0.28.2 + build.mjs 复刻 gulp 14 任务全部落地：app.js 85 文件/templates.js 52 条目/lib.js 138 文件（含 codemirror modes 动态扫描）/app.css 8/css/lib.css 3/fonts/icons/node/release-notes/static/裁剪 package.json（GENPKG-OK）/vendor 3 手工文件拷贝（VENDOR-OK）/产物布局 LAYOUT-CHECK-DONE 零 MISSING |
+| 2026-11-14 | P1-05 决策 | dist 内依赖安装改为 npm install --omit=dev 并以 --dist-install 标志触发（默认 build 跳过）：原 gulp build 每次 build 均在 dist 跑 yarn install（分钟级），该触发时机差异仅影响构建时长，不影响应用运行行为；Makefile build 目标与 npm run build:full 走 --dist-install |
+| 2026-11-14 | P1-03 备注 | gulpfile 原清单中 ./node_modules/codemirror/addon/mode/merge/merge.js 与 merge.css 实际位于 addon/merge/（原路径笔误），gulp3 对不存在字面路径静默跳过，新构建保持同行为（warn 记录），行为等价 |
+| 2026-11-14 | P1 A2 实测 | timeout 12s 启动 Electron 1.8.4：dist/main.js 正确加载、server.js 静态服务启动（listening on port 7123），构建产物契约验证通过；main.js:38 app.commandLine.appendSwitch 处报错为 Electron 1.8.4 二进制在本 Windows 11 环境的预存兼容问题（正是 P2 升级目标，R-01），不阻断 P1 收口 |
 
 #### 抽验记录表（P5-03，2026-11-14，Windows git-bash）
 

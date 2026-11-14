@@ -915,7 +915,47 @@ Electron 45 已移除 `remote` 模块（Electron 14 起废弃），五项改造�
 - **影响等级**：高（存量登录态丢失）
 - **缓解措施**：P0 阶段单测锁定固定明文→固定密文锚点（test/unit/components/services/cipher.test.js）；P2 阶段以 createCipheriv + EVP_BytesToKey(MD5、无盐、单轮) 等价改造，改造后密文锚点一致性比对通过；crypto-legacy 基建提供等价实现参照。
 - **回滚策略**：`git checkout rollback/P1-toolchain`（cipher.js 回退旧实现）。
+- **状态**：已触发并已缓解（CS-04 批次 E2E 首次真实调用渲染层 decipher 暴露：createCipheriv('aes192') 别名在 Electron 渲染进程 BoringSSL 下抛 Unknown cipher，v1 兼容读实际不可用；CANONICAL 规范名映射修复，密文行为零变化，详见 10.4 T-CS-09）
+
+### R-15
+
+- **风险描述**：存量迁移失败（v1 解密成功但 v2 写回中断/失败）导致旧格式残留。
+- **影响阶段**：CS-02（五键存储点改造）
+- **发生概率**：低
+- **影响等级**：高
+- **缓解措施**：惰性迁移失败保留原值 + 下次重试（5.3.1-4）；单测迁移三态用例锁定（secure-store.test.mjs / authinfo-migration.test.mjs）；E2E smoke-10 冒烟断言。
+- **回滚策略**：`git checkout` 还原存储点改造文件（v1 兼容读在位，数据无损）。
 - **状态**：未触发
+
+### R-16
+
+- **风险描述**：降级模式异常（Linux 无 libsecret / keychain 拒绝）导致凭证功能不可用。
+- **影响阶段**：CS-01/CS-02
+- **发生概率**：中
+- **影响等级**：高
+- **缓解措施**：SafeStorageClient 异常全 catch + v2d 实例级随机 DEK + 功能红线单测（secure-store.test.mjs 降级路径用例组）；E2E Linux CI 路径实测（release.yml linux-x64 job）。
+- **回滚策略**：同 R-15；降级提示语义可独立还原。
+- **状态**：未触发
+
+### R-17
+
+- **风险描述**：回滚后登录态失效（旧版本读不懂 v2 密文）——已接受的决策（安全优先于回滚便利，5.3.1-6）。
+- **影响阶段**：回滚操作时
+- **发生概率**：确定（回滚即触发）
+- **影响等级**：中
+- **缓解措施**：用户重新登录即恢复；非凭证数据不受损；本条目即为 spec 5.7-9 要求的显式登记。
+- **回滚策略**：不适用（接受性声明，非待缓解项）。
+- **状态**：已接受
+
+### R-18
+
+- **风险描述**：v1 密钥以字节序列重构形态存续于兼容读路径（零字面量检索达标，逆向仍可提取）。
+- **影响阶段**：CS-01
+- **发生概率**：低
+- **影响等级**：中
+- **缓解措施**：迁移能力下线时移除（另行决策）；本条登记"非字面量≠不可逆向"的边界。
+- **回滚策略**：同 R-15 随迁移能力下线消解。
+- **状态**：存续（边界已登记）
 
 ## 7. 回滚机制
 
@@ -1191,6 +1231,10 @@ git tag -f rollback/P{n}-{主题词}
 | P5-05 | installRestart 升级机制验证 | 已完成 | 2026-11-14 | 入口 main.js:145（app:install-restart handle）核对在位；asar 布局下 {version}-app.asar 路径逻辑不变，自动升级服务端不在范围（见 2.2 排除项） |
 | P5-06 | 三平台验证 | 已完成 | 2026-11-14 | Windows 实测：win-unpacked/oss-browser.exe 启动成功（listening 7123）+ smoke-08 产物断言通过；macOS/Linux 待人工回填 |
 | P5-07 | 终验收口 | 已完成 | 2026-11-14 | npx playwright test 全量 + npm test 96 用例 + audit 运行时链 critical=0；详见 10.4 GATE-02 记录 |
+| CS-01 | safeStorage 通道与 SecureStore v2 门面 | 已完成 | 2026-11-14 | 渲染层直调（Electron 45 文档 Main and Renderer）；AES-256-GCM 信封 + DEK 单槽（enc-dek）；'enc:v2:'/'enc:v2d:' 版本标记；新增单测 29 条（secure-store 20 + cipher 净增 1 + prog-naming 8），npm test 128 用例全绿 |
+| CS-02 | 五键存储点改造与惰性迁移 | 已完成 | 2026-11-14 | authinfo 三键/login 两点/mailSender 内部切换；v1/v0 读取即迁移，失败保留原值；新增单测 20 条（authinfo-migration 9 + login-authtoken 5 + settings-mailSmtp 6），npm test 148 用例全绿 |
+| CS-03 | 进度文件名脱敏与改名迁移 | 已完成 | 2026-11-14 | sha256 截断 16hex；先写后删（D-14）；旧名补删孤儿清理；npm test 148 用例全绿保持 |
+| CS-04 | 测试锚点转正与新增 + E2E 迁移冒烟 | 已完成 | 2026-11-14 | cipher 锚点转兼容读（批次一）+ ak-histories 断言转正（批次二）；新增单测 49 条（累计 148）；smoke-10 无凭证必跑，playwright 7 passed / 6 skipped / 退出码 0 |
 
 ### 10.3 基线核对任务说明
 
@@ -1254,6 +1298,23 @@ agent 每次续作（新会话或中断恢复）先执行基线核对：核对�
 | 2026-11-14 | 批次守护复核 | T-P2-E01：35 用例 P2-BASELINE-OK（cipher/util/address-bar/ak-histories，验证命令文件后缀按 .mjs 适配执行，行为等价）；T-P2-E02：cipher createCipheriv 改造已完成且锚点用例通过（R-14 已处置）；T-P3-E01：20 用例 P3-BASELINE-OK（list-filter/formater/i18n）；T-P4-E01：26 用例 P4-BASELINE-OK 退出码 0（mailer/upload-job/sts/download-job） |
 | 2026-11-14 | 状态双写同步 | tasks.md 100 条 checkbox 全部勾选（0 未勾），与 10.2 总表 55 条已完成双向一致（0.2 执行动序补齐）；下载任务本轮改名为 DownloadJob 后 5 用例复验全绿 |
 | 2026-11-14 | 本地打包测试 | make win64 等价序列手动执行（本机无 make）：①node build.mjs --dist-install（dist 依赖 141 包）；②electron-builder --win --x64 完整打包（zip target，签名跳过属预期）产出 build/oss-browser-1.19.2-win.zip（159MB）；③归档 releases/1.19.2/oss-browser-win32-x64.zip；④解压测试三核心就位（oss-browser.exe/resources/custom/index.js/resources/app.asar）；⑤解压产物启动冒烟通过（listening on port 7123，无 JS 错误）；⑥smoke-08/09 打包契约复验 4 用例全通过 |
+| 2026-11-14 | CI-WF-01 | release workflow 更新专项：Node 24 钉选（对齐 Electron 45.3.2 内置 Node 24.22.2）；清除 yarn/rcedit/electron-packager/npmmirror 旧链路（npm ci 官方源 + npm run build:full + npx electron-builder）；矩阵收敛 win32/linux/darwin 三行 x64，ia32 移除留痕引用 D6-ia32（404 实证，待人工裁决）；npm test 96 用例三平台前置门禁 + E2E 仅 win64（6 passed/6 skipped 退出码 0）；builder 默认名→归档规范名映射（releases/{version}/oss-browser-{platform}-{arch}.zip + oss-browser.dmg，源缺失 fail-fast）；dispatch 输入校验 ^v\d+\.\d+\.\d+$ + checkout tag 修正（构建源一致性）；发布前置拦截（至少一平台成功）+ Release 附件双 glob 含 dmg；核验：js-yaml 解析零错误 + 结构断言 A1-A15 全通过 + 文本断言（D6-ia32×2/404 证据/镜像不设/E2E 豁免注释在位，actionlint 等价）；附带清理旧链配套（用户授权扩展交付范围）：删除 zip.js、tools/rcedit-x64.exe、tools/.yarnclean，build.mjs copy-index 停拷 .yarnclean；复验 node build.mjs 完整 + npm test 96 用例全绿 |
+| 2026-11-14 | BUG-DLMGR-01 | 下载任务 STS endpoint bug 修复（技术债排查新发现）：createJob 由 upload 版复制引入，STS 分支残留 opt.to.bucket——而下载任务 opt.to={name,path} 无 bucket（源文件 @param 注释契约），恒 undefined → getOssEndpoint 跳过 bucketMap 专属 endpoint 解析直落 region 模板兜底；非 STS 分支早已用 opt.from.bucket（正确），仅 STS 分支漏改。修复：opt.to.bucket → opt.from.bucket（oss-download-manager.js:331）；锚定测试 test/unit/components/services/oss-download-manager.test.mjs 3 用例（STS 分支 from.bucket / 非 STS 基线锁定 / cname 模板选择），采用 angular-stub + module-stubs + Module._resolveFilename 重定向 './node/ossstore' 至仓库根 node/ossstore/lib/index.js（与 dist 运行时布局等价语义）；验证：锚定用例先红（bucket=undefined 实证）后绿，npm test 99 用例全绿（+3），npm run lint 零错误 |
+| 2026-11-14 | DEPS-CLEAN-01 | 僵尸依赖清理（技术债排查批次）：移除 devDependencies 6 项零引用包（commander~2.9.0 / electron-packager 7.1.0 / mocha~2.4.5 / should~9.0.0 / minimist^1.2.0 / pngjs^7.0.0，全仓 rg 复核零 require/import，electron-packager 仅 Makefile 注释提及；node/ossstore 子项目测试自带 mocha^3.4.2/should^11.2.1 与主仓声明无关且无执行入口）；clipboard 双声明去重：删 dependencies 侧（运行时消费方为 lib.js 全局 Clipboard，由 devDependencies 侧 node_modules/clipboard/dist/clipboard.min.js 打入 build.mjs:115，dist/node_modules 装配纯冗余，dist 依赖 13→12）；同步删除旧链残留 gulpfile.js（286 行死文件，依赖 gulp 链已于 P1-08 移除）与空 .npmrc（0 字节无配置作用）；npm install 重生成 package-lock.json；验证：npm audit critical 0（P4-07 豁免的 dev 链 6 处 critical 全部来自 mocha 2.4.5/electron-packager 7.1.0 传递链，随删除清零，余 12 moderate/4 high 属运行时链 aliyun-sdk 等存量）+ npm test 99 用例全绿 + node build.mjs 完整 + npm run lint 零错误 + npx playwright test 6 passed/6 skipped 退出码 0 + dist/package.json 依赖清单确认无 clipboard |
+| 2026-11-14 | T-CS-01（CS-01）| SafeStorageClient（渲染层直调 safeStorage，异常全 catch）+ SecureStore（七方法门面：四格式判定/DEK 生命周期 p-d 态/惰性迁移/降级通知）新增；secure-store.test.mjs 20 用例全通过（八组行为：v2 往返/随机 IV/格式判定/DEK 生命周期含场景 B-D/跨实例互异/降级路径/迁移三态/异常回调）；npm test 128 用例全绿 |
+| 2026-11-14 | T-CS-02（CS-01）| cipher.js 缺省 KEY 改字节序列构造（D-4，evpBytesToKey 原生支持 Buffer，派生结果零变化）+ 注释更新（R-18 边界声明）；cipher.test.mjs 锚点用例转正 1/2 处（加密一致性→兼容读 decipher + SecureStore v2 区分双断言），4→5 用例全通过；app/ 静态密钥双检（明文形态 + base64 变体 eDgybSMqbHg4dnY）零命中 KEY-CLEAN |
+| 2026-11-14 | T-CS-03（CS-01）| ProgNaming 脱敏命名纯函数（newProgFileName：sha256 hex 前 16 字符；legacyProgFileName：仅供迁移探测）新增；prog-naming.test.mjs 8 用例全通过（脱敏/确定性/碰撞/空 ak/legacy 一致/双前缀/16hex 结构/angular-stub 加载）；lint 零错误 |
+| 2026-11-14 | T-CS-GATE-A（CS-01）| 批次一守护复核：npm test 128 用例全绿（基线 99 + 新增 29，≥126 达标）；零静态密钥双检 + 泄露扫描（LTAI 模式）零命中；git status 边界核对通过（批次一 7 文件：3A 源 + 1M 源 + 3 测试，红线 main.js/server.js/const.js/app/index.html 零改动）；10.2 CS-01 行已登记 |
+| 2026-11-14 | T-CS-04（CS-02）| AuthInfo 三键内部切换 SecureStore（get 惰性迁移写回/save 失败不落盘 D-9/remove 直通），对外 11 方法签名零变化；ak-histories.test.mjs 断言转正 2/2 处（hex 正则 → 'enc:v2:' 前缀，D-15 后半）；authinfo-migration.test.mjs 9 用例全通过（三键 v1 迁移/D-9 写盘失败/not-json-array 行为一致/去重/往返/合并）；ak-histories 10 用例全绿保持 |
+| 2026-11-14 | T-CS-05（CS-02）| login.js :107/:175 两点切换（非空 SecureStore.set、空串直写 D-10；读取 legacyPlain v0 迁移），其余逻辑零触碰；login-authtoken.test.mjs 5 用例全通过（防抖 flush v2 密文/空串/v0 迁移/authTokenInfo 内存解析/去抖仅最后一次生效） |
+| 2026-11-14 | T-CS-06（CS-02）| settings.js mailSmtp 成员内部切换 + D-11 损坏守卫（回退默认 {port:465} 不抛异常，修正存量缺陷）；兄弟 13 偏好成员零触碰；settings-mailSmtp.test.mjs 6 用例全通过（v2 密文无密码明文/v0 逐字段迁移/损坏回退/默认 465/往返/兄弟成员抽验） |
+| 2026-11-14 | T-CS-07（CS-02）| app.js run 块注册 SecureStore.onDegrade（Toast.warn）/onSaveError（Toast.error）回调（一次性防重复由 session 标记承担 D-7）；node/i18n 三语言各 +2 key（security.storage.degraded/savefailed），grep 计数各 1；lint 零错误 |
+| 2026-11-14 | T-CS-GATE-B（CS-02）| 批次二守护复核：npm test 148 用例全绿（128 + 新增 20，≥145 达标）；零静态密钥检索 + 泄露扫描零命中；排除键 diff 抽验通过（settings.js 仅 mailSmtp 区域、login.js 仅 DI 行+:107/:175 两点、authinfo.js 对外签名零变化）；执行中发现并修复 2 项测试基建问题：① address-bar.test.mjs 加载 authinfo.js 未适配 SecureStore DI（11 用例失败）→ 补 stubModule + secure-store 加载链修复（批次二边界扩展 1 文件，显式声明）② 批次二三新测试文件 test() 并发与 t.teardown 存在替身竞态（flaky 1 失败）→ 全部 test.serial 化修复；git status 边界核对通过（红线四文件零改动） |
+| 2026-11-14 | T-CS-08（CS-03）| 两 manager 路径函数切换 ProgNaming.newProgFileName（sha256 截 16hex 脱敏，D-6）+ loadProg 先写后删迁移（D-14：旧名断点恢复→读旧→写新→删旧；写新失败保留旧文件按旧路径读取 5.5.1-3；内容损坏不迁移不删除返回 [] 5.5.3-2；新名在位旧名残留补删孤儿清理）；saveProg 与进度内容字段白名单零修改（5.5.1-4）；DI 追加 ProgNaming；连带适配 oss-download-manager.test.mjs setup 补 prog-naming.js 加载（批次三边界扩展 1 文件，DI 适配必要改动，显式声明）；验证：manager 3 用例全绿保持 + 落位计数各 1 + NAMING-CLEAN（app/ 明文拼接检索零命中）+ lint 零错误 |
+| 2026-11-14 | T-CS-GATE-C（CS-03）| 批次三守护复核：npm test 148 用例全绿（≥145 保持）；git diff 核对两 manager 仅 DI/loadProg/路径函数段改动（writeFileSync 匹配 2 处均为 loadProg 迁移新增，saveProg 与 crc64Str/checkPoints 内容字段白名单零增删）；git status 边界核对通过（红线 main.js/server.js/const.js/app/index.html 零改动）；10.2 CS-03 行已登记 |
+| 2026-11-14 | T-CS-09（CS-04）| 新增 test/e2e/smoke-10-credential-migration.spec.js（无凭证必跑，不携带 skip 装饰）：预置 auth-keep/auth-his v1 密文（crypto-legacy evpBytesToKey 生成）+ mailSender v0 明文 + auth-remember=YES → reload → 断言记住账号回填（expect.poll 轮询等待 angular init 完成）/ mailSender 经 Angular 注入器等价触发逐字段回读一致（6.3-3）/ 三键 'enc:v2:' 或 'enc:v2d:' 前缀且无明文样本无旧 hex 残留（win 主路径与 linux 降级路径断言一致）/ 应用可用（4.2.2-1）；执行中发现并修复存量缺陷：cipher.js createCipheriv/createDecipheriv 使用 'aes192' 别名在 Electron 渲染进程 BoringSSL 下抛 "Unknown cipher"（R-14 改造引入——Node/OpenSSL 下别名合法故单测全绿未暴露，渲染层首次被 E2E 真实调用才暴露，v1 兼容读在渲染层实际不可用）→ CANONICAL 规范名映射修复（aes192→aes-192-cbc 等，同一算法密文行为零变化，cipher 锚点兼容读保持通过）；修复过程引入 CANONICAL 变量位置错误（置于 factory return 之后不执行导致 undefined）→ 移至 ALGO_KEY_IV 初始化区修正；smoke-10 预置补 auth-remember=YES（防 flags.remember watch 触发 unremember 删除预置数据，一次性诊断脚本定位）；验证：smoke-10 单独 passed + 针对性单测 34 用例全绿（cipher 5 + secure-store 20 + authinfo-migration 9）+ npm run build 后 E2E 生效 |
+| 2026-11-14 | T-CS-10（CS-04）| smoke-03 追加进度文件名脱敏核验（2.5.2 边界唯一显式扩展项，依据 design 2.4.2-4，显式声明）：上传触发进度持久化后轮询断言 ~/.oss-browser 下 'upprog_+16hex+.json' 脱敏命名存在且无含明文 AccessKeyId 的进度文件（5.6.1-5a）；skip 策略零改动（R-13 惯例保持），无凭证时保持 skipped（实测 1 skipped 属预期）；凭证就位条件项（13 passed/0 skipped）待凭证注入后补验；批次四收口：npx playwright test 全量 7 passed / 6 skipped / 退出码 0（design 2.4.3 门禁第二行达标）+ lint 零错误；10.2 CS-04 行已登记 |
+| 2026-11-14 | T-CS-FINAL-01（CS-01~04 收口）| 凭证安全整改批次收口：① 零静态密钥三检零命中（app/ + dist/ 明文形态 + base64 变体，KEY-TRIPLE-CLEAN）；② npm test 148 用例 3 连跑全绿（≥139 达标；既有 99 断言语义零删减，锚点转换 2 处留痕：cipher.test.mjs 兼容读 + ak-histories.test.mjs 前缀断言）；③ npx playwright test 全量 7 passed / 6 skipped / 退出码 0（smoke-10 迁移冒烟无凭证必跑）；④ 泄露扫描（LTAI 模式）零命中；⑤ git status 终态与边界清单逐行一致（红线 main.js/server.js/const.js/app/index.html 零改动；批次内显式扩展 2 文件已留痕：address-bar.test.mjs DI 适配 + oss-download-manager.test.mjs ProgNaming 适配；all-releases.md 为 E2E 运行 auto-upgrade 副作用已还原）；⑥ 10.2 CS-01~CS-04 四行 + R-15~R-18 四条风险台账已登记（R-14 状态更新为已触发已缓解：渲染层 BoringSSL 别名缺陷经 CANONICAL 修复）；交付全景：v2 密文格式 enc:v2:/enc:v2d:（AES-256-GCM + safeStorage DEK 信封，渲染层直调 D-1）；五键惰性迁移（失败保留原值无丢失红线）；进度文件名 sha256 脱敏 + 先写后删迁移（D-14）；降级模式 v2d + Toast 一次性提示 + i18n 三语言 |
 
 #### 抽验记录表（P5-03，2026-11-14，Windows git-bash）
 

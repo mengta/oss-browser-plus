@@ -1,6 +1,6 @@
 {
   "name": "oss-browser",
-  "version": "1.19.2",
+  "version": "1.20.0",
   "main": "dist/main.js",
   "scripts": {
     "test": "ava",
@@ -79,11 +79,9 @@
     "bootstrap": "^3.4.1",
     "clipboard": "^1.7.1",
     "codemirror": "^5.65.21",
-    "commander": "~2.9.0",
     "cross-env": "^3.1.4",
     "electron": "^45.3.2",
     "electron-builder": "^26.18.0",
-    "electron-packager": "7.1.0",
     "esbuild": "^0.28.2",
     "eslint": "^7.1.0",
     "font-awesome": "^4.7.0",
@@ -91,18 +89,14 @@
     "jquery": "^3.7.1",
     "jquery.qrcode": "^1.0.3",
     "lint-staged": "^10.1.2",
-    "minimist": "^1.2.0",
-    "mocha": "~2.4.5",
     "moment": "^2.31.0",
     "npm-run-all": "^4.0.2",
-    "pngjs": "^7.0.0",
-    "should": "~9.0.0",
     "showdown": "^2.1.0"
   },
   "dependencies": {
     "ali-oss": "^6.23.0",
     "aliyun-sdk": "^1.12.10",
-    "clipboard": "^1.7.1",
+
     "electron-log": "^5.4.4",
     "emoji-regex": "^9.0.0",
     "koa": "^2.16.4",

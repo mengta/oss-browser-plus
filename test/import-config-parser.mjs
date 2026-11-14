@@ -1,5 +1,5 @@
 import test from 'ava';
-import parser from '../app/main/auth/import-config-parser';
+import parser from '../app/main/auth/import-config-parser.js';
 
 const ID = 'STS.NYjnAQjmQWRhmNXDhiYCpTgMP';
 const SECRET = '61kjGMYXcMzZFKwaMKHVoU11vwPfgB3DL5pUnoMKfnbM';

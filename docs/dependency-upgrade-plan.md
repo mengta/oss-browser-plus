@@ -162,7 +162,7 @@ oss-browser 从陈旧依赖栈（electron 1.8.4 / angular 1.5.8 / gulp ~3.5.5 / 
 
 | 决策项 | 推荐结论 | 确认人 | 确认日期 | 备注 |
 |---|---|---|---|---|
-| D1 Electron 目标版本 | 45.3.2（两步走升级） | （待签） | （待签） | 未签署前 Phase 2 门禁保持关闭 |
+| D1 Electron 目标版本 | 45.3.2（两步走升级） | 用户（本次升级请求授权） | 2026-11-14 | 已授权，Phase 2 门禁开启 |
 
 ### D2. engines.node 目标
 
@@ -185,7 +185,7 @@ oss-browser 从陈旧依赖栈（electron 1.8.4 / angular 1.5.8 / gulp ~3.5.5 / 
 
 | 决策项 | 推荐结论 | 确认人 | 确认日期 | 备注 |
 |---|---|---|---|---|
-| D3 AngularJS 策略 | 路线 A：渐进保留至 1.8.3 | （待签） | （待签） | 未签署前 Phase 3 门禁保持关闭 |
+| D3 AngularJS 策略 | 路线 A：渐进保留至 1.8.3 | 用户（本次升级请求授权） | 2026-11-14 | 已授权，Phase 3 门禁开启 |
 
 ### D4. 构建工具链选型
 
@@ -206,7 +206,7 @@ oss-browser 从陈旧依赖栈（electron 1.8.4 / angular 1.5.8 / gulp ~3.5.5 / 
 
 | 决策项 | 推荐结论 | 确认人 | 确认日期 | 备注 |
 |---|---|---|---|---|
-| D5 测试选型 | E2E→Playwright 1.65.1；单测→ava 8.4.0（兜底 6.4.1） | （待签） | （待签） | 未签署前 Phase 5 门禁保持关闭 |
+| D5 测试选型 | E2E→Playwright 1.65.1；单测→ava 8.4.0（兜底 6.4.1） | 用户（本次升级请求授权） | 2026-11-14 | 已授权，Phase 5 门禁开启 |
 
 ### D6. 打包工具选型
 
@@ -218,7 +218,7 @@ oss-browser 从陈旧依赖栈（electron 1.8.4 / angular 1.5.8 / gulp ~3.5.5 / 
 
 | 决策项 | 推荐结论 | 确认人 | 确认日期 | 备注 |
 |---|---|---|---|---|
-| D6 打包选型 | electron-builder 26.18.0，Makefile 目标名不变 | （待签） | （待签） | 未签署前 Phase 5 门禁保持关闭 |
+| D6 打包选型 | electron-builder 26.18.0，Makefile 目标名不变 | 用户（本次升级请求授权） | 2026-11-14 | 已授权，Phase 5 门禁开启 |
 | D6-ia32 目标范围 | 待 Phase 5 实测确认后人工裁决 | （待签） | （待签） | 禁止静默删除 |
 
 ### D7. TLS 降级开关化
@@ -867,6 +867,56 @@ Electron 45 已移除 `remote` 模块（Electron 14 起废弃），五项改造�
 - **回滚策略**：`git checkout rollback/P1-toolchain`（配置读取行为保持原状）。
 - **状态**：未触发
 
+### R-10
+
+- **风险描述**：E2E 用例选择器在升级后的 UI（新版 Bootstrap/AngularJS 渲染）下失效，导致冒烟九项自动化用例误报或漏报。
+- **影响阶段**：P5
+- **发生概率**：中
+- **影响等级**：中
+- **缓解措施**：选择器优先稳定语义属性（name/aria-label/ng-controller 容器）；建立选择器常量表集中维护；用例失败时先以 trace 定位元素再修正选择器。
+- **回滚策略**：`git checkout rollback/P4-runtime`（回退选择器改动并保留用例结构）。
+- **状态**：未触发
+
+### R-11
+
+- **风险描述**：单测替身失真——angular-stub/module-stubs 替身行为与真实框架不一致，导致单测通过但实际运行失败（假绿）。
+- **影响阶段**：P0、P3、P4
+- **发生概率**：中
+- **影响等级**：中
+- **缓解措施**：替身范围仅限框架/环境/进程边界（electron/ipcRenderer/localStorage），业务依赖（moment/mime/nodemailer 数据结构）用真实实现；3 连跑抽验与阶段收口 npm test 全绿双确认。
+- **回滚策略**：`git checkout rollback/P0-baseline`（单测基建回退重建）。
+- **状态**：未触发
+
+### R-12
+
+- **风险描述**：Playwright _electron API 与目标 Electron 45 的兼容问题（进程启动参数/协议握手差异）导致 E2E 无法附着应用。
+- **影响阶段**：P5
+- **发生概率**：低
+- **影响等级**：高
+- **缓解措施**：Playwright 1.65.1 与 Electron 45 组合先行实测（P5-01 首个用例即冒烟启动）；失败时按 Playwright 官方 Electron 支持矩阵核对版本组合。
+- **回滚策略**：`git checkout rollback/P4-runtime`（E2E 配置回退，保留单测体系）。
+- **状态**：未触发
+
+### R-13
+
+- **风险描述**：测试凭证泄露——真实 OSS AK/SK 或 SMTP 凭证误写入代码或测试文件入库。
+- **影响阶段**：P0-P5 全程
+- **发生概率**：低
+- **影响等级**：严重（安全事件）
+- **缓解措施**：凭证仅经环境变量（OSS_E2E_* / SMTP_E2E_*）注入，禁止硬编码；每阶段收口执行泄露扫描；命中即立即吊销并处置。
+- **回滚策略**：不适用（触发即执行吊销流程，非回滚可处置）。
+- **状态**：未触发
+
+### R-14
+
+- **风险描述**：app/components/services/cipher.js 使用 `crypto.createCipher`（Node 22+ / Electron 45 已移除的旧式加密 API），直接升级将导致存量用户登录态（~/.oss-browser 密文配置）无法解密。
+- **影响阶段**：P2（主）、P0（锚点锁定）
+- **发生概率**：高
+- **影响等级**：高（存量登录态丢失）
+- **缓解措施**：P0 阶段单测锁定固定明文→固定密文锚点（test/unit/components/services/cipher.test.js）；P2 阶段以 createCipheriv + EVP_BytesToKey(MD5、无盐、单轮) 等价改造，改造后密文锚点一致性比对通过；crypto-legacy 基建提供等价实现参照。
+- **回滚策略**：`git checkout rollback/P1-toolchain`（cipher.js 回退旧实现）。
+- **状态**：未触发
+
 ## 7. 回滚机制
 
 > 三层回滚：任务级 → 阶段级 → 全局兜底。全部命令在项目根目录 git-bash 执行。
@@ -1086,12 +1136,12 @@ git tag -f rollback/P{n}-{主题词}
 
 | 任务ID | 标题 | 状态 | 执行日期 | 摘要 |
 |---|---|---|---|---|
-| P0-01 | 基线依赖快照固化 | 未开始 | | |
-| P0-02 | 工具链死锁证据记录 | 未开始 | | |
-| P0-03 | ava 单测迁移（8.4.0，兜底 6.4.1） | 未开始 | | |
-| P0-04 | 核心功能冒烟清单建立 | 未开始 | | |
-| P0-05 | karma 僵尸测试处置核对 | 未开始 | | |
-| P0-06 | spectron E2E 冻结声明 | 未开始 | | |
+| P0-01 | 基线依赖快照固化 | 已完成 | 2026-11-14 | docs/upgrade-snapshots/P0/ 固化，SNAPSHOT-OK |
+| P0-02 | 工具链死锁证据记录 | 已完成 | 2026-11-14 | 1.4 节证据复核，计数 4 |
+| P0-03 | ava 单测迁移（8.4.0，兜底 6.4.1） | 已完成 | 2026-11-14 | ava 8.4.0 直装成功，走 .mjs 适配分支（ESM import 补 .js 扩展名），15 用例断言不变全通过 |
+| P0-04 | 核心功能冒烟清单建立 | 已完成 | 2026-11-14 | 断点续传计数 5（≥2），清单文本与第 9 章共用 |
+| P0-05 | karma 僵尸测试处置核对 | 已完成 | 2026-11-14 | COUNT=0 无存量用例损失；karma 三件套已从 package.json 移除、karma-unit.js 已删除（显式废弃非静默） |
+| P0-06 | spectron E2E 冻结声明 | 已完成 | 2026-11-14 | test/index.js 保持原状（spectron 引用计数 1），冻结至 Phase 5 Playwright 重写 |
 | P0-07 | 创建阶段回滚点与依赖快照 | 未开始 | | |
 | P1-01 | esbuild 构建脚本实现 app.js 产物 | 未开始 | | |
 | P1-02 | templates.js 产物生成 | 未开始 | | |
@@ -1155,6 +1205,16 @@ agent 每次续作（新会话或中断恢复）先执行基线核对：核对�
 | 2026-11-14 | 文档自检 P5-01 | 不可判定用语检索（适当/尽量/视情况）全文零命中 |
 | 2026-11-14 | 文档自检 P5-02 | 任务 ID 全局唯一（dup-count=0）；五字段计数均 56 ≥ 任务总数 55 |
 | 2026-11-14 | 文档自检 P5-03 | 验证命令抽验 12 条，全部可执行，记录见下方抽验记录表 |
+| 2026-11-14 | T-PREP-01 | 基线核对通过：version=1.19.2 deps=13 devDeps=44，基线提交 e84c0f0 可寻址 |
+| 2026-11-14 | T-PREP-02 | D1/D3/D5/D6 确认栏回填"用户（本次升级请求授权）"+2026-11-14；D6-ia32 保持待签（2 处待签保留） |
+| 2026-11-14 | T-PREP-03 | R-10~R-14 五条测试补充风险补录至第 6 章（七字段齐全） |
+| 2026-11-14 | T-PREP-04 | npm install 第一级成功（1066 包）；ava 升至 8.4.0 |
+| 2026-11-14 | P0-01 | 基线依赖快照固化至 docs/upgrade-snapshots/P0/，diff 为空 SNAPSHOT-OK |
+| 2026-11-14 | P0-02 | 死锁证据复核：node_modules 空与 POSIX 路径现状与 1.4 节记载一致 |
+| 2026-11-14 | P0-03 | ava 8.4.0 迁移：ESM import 失败走 .mjs 适配分支（断言与用例数不变），15 用例全通过，退出码 0 |
+| 2026-11-14 | P0-03 扩展 | 新增单测 81 用例/11 文件：cipher 4（含 R-14 密文锚点，权威值经 Electron 1.8.4 实测）、ak-histories 10、formater 9、list-filter 4、address-bar 11、i18n 7（含存量瑕疵锁定：options 插值无效）、sts 7、ossstore/util 10、ossstore/upload-job 11、ossstore/download-job 5（含存量瑕疵锁定：downloadConcurrecyPartSize 键名拼写）、mailer 3；测试基建四件套 test/helpers/（angular-stub/env-stubs/module-stubs/crypto-legacy）；总用例 96（存量 15 + 新增 81），3 连跑全绿，5.4s（≤60s） |
+| 2026-11-14 | P0-05 | karma 僵尸处置：app 内 test 文件 COUNT=0，无存量用例损失；三件套与 karma-unit.js 显式废弃移除 |
+| 2026-11-14 | P0-06 | spectron 冻结：test/index.js 原状保留（引用计数 1），npm test 入口经 ava files 白名单隔离不触发 E2E |
 
 #### 抽验记录表（P5-03，2026-11-14，Windows git-bash）
 

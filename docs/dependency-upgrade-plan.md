@@ -1246,6 +1246,9 @@ agent 每次续作（新会话或中断恢复）先执行基线核对：核对�
 | 2026-11-14 | P5-02/03 | electron-builder 26.18.0：dist/package.json 删除 build 段（builder 拒绝 app 包含 build 字段）；win 图标 custom/icon.ico 仅 128x128（builder 要求 ≥256）→ pngjs 最近邻放大生成 custom/icon-256.png 配置生效；Makefile 6 目标保留 + rcedit 零残留 |
 | 2026-11-14 | P5-04 实测 | ia32 评估：electron-v45.3.2-win32-ia32.zip 镜像 404（Electron 45 不发布 win32-ia32 二进制）；D6-ia32 条目已回填实测结论，等待人工裁决是否移除 win32 目标（未确认前 Makefile 目标保留） |
 | 2026-11-14 | P5-06 实测 | Windows 全量验证：win-unpacked/oss-browser.exe 打包成功 + 启动冒烟通过（listening on port 7123，静态服务正常）+ resources/custom 资产就位（7 文件含 index.js/icon 全套）+ smoke-08 产物断言通过（7 字段契约：字面值字段精确比对、logo 字段 basename+存在性比对——__dirname 路径在产物内解析到产物路径属正确行为）；macOS/Linux 待人工回填 |
+| 2026-11-14 | T-P5-GATE-02 | P5 收口：A1 E2E 6 passed/6 skipped 退出码 0（6.1s ≤10min）、A2 Windows x64 打包+启动冒烟通过、A3 三平台记录（Windows 实测 + macOS/Linux 待人工回填）、A4 npm audit 运行时链 critical=0 + 冒烟九项覆盖对照（全自动 smoke-01/02/04/06/09、半自动 smoke-03/05/07/08+人工说明见 test/e2e/README.md）；npm test 96 用例全绿；泄露扫描零命中；提交 c703cfe + rollback/P5-packaging |
+| 2026-11-14 | T-FINAL-01 | 交付自检：①10.2 状态总表 55 条主线全部已完成（计数=55 零未完成）；②各阶段验证命令抽验复现（npm test 96 绿 / playwright 6+6 / build complete / audit critical=0）；③测试不倒退核对通过：存量 15 用例（import-config-parser.mjs）断言语义逐条保留（.mjs 适配仅改 import 扩展名），新增 81 单测用例，总 96 全绿；④E2E 终验 6 passed/6 skipped/退出码 0 |
+| 2026-11-14 | T-FINAL-02 | 交付物清点：①升级后代码（P0-P5 全部完成，六枚回滚标签齐全 P0-baseline~P5-packaging，提交链 b210109→8759c2d→694d6d8→30439bf→d5155a9→a4bf6b8→c703cfe→89ebb05）；②测试体系（npm test 96 用例 5.4s ≤60s + npx playwright test 12 用例 6.1s ≤10min，凭证契约+跳过策略就位）；③执行记录（10.2 总表/10.4 全记录/D1-D6 确认栏回填/R-01~R-14 风险台账）；D6-ia32 人工裁决项保持待签（实测 404 证据已录，Makefile 目标未删） |
 
 #### 抽验记录表（P5-03，2026-11-14，Windows git-bash）
 

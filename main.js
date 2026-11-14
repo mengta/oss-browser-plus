@@ -19,17 +19,19 @@ var os = require("os");
 var path = require("path");
 var nativeImage = require("electron").nativeImage;
 
-// electron-log收集和引入
+// electron-log收集和引入（P4-03：1.3.0 → 5.4.4，level=false 写法适配为 'silent'）
 var log = require("electron-log");
-log.transports.file.level = false;
-log.transports.console.level = false;
+log.transports.file.level = "silent";
+log.transports.console.level = "silent";
 
 if (ALLOW_INSECURE_TLS) {
-  // 审计日志：开关开启时记录时间戳（P2 阶段 console 输出；P4-03 升级 electron-log 5.x 后切 log.info）
-  console.log(
+  // 审计日志（D7）：开关开启时输出（electron-log 5.x）
+  log.transports.console.level = "info";
+  log.info(
     "[audit][tls] OSS_BROWSER_ALLOW_INSECURE_TLS=1 enabled at " +
       new Date().toISOString()
   );
+  log.transports.console.level = "silent";
 }
 
 ///*****************************************

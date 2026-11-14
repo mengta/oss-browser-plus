@@ -1,8 +1,9 @@
 angular.module('web').factory('Mailer', [
   'settingsSvs',
   function(settingsSvs) {
+    // P4-02：nodemailer 升级至 6.x，nodemailer-smtp-transport 已废弃移除，
+    // createTransport(smtp) 直传（对象结构等价于 smtpTransport(smtp) 包装结果）
     var nodemailer = require('nodemailer');
-    var smtpTransport = require('nodemailer-smtp-transport');
 
     return {
       send: function(info) {
@@ -16,7 +17,7 @@ angular.module('web').factory('Mailer', [
           };
           // console.log('sending..', smtp, opt);
 
-          var transporter = nodemailer.createTransport(smtpTransport(smtp));
+          var transporter = nodemailer.createTransport(smtp);
 
           transporter.sendMail(opt, function(err, info) {
             if (err) { reject(err); } else { resolve(info); }

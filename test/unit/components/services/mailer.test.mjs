@@ -1,8 +1,10 @@
 'use strict';
 
-// mailer 基线单测（源 app/components/services/mailer.js）
-// nodemailer / nodemailer-smtp-transport 以 module-stubs 注入替身；
-// 断言 send() 的 opt 构造（from/to/subject/html||content）与 transport 参数传递。
+// mailer 单测（源 app/components/services/mailer.js，P4-02 改造后形态）
+// nodemailer 以 module-stubs 注入替身；
+// 断言 send() 的 opt 构造（from/to/subject/html||content）与 createTransport(smtp) 直传。
+// 注：P4-02 升级后 createTransport(smtp) 直传（nodemailer-smtp-transport 已废弃移除），
+// 替身断言同步为直传形态（升级后行为等价性验证）。
 
 import test from 'ava';
 import { stubAngular } from '../../../helpers/angular-stub.js';
@@ -10,11 +12,6 @@ import { stubModule, unstubAll } from '../../../helpers/module-stubs.js';
 
 function setupMailer(smtp) {
   const calls = { transports: [], mails: [] };
-  const firstMailCall = {};
-  stubModule('nodemailer-smtp-transport', (cfg) => {
-    calls.transports.push(cfg);
-    return { __transport: cfg };
-  });
   stubModule('nodemailer', {
     createTransport(t) {
       calls.transports.push(t);
@@ -53,7 +50,7 @@ test.afterEach(() => {
   unstubAll();
 });
 
-test('send 组装 from/to/subject/html 并经 smtpTransport 包装创建 transport', async (t) => {
+test('send 组装 from/to/subject/html 并以 createTransport(smtp) 直传创建 transport', async (t) => {
   const { Mailer, calls } = setupMailer();
 
   const info = await Mailer.send({
@@ -62,7 +59,7 @@ test('send 组装 from/to/subject/html 并经 smtpTransport 包装创建 transpo
     html: '<b>hello</b>',
   });
 
-  t.is(calls.transports.length, 2);
+  t.is(calls.transports.length, 1);
   t.is(calls.transports[0].from, 'sender@example.com');
   t.is(calls.transports[0].host, 'smtp.example.com');
   t.is(calls.mails.length, 1);

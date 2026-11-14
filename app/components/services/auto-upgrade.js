@@ -105,62 +105,86 @@ angular.module('web').factory('autoUpgradeSvs', [
         console.log('start download ...');
         that._changeStatus('running');
 
-        request
-            .head({ url: from, timeout: 10000 })
-            .on('error', function(err) {
-              console.log(err);
-              this._changeStatus('failed', err);
-            })
-            .on('response', function(response) {
-              console.log(response.statusCode); // 200
-              console.log(response.headers); // 'image/png'
+        // P4-01：request 包已废弃（npm request deprecated），改用原生 fetch（Chromium 内置）
+        // 等价复刻原 request.head + request(from).pipe(ws) 行为
+        fetch(from, { method: 'HEAD', signal: AbortSignal.timeout(10000) })
+            .then(function(response) {
+              console.log(response.status);
 
-              if (response.statusCode == 200) {
-                that.total = response.headers['content-length'];
-                var current = 0;
-
-                that.progress = Math.round((current * 10000) / that.total) / 100;
-                console.log(that.total);
-
-                var ws = fs.createWriteStream(to + '.download', { flags: 'a+' });
-
-                request(from)
-                    .on('error', function(err) {
-                      console.log(err);
-                      that._changeStatus('failed', err);
-                    })
-                    .on('data', function(chunk) {
-                      current += chunk.length;
-                      that.progress =
-                    Math.round((current * 10000) / that.total) / 100;
-                      // console.log(that.progress)
-                      that._changeProgress(that.progress);
-
-                      // fs.appendFile(to+'.download', chunk, function(err){
-                      //    if(err)console.log(err)
-                      // });
-                      return chunk;
-                    })
-                    .pipe(ws)
-                    .on('finish', function() {
-                      that._changeStatus('verifying');
-
-                      that.check(
-                          response.headers['x-oss-hash-crc64ecma'],
-                          response.headers['content-md5'],
-                          function(err) {
-                            console.log('check error:', err);
-
-                            if (err) { that._changeStatus('failed', err); } else {
-                              that.update();
-                            }
-                          }
-                      );
-                    });
-              } else {
-                console.log(response);
+              if (response.status != 200) {
                 that._changeStatus('failed', response);
+                return;
               }
+
+              that.total =
+                  parseInt(response.headers.get('content-length') || '0');
+              var hashCrc64ecma = response.headers.get('x-oss-hash-crc64ecma');
+              var contentMd5 = response.headers.get('content-md5');
+
+              var current = 0;
+              that.progress = Math.round((current * 10000) / that.total) / 100;
+              console.log(that.total);
+
+              fetch(from)
+                  .then(function(res) {
+                    if (!res.ok) {
+                      that._changeStatus('failed', res);
+                      return;
+                    }
+
+                    var ws = fs.createWriteStream(to + '.download', { flags: 'a+' });
+                    var reader = res.body.getReader();
+
+                    function pump() {
+                      reader.read()
+                          .then(function(r) {
+                            if (r.done) {
+                              ws.end(function() {
+                                that._changeStatus('verifying');
+
+                                that.check(
+                                    hashCrc64ecma,
+                                    contentMd5,
+                                    function(err) {
+                                      console.log('check error:', err);
+
+                                      if (err) {
+                                        that._changeStatus('failed', err);
+                                      } else {
+                                        that.update();
+                                      }
+                                    }
+                                );
+                              });
+                              return;
+                            }
+
+                            current += r.value.length;
+                            that.progress =
+                                Math.round((current * 10000) / that.total) / 100;
+                            that._changeProgress(that.progress);
+
+                            if (ws.write(Buffer.from(r.value)) === false) {
+                              ws.once('drain', pump);
+                              return;
+                            }
+                            pump();
+                          })
+                          .catch(function(err) {
+                            that._changeStatus('failed', err);
+                          });
+                    }
+
+                    pump();
+                  })
+                  .catch(function(err) {
+                    console.log(err);
+                    that._changeStatus('failed', err);
+                  });
+            })
+            .catch(function(err) {
+              console.log(err);
+              that._changeStatus('failed', err);
             });
       };
       this.onProgressChange = function(fn) {

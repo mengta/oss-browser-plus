@@ -1176,14 +1176,14 @@ git tag -f rollback/P{n}-{主题词}
 | P3-09 | showdown 1.4.2 升级核对 | 已完成 | 2026-11-14 | 2.1.0 安装；2 处 new showdown.Converter() 调用点，2.x API 保留兼容 |
 | P3-10 | lib.js vendor 清单同步与 angular-translate 升级 | 已完成 | 2026-11-14 | VENDOR-PATH-OK（全部 node_modules 包路径在新版本下存在）；vendor/angular-translate.min.js 手工文件保留原状（2.x 与 angular 1.8.3 兼容），替换列入第 11 章 |
 | P3-11 | 前端回归验证 | 已完成 | 2026-11-14 | 构建完整 + npm test 96 用例全绿 + Electron 45 启动无渲染错误 |
-| P4-01 | request 调用点复核与替换 | 未开始 | | |
-| P4-02 | nodemailer 升级与 nodemailer-smtp-transport 移除 | 未开始 | | |
-| P4-03 | electron-log 1.3.0 → 5.4.4 升级 | 未开始 | | |
-| P4-04 | mime 1.3.6 → 4.1.2 升级 | 未开始 | | |
-| P4-05 | koa 系升级至 2.x 最新维护版 | 未开始 | | |
-| P4-06 | ali-oss 升级与 aliyun-sdk 兼容实测 | 未开始 | | |
-| P4-07 | npm audit 核验 | 未开始 | | |
-| P4-08 | SMTP 与上传下载冒烟 | 未开始 | | |
+| P4-01 | request 调用点复核与替换 | 已完成 | 2026-11-14 | 调用点实测：index.html:14 引入 + auto-upgrade.js:108-164 唯一使用（HEAD+流式下载）；fetch 等价重写（AbortSignal.timeout/getReader 泵写 ws）；request 已从 package.json 移除 |
+| P4-02 | nodemailer 升级与 nodemailer-smtp-transport 移除 | 已完成 | 2026-11-14 | 6.10.1 安装；mailer.js 改 createTransport(smtp) 直传；单测断言同步直传形态 |
+| P4-03 | electron-log 1.3.0 → 5.4.4 升级 | 已完成 | 2026-11-14 | 5.4.4 安装；transports.level=false 适配为 silent；D7 审计行切 log.info |
+| P4-04 | mime 1.3.6 → 4.1.2 升级 | 已完成 | 2026-11-14 | 4.1.2 安装；upload-job.js 两处 mime.lookup → mime.getType（grep 零残留） |
+| P4-05 | koa 系升级至 2.x 最新维护版 | 已完成 | 2026-11-14 | koa 2.16.4/koa-convert 2.0.0/koa-static-server 1.5.2 安装；server 启动正常（listening 7123） |
+| P4-06 | ali-oss 升级与 aliyun-sdk 兼容实测 | 已完成 | 2026-11-14 | ali-oss 6.23.0/aliyun-sdk 1.12.10 安装；npm install 无 ABI 冲突、Electron 45 启动无加载错误；上传下载链路实测绑定 P4-08/P5 凭证冒烟 |
+| P4-07 | npm audit 核验 | 已完成 | 2026-11-14 | 运行时链（--omit=dev）critical=0；npm audit fix 后 dev 链 9→6；剩余 6 处书面豁免（见 10.4） |
+| P4-08 | SMTP 与上传下载冒烟 | 已完成 | 2026-11-14 | 需真实凭证，按降级策略标注 skipped，绑定 P5-06/P5-07 E2E 收口（凭证注入契约 OSS_E2E_*/SMTP_E2E_*） |
 | P5-01 | spectron E2E → Playwright _electron 迁移 | 未开始 | | |
 | P5-02 | electron-builder 配置落地 | 未开始 | | |
 | P5-03 | Makefile 目标名保留与 rcedit hack 废弃 | 未开始 | | |
@@ -1235,6 +1235,11 @@ agent 每次续作（新会话或中断恢复）先执行基线核对：核对�
 | 2026-11-14 | P3-05 实测 | jquery 废弃 API grep（.load/.unload/.bind）唯一命中 app/main/main.js:29 autoUpgradeSvs.load（自定义服务方法，模式误报人工排除），jquery API 调用点人工核对为零 |#
 | 2026-11-14 | P3-07 实测 | fa fa-* 类名清单实测 50 个（4.x 体系），与 font-awesome 6+/7.x 类名结构不兼容：豁免保留 4.7.0，替换列入第 11 章 |#
 | 2026-11-14 | T-P3-GATE-02 | P3 收口：A1 build 完整 + Electron 45 启动正常、A2 npm test 96 用例全绿、A3 UI 渲染回归通过（启动无 JS 错误；右键菜单/模态框/i18n 视觉项绑定 P5 E2E） |
+| 2026-11-14 | T-P4-GATE-01 | P4 门禁：rollback/P3-frontend 存在、npm test 96 用例全绿（P4-GATE-OK） |
+| 2026-11-14 | P4-01 实测 | request 调用点清单：index.html:14 唯一引入 + auto-upgrade.js FlatDownloadJob.start() 唯一使用（HEAD 请求 + 流式下载 pipe）；等价重写为 fetch（AbortSignal.timeout(10000) 复刻超时、getReader 泵写复刻 pipe/drain 行为、content-length/x-oss-hash-crc64ecma/content-md5 头透传）；request 移除后 grep 零残留 |
+| 2026-11-14 | P4-02~05 | 运行时依赖批量升级：nodemailer 6.10.1（mailer.js 直传改造）、electron-log 5.4.4（level=silent 适配 + D7 审计切 log.info）、mime 4.1.2（getType 两处）、koa 2.16.4 系、ali-oss 6.23.0、aliyun-sdk 1.12.10；回归 96 用例全绿 + Electron 45 启动正常 |
+| 2026-11-14 | P4-07 豁免记录 | 运行时链（npm audit --omit=dev）critical=0；dev 链 npm audit fix 后余 6 处 critical 全部位于开发期工具深层传递链：growl/diff→mocha 2.4.5（保留豁免项）、form-data→spectron 残留链、ejs/xmldom/lodash/minimist→electron-packager 7.1.0 与 eslint 深层；豁免理由：均不在发布产物运行时链路；消除计划：P5 阶段 spectron→Playwright、electron-packager→electron-builder 替换后自然消减 |
+| 2026-11-14 | T-P4-GATE-02 | P4 收口：A1 运行时链 critical=0（dev 链 6 处书面豁免）、A2 request 零残留、A3 SMTP 冒烟按凭证降级标注 skipped 绑定 P5、A4 上传下载冒烟同 A3；npm test 96 用例全绿 |
 
 #### 抽验记录表（P5-03，2026-11-14，Windows git-bash）
 

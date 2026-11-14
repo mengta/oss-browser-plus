@@ -294,7 +294,7 @@ UploadJob.prototype.uploadSingle = function () {
       Bucket: self.to.bucket,
       Key: self.to.key,
       Body: data,
-      ContentType: mime.lookup(self.from.path),
+      ContentType: mime.getType(self.from.path),
     };
 
     self.prog = {
@@ -410,7 +410,7 @@ UploadJob.prototype.uploadMultipart = function (checkPoints) {
   var params = {
     Bucket: self.to.bucket,
     Key: self.to.key,
-    ContentType: mime.lookup(self.from.path),
+    ContentType: mime.getType(self.from.path),
   };
   self.prog.total = checkPoints.file.size;
 

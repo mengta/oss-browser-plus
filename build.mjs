@@ -225,6 +225,9 @@ function taskGenPackage() {
   const info = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
   delete info.devDependencies;
   delete info.ava;
+  // electron-builder 配置段与构建脚本不入应用包（builder 拒绝 app 包内含 build 字段）
+  delete info.build;
+  delete info.scripts;
   info.scripts = { start: 'electron .' };
   info.main = 'main.js';
   fs.writeFileSync(path.join(DIST, 'package.json'), JSON.stringify(info, null, 2));

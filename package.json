@@ -12,8 +12,48 @@
     "build": "node build.mjs",
     "build:full": "node build.mjs --dist-install",
     "watch": "node build.mjs --watch",
-    "rcedit": "cp tools/rcedit-x64.exe node_modules/rcedit/bin/rcedit.exe",
+    "e2e": "playwright test",
     "lint": "eslint --fix app"
+  },
+  "build": {
+    "appId": "com.aliyun.oss-browser",
+    "productName": "oss-browser",
+    "directories": {
+      "app": "dist",
+      "output": "build"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*.{md,md5,map,ts}",
+      "!node_modules/.bin"
+    ],
+    "extraResources": [
+      {
+        "from": "custom",
+        "to": "custom"
+      }
+    ],
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "win": {
+      "target": [
+        "zip"
+      ],
+      "icon": "custom/icon-256.png"
+    },
+    "mac": {
+      "target": [
+        "zip",
+        "dmg"
+      ],
+      "icon": "custom/icon.icns"
+    },
+    "linux": {
+      "target": [
+        "zip"
+      ]
+    }
   },
   "engines": {
     "node": ">=22"
@@ -27,6 +67,7 @@
   },
   "devDependencies": {
     "@alicloud/eslint-config": "^1.2.23",
+    "@playwright/test": "^1.65.1",
     "angular": "^1.8.3",
     "angular-bootstrap-contextmenu": "^1.1.0",
     "angular-sanitize": "^1.8.3",
@@ -41,6 +82,7 @@
     "commander": "~2.9.0",
     "cross-env": "^3.1.4",
     "electron": "^45.3.2",
+    "electron-builder": "^26.18.0",
     "electron-packager": "7.1.0",
     "esbuild": "^0.28.2",
     "eslint": "^7.1.0",
@@ -53,9 +95,9 @@
     "mocha": "~2.4.5",
     "moment": "^2.31.0",
     "npm-run-all": "^4.0.2",
+    "pngjs": "^7.0.0",
     "should": "~9.0.0",
-    "showdown": "^2.1.0",
-    "spectron": "^3.7.2"
+    "showdown": "^2.1.0"
   },
   "dependencies": {
     "ali-oss": "^6.23.0",

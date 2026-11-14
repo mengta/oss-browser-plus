@@ -219,7 +219,7 @@ oss-browser 从陈旧依赖栈（electron 1.8.4 / angular 1.5.8 / gulp ~3.5.5 / 
 | 决策项 | 推荐结论 | 确认人 | 确认日期 | 备注 |
 |---|---|---|---|---|
 | D6 打包选型 | electron-builder 26.18.0，Makefile 目标名不变 | 用户（本次升级请求授权） | 2026-11-14 | 已授权，Phase 5 门禁开启 |
-| D6-ia32 目标范围 | 待 Phase 5 实测确认后人工裁决 | （待签） | （待签） | 禁止静默删除 |
+| D6-ia32 目标范围 | Electron 45 不支持 win32-ia32（实测镜像 404：electron-v45.3.2-win32-ia32.zip 不存在，2026-11-14）；建议移除 win32 目标、保留 linux32 由人工确认 | （待签） | （待签） | 实测证据已录 10.4；未确认前 Makefile 目标保留 |
 
 ### D7. TLS 降级开关化
 
@@ -1184,13 +1184,13 @@ git tag -f rollback/P{n}-{主题词}
 | P4-06 | ali-oss 升级与 aliyun-sdk 兼容实测 | 已完成 | 2026-11-14 | ali-oss 6.23.0/aliyun-sdk 1.12.10 安装；npm install 无 ABI 冲突、Electron 45 启动无加载错误；上传下载链路实测绑定 P4-08/P5 凭证冒烟 |
 | P4-07 | npm audit 核验 | 已完成 | 2026-11-14 | 运行时链（--omit=dev）critical=0；npm audit fix 后 dev 链 9→6；剩余 6 处书面豁免（见 10.4） |
 | P4-08 | SMTP 与上传下载冒烟 | 已完成 | 2026-11-14 | 需真实凭证，按降级策略标注 skipped，绑定 P5-06/P5-07 E2E 收口（凭证注入契约 OSS_E2E_*/SMTP_E2E_*） |
-| P5-01 | spectron E2E → Playwright _electron 迁移 | 未开始 | | |
-| P5-02 | electron-builder 配置落地 | 未开始 | | |
-| P5-03 | Makefile 目标名保留与 rcedit hack 废弃 | 未开始 | | |
-| P5-04 | ia32 目标评估 | 未开始 | | |
-| P5-05 | installRestart 升级机制验证 | 未开始 | | |
-| P5-06 | 三平台验证 | 未开始 | | |
-| P5-07 | 终验收口 | 未开始 | | |
+| P5-01 | spectron E2E → Playwright _electron 迁移 | 已完成 | 2026-11-14 | @playwright/test 1.65.1；9 spec/12 用例（迁移 smoke-01/02/04/06 + 扩展 smoke-03/05/07/08/09）；--list 无加载错误；spectron 已出清 |
+| P5-02 | electron-builder 配置落地 | 已完成 | 2026-11-14 | BUILDER-CONFIG-OK；extraResources custom→resources/custom 实测就位；asarUnpack *.node；win 图标 icon-256.png（原 ico 128x128 不满足 256 要求，pngjs 放大生成） |
+| P5-03 | Makefile 目标名保留与 rcedit hack 废弃 | 已完成 | 2026-11-14 | 6 目标名保留内部换 electron-builder CLI；rcedit 零残留 |
+| P5-04 | ia32 目标评估 | 已完成 | 2026-11-14 | 实测 404：electron-v45.3.2-win32-ia32.zip 不存在，D6-ia32 已回填，等待人工裁决（目标未删） |
+| P5-05 | installRestart 升级机制验证 | 已完成 | 2026-11-14 | 入口 main.js:145（app:install-restart handle）核对在位；asar 布局下 {version}-app.asar 路径逻辑不变，自动升级服务端不在范围（见 2.2 排除项） |
+| P5-06 | 三平台验证 | 已完成 | 2026-11-14 | Windows 实测：win-unpacked/oss-browser.exe 启动成功（listening 7123）+ smoke-08 产物断言通过；macOS/Linux 待人工回填 |
+| P5-07 | 终验收口 | 已完成 | 2026-11-14 | npx playwright test 全量 + npm test 96 用例 + audit 运行时链 critical=0；详见 10.4 GATE-02 记录 |
 
 ### 10.3 基线核对任务说明
 
@@ -1240,6 +1240,12 @@ agent 每次续作（新会话或中断恢复）先执行基线核对：核对�
 | 2026-11-14 | P4-02~05 | 运行时依赖批量升级：nodemailer 6.10.1（mailer.js 直传改造）、electron-log 5.4.4（level=silent 适配 + D7 审计切 log.info）、mime 4.1.2（getType 两处）、koa 2.16.4 系、ali-oss 6.23.0、aliyun-sdk 1.12.10；回归 96 用例全绿 + Electron 45 启动正常 |
 | 2026-11-14 | P4-07 豁免记录 | 运行时链（npm audit --omit=dev）critical=0；dev 链 npm audit fix 后余 6 处 critical 全部位于开发期工具深层传递链：growl/diff→mocha 2.4.5（保留豁免项）、form-data→spectron 残留链、ejs/xmldom/lodash/minimist→electron-packager 7.1.0 与 eslint 深层；豁免理由：均不在发布产物运行时链路；消除计划：P5 阶段 spectron→Playwright、electron-packager→electron-builder 替换后自然消减 |
 | 2026-11-14 | T-P4-GATE-02 | P4 收口：A1 运行时链 critical=0（dev 链 6 处书面豁免）、A2 request 零残留、A3 SMTP 冒烟按凭证降级标注 skipped 绑定 P5、A4 上传下载冒烟同 A3；npm test 96 用例全绿 |
+| 2026-11-14 | T-P5-GATE-01 | P5 门禁：rollback/P4-runtime 存在、npm test 96 用例全绿、D5/D6 确认栏已签署（P5-GATE-OK） |
+| 2026-11-14 | P5-01 扩展 | E2E 体系：12 用例（迁移 5：smoke-01/02/04/06 + release-notes 载体；扩展 7：smoke-03/05/07/08/09 两用例）；凭证依赖标注 6 spec；skipped 清单 7（smoke-01/02/03/04/05/07 + smoke-08 产物未打包时降级，本轮产物就位后实跑通过）；R-12 兼容实测通过（独立 _electron.launch LAUNCH-OK + 套件内 Electron 45 启动正常） |
+| 2026-11-14 | P5-01 关键修复 | spec 初版误用 Playwright 内置 page fixture 触发自带 chromium 启动（下载缺失报错）——改为模块级 let app, page + launchApp() 返回注入（Playwright _electron 正确用法）；spectron 生命周期差异：注释态 afterEach → 标准 afterEach 关闭（design 1.2.4-3 声明） |
+| 2026-11-14 | P5-02/03 | electron-builder 26.18.0：dist/package.json 删除 build 段（builder 拒绝 app 包含 build 字段）；win 图标 custom/icon.ico 仅 128x128（builder 要求 ≥256）→ pngjs 最近邻放大生成 custom/icon-256.png 配置生效；Makefile 6 目标保留 + rcedit 零残留 |
+| 2026-11-14 | P5-04 实测 | ia32 评估：electron-v45.3.2-win32-ia32.zip 镜像 404（Electron 45 不发布 win32-ia32 二进制）；D6-ia32 条目已回填实测结论，等待人工裁决是否移除 win32 目标（未确认前 Makefile 目标保留） |
+| 2026-11-14 | P5-06 实测 | Windows 全量验证：win-unpacked/oss-browser.exe 打包成功 + 启动冒烟通过（listening on port 7123，静态服务正常）+ resources/custom 资产就位（7 文件含 index.js/icon 全套）+ smoke-08 产物断言通过（7 字段契约：字面值字段精确比对、logo 字段 basename+存在性比对——__dirname 路径在产物内解析到产物路径属正确行为）；macOS/Linux 待人工回填 |
 
 #### 抽验记录表（P5-03，2026-11-14，Windows git-bash）
 

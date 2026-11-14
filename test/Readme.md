@@ -1,27 +1,21 @@
-# test
+# 测试说明
 
-## 使用到的测试框架
+## 单元测试（ava 8）
 
-[spectron](https://github.com/electron/spectron#application-api)
-
-[AVA](https://github.com/avajs/ava)
-
-## 启动测试
-
-- 1. 之前需要先 build
-
-```
-npm run linux64   # scope: linux64, mac or win64
-```
-
-- 2. 然后先打开，填入有效 AK，登录一遍。然后关闭应用。
-
-- 3. 开始测试：
-
-```
+```bash
 npm test
 ```
 
-## 帮助文档
+- 入口白名单见 package.json `ava.files`：`test/import-config-parser.mjs` + `test/unit/**/*.test.mjs`
+- 串行执行（`serial: true`，全局替身不并发互踩）
+- 测试基建四件套：`test/helpers/`（angular-stub / env-stubs / module-stubs / crypto-legacy）
 
-[selectors](http://webdriver.io/guide/usage/selectors.html)
+## E2E 测试（Playwright _electron）
+
+```bash
+npm run build && npx playwright test
+```
+
+详见 [e2e/README.md](e2e/README.md)（凭证注入方法、冒烟九项用例清单、半自动项人工步骤说明）。
+
+> 原 spectron 用例（test/index.js）已由 Playwright 冒烟用例等价替换（替换而非删除，断言语义不变，git 历史可溯）。

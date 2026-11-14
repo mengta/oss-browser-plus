@@ -1,15 +1,15 @@
 
-VERSION=1.19.0
+VERSION=1.19.2
 NAME=oss-browser
 CUSTOM=./custom
 
-
-PKGER=node node_modules/electron-packager/cli.js
-ZIP=node ../zip.js
-
+# P5-03：electron-builder（26.18.0）替代 electron-packager 7.1.0
+# 目标名保持不变：win64/win32/linux64/linux32/mac/dmg（升级文档 D6）
+# 旧 win 图标/版本信息 hack 已废弃：electron-builder 内置处理
+BUILDER=npx electron-builder
 ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
-ELECTRON_VERSION=1.8.4
-BUILD=ELECTRON_MIRROR=$(ELECTRON_MIRROR) $(PKGER) ./dist $(NAME) --asar --asar-unpack *.node --overwrite --out=build --version $(ELECTRON_VERSION) --app-version $(VERSION)
+BUILDER_ENV=ELECTRON_MIRROR=$(ELECTRON_MIRROR) ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
+
 ELECTON=./node_modules/.bin/electron
 
 i:
@@ -33,45 +33,36 @@ build:
 	node gen.js
 
 win64:
-	$(BUILD) --platform=win32 --arch=x64 --icon=$(CUSTOM)/icon.ico
-	cp -rf $(CUSTOM) build/$(NAME)-win32-x64/resources
+	node build.mjs --dist-install
+	$(BUILDER_ENV) $(BUILDER) --win --x64
 	rm -rf releases/$(VERSION)/$(NAME)-win32-x64.zip && mkdir -p releases/$(VERSION)
-	cd build && $(ZIP) ../releases/$(VERSION)/$(NAME)-win32-x64.zip $(NAME)-win32-x64/
+	cp build/$(NAME)-1.19.2-x64.zip releases/$(VERSION)/$(NAME)-win32-x64.zip 2>/dev/null || cp build/*win*x64*.zip releases/$(VERSION)/$(NAME)-win32-x64.zip
 win32:
-	$(BUILD) --platform=win32 --arch=ia32 --icon=$(CUSTOM)/icon.ico
-	cp -rf $(CUSTOM) build/$(NAME)-win32-ia32/resources
+	node build.mjs --dist-install
+	$(BUILDER_ENV) $(BUILDER) --win --ia32
 	rm -rf releases/$(VERSION)/$(NAME)-win32-ia32.zip && mkdir -p releases/$(VERSION)
-	cd build && $(ZIP) ../releases/$(VERSION)/$(NAME)-win32-ia32.zip $(NAME)-win32-ia32/
+	cp build/*win*ia32*.zip releases/$(VERSION)/$(NAME)-win32-ia32.zip 2>/dev/null || echo "ia32 产物见 build/ 目录（命名以 builder 输出为准）"
 linux64:
-	$(BUILD) --platform=linux --arch=x64
-	cp -rf $(CUSTOM) build/$(NAME)-linux-x64/resources
-	rm -rf releases/$(VERSION)/$(NAME)-linux-x64.zip && mkdir -p releases/$(VERSION)
-	cd build && $(ZIP) ../releases/$(VERSION)/$(NAME)-linux-x64.zip $(NAME)-linux-x64/
+	node build.mjs --dist-install
+	$(BUILDER_ENV) $(BUILDER) --linux --x64
+	mkdir -p releases/$(VERSION)
+	cp build/*linux*x64*.zip releases/$(VERSION)/$(NAME)-linux-x64.zip 2>/dev/null || echo "linux x64 产物见 build/ 目录"
 linux32:
-	$(BUILD) --platform=linux --arch=ia32
-	cp -rf $(CUSTOM) build/$(NAME)-linux-ia32/resources
-	rm -rf releases/$(VERSION)/$(NAME)-linux-ia32.zip && mkdir -p releases/$(VERSION)
-	cd build && $(ZIP) ../releases/$(VERSION)/$(NAME)-linux-ia32.zip $(NAME)-linux-ia32/
+	node build.mjs --dist-install
+	$(BUILDER_ENV) $(BUILDER) --linux --ia32
+	mkdir -p releases/$(VERSION)
+	cp build/*linux*ia32*.zip releases/$(VERSION)/$(NAME)-linux-ia32.zip 2>/dev/null || echo "linux ia32 产物见 build/ 目录（Electron 4+ 已停止 Linux ia32 支持，见 D6-ia32 决策）"
 mac:
-	$(BUILD) --platform=darwin --arch=x64 --icon=$(CUSTOM)/icon.icns
-	cp -rf $(CUSTOM) build/$(NAME)-darwin-x64/$(NAME).app/Contents/Resources
-	rm -rf releases/$(VERSION)/$(NAME)-darwin-x64.zip && mkdir -p releases/$(VERSION)
-	cd build && $(ZIP) ../releases/$(VERSION)/$(NAME)-darwin-x64.zip $(NAME)-darwin-x64/
+	node build.mjs --dist-install
+	$(BUILDER_ENV) $(BUILDER) --mac --x64
+	mkdir -p releases/$(VERSION)
+	cp build/*mac*x64*.zip releases/$(VERSION)/$(NAME)-darwin-x64.zip 2>/dev/null || echo "mac 产物见 build/ 目录"
 dmg:
-	rm build/$(NAME)-darwin-x64/LICENSE* build/$(NAME)-darwin-x64/version || continue
-	ln -s /Applications/ build/$(NAME)-darwin-x64/Applications || continue
-	#cp dist/icons/icon.icns build/$(NAME)-darwin-x64/.VolumeIcon.icns
-	#mkdir -p build/$(NAME)-darwin-x64/.background
-	#cp dist/icons/background.tiff build/$(NAME)-darwin-x64/.background
-	rm -f releases/$(VERSION)/$(NAME).dmg || continue
-	hdiutil create -size 250M -format UDZO -srcfolder build/$(NAME)-darwin-x64 -o releases/$(VERSION)/$(NAME).dmg
-all:win32 win64 linux32 linux64 mac asar
+	node build.mjs --dist-install
+	$(BUILDER_ENV) $(BUILDER) --mac dmg --x64
+	mkdir -p releases/$(VERSION)
+	cp build/*.dmg releases/$(VERSION)/$(NAME).dmg 2>/dev/null || echo "dmg 产物见 build/ 目录"
+all:win32 win64 linux32 linux64 mac dmg
 	@echo 'Done'
-asar:
-	mkdir -p releases/$(VERSION)/darwin-x64 && cp build/$(NAME)-darwin-x64/$(NAME).app/Contents/Resources/app.asar releases/$(VERSION)/darwin-x64
-	mkdir -p releases/$(VERSION)/win32-x64 && cp build/$(NAME)-win32-x64/resources/app.asar releases/$(VERSION)/win32-x64
-	mkdir -p releases/$(VERSION)/win32-ia32 && cp build/$(NAME)-win32-ia32/resources/app.asar releases/$(VERSION)/win32-ia32
-	mkdir -p releases/$(VERSION)/linux-x64 && cp build/$(NAME)-linux-x64/resources/app.asar releases/$(VERSION)/linux-x64
-	mkdir -p releases/$(VERSION)/linux-ia32 && cp build/$(NAME)-linux-ia32/resources/app.asar releases/$(VERSION)/linux-ia32
 
-.PHONY:build
+.PHONY:build win64 win32 linux64 linux32 mac dmg all

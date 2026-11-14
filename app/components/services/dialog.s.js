@@ -3,7 +3,8 @@ angular
     .factory('Dialog', [
       '$uibModal',
       function($modal) {
-        var dialog = require('electron').remote.dialog;
+        // remote 模块已于 Electron 14 起移除（D8）：改经 ipcRenderer.invoke 走主进程 dialog
+        var { ipcRenderer } = require('electron');
 
         return {
           alert: alert,
@@ -16,31 +17,29 @@ angular
         function showUploadDialog(fn, isFolder) {
           var isMac = navigator.userAgent.indexOf('Macintosh') != -1;
           var selopt = isFolder
-            ? ['openDirectory', 'multiSelections']
-            : ['openFile', 'multiSelections'];
+              ? ['openDirectory', 'multiSelections']
+              : ['openFile', 'multiSelections'];
 
-          dialog.showOpenDialog(
-              {
+          ipcRenderer
+              .invoke('dialog:show-open-dialog', {
                 title: 'Upload',
                 properties: isMac
-                  ? ['openFile', 'openDirectory', 'multiSelections']
-                  : selopt
-              },
-              function(filePaths) {
-                if (typeof fn === 'function') { fn(filePaths); }
-              }
-          );
+                    ? ['openFile', 'openDirectory', 'multiSelections']
+                    : selopt
+              })
+              .then(function(r) {
+                if (typeof fn === 'function') { fn(r.filePaths); }
+              });
         }
         function showDownloadDialog(fn) {
-          dialog.showOpenDialog(
-              {
+          ipcRenderer
+              .invoke('dialog:show-open-dialog', {
                 title: 'Download',
                 properties: ['openDirectory']
-              },
-              function(filePaths) {
-                if (typeof fn === 'function') { fn(filePaths); }
-              }
-          );
+              })
+              .then(function(r) {
+                if (typeof fn === 'function') { fn(r.filePaths); }
+              });
         }
 
         /**

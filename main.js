@@ -1,13 +1,17 @@
+// TLS 显式开关（D7）：默认关闭走系统证书校验；OSS_BROWSER_ALLOW_INSECURE_TLS=1 开启（Apsara Stack 自签证书场景）
+// 赋值时序：必须保持在 require("electron") 之前
+var ALLOW_INSECURE_TLS = process.env.OSS_BROWSER_ALLOW_INSECURE_TLS == "1";
+if (ALLOW_INSECURE_TLS) {
+  process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+}
+
 var electron = require("electron");
 // Module to control application life.
-
-// use self signed certificate for Apsara Stack
-// https://stackoverflow.com/questions/58615762/will-an-electron-based-app-pass-system-wide-nodejs-environment-variables
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
 var app = electron.app;
 var Menu = electron.Menu;
 var ipcMain = electron.ipcMain;
+var dialog = electron.dialog;
 var BrowserWindow = electron.BrowserWindow;
 
 var fs = require("fs");
@@ -19,6 +23,14 @@ var nativeImage = require("electron").nativeImage;
 var log = require("electron-log");
 log.transports.file.level = false;
 log.transports.console.level = false;
+
+if (ALLOW_INSECURE_TLS) {
+  // 审计日志：开关开启时记录时间戳（P2 阶段 console 输出；P4-03 升级 electron-log 5.x 后切 log.info）
+  console.log(
+    "[audit][tls] OSS_BROWSER_ALLOW_INSECURE_TLS=1 enabled at " +
+      new Date().toISOString()
+  );
+}
 
 ///*****************************************
 //静态服务
@@ -35,7 +47,10 @@ for (var port of PORTS) {
   }
 }
 
-app.commandLine.appendSwitch("ignore-certificate-errors");
+if (ALLOW_INSECURE_TLS) {
+  // 自签证书支持（仅开关开启时）
+  app.commandLine.appendSwitch("ignore-certificate-errors");
+}
 ///*****************************************
 
 var custom = {};
@@ -68,6 +83,10 @@ function createWindow() {
 
     webPreferences: {
       plugins: true,
+      // D9 过渡态显式声明（升级文档 D9：渲染层直接依赖 Node API，contextBridge 改造列入第 11 章）
+      nodeIntegration: true,
+      contextIsolation: false,
+      sandbox: false,
     },
   };
 
@@ -107,42 +126,45 @@ function createWindow() {
   }
 }
 
-//监听web page里发出的message
-ipcMain.on("asynchronous", (event, data) => {
-  switch (data.key) {
-    case "getStaticServerPort":
-      //在main process里向web page发出message
-      event.sender.send("asynchronous-reply", { key: data.key, port: port });
-      break;
-    case "openDevTools":
-      process.env["DEBUG"] = 'ali-oss';
-      win.webContents.openDevTools();
-      break;
+//监听web page里发出的message（每消息一通道 invoke/handle，D8 改造）
+ipcMain.handle("app:get-static-server-port", () => {
+  return port;
+});
 
-    case "refreshPage":
-      win.reload();
-      break;
-    case "installRestart":
-      var version = data.version;
-      //Copy
-      //var from = path.join(os.homedir(), '.oss-browser', version+'-app.asar');
-      var from = path.join(path.dirname(__dirname), version + "-app.asar");
-      var to = path.join(path.dirname(__dirname), "app.asar");
+ipcMain.handle("app:open-dev-tools", () => {
+  process.env["DEBUG"] = "ali-oss";
+  win.webContents.openDevTools();
+});
 
-      process.noAsar = true;
+ipcMain.handle("app:refresh-page", () => {
+  win.reload();
+});
 
-      moveFile(from, to, function (e) {
-        if (e)
-          fs.writeFileSync(
-            path.join(os.homedir(), ".oss-browser", "upgrade-error.txt"),
-            JSON.stringify(e)
-          );
-        app.relaunch();
-        app.exit(0);
-      });
+ipcMain.handle("app:install-restart", (event, version) => {
+  //Copy
+  //var from = path.join(os.homedir(), '.oss-browser', version+'-app.asar');
+  var from = path.join(path.dirname(__dirname), version + "-app.asar");
+  var to = path.join(path.dirname(__dirname), "app.asar");
 
-      break;
-  }
+  process.noAsar = true;
+
+  moveFile(from, to, function (e) {
+    if (e)
+      fs.writeFileSync(
+        path.join(os.homedir(), ".oss-browser", "upgrade-error.txt"),
+        JSON.stringify(e)
+      );
+    app.relaunch();
+    app.exit(0);
+  });
+});
+
+// remote.dialog 替代（D8：remote 模块于 Electron 14 起移除）
+// 渲染进程经 ipcRenderer.invoke('dialog:show-open-dialog', options) 调用，
+// 返回 { canceled, filePaths }（与 dialog.showOpenDialog 结构一致）
+ipcMain.handle("dialog:show-open-dialog", async (event, options) => {
+  var callerWin = BrowserWindow.fromWebContents(event.sender);
+  return dialog.showOpenDialog(callerWin, options);
 });
 
 function moveFile(from, to, fn) {
@@ -178,18 +200,20 @@ function moveFile(from, to, fn) {
   });
 }
 
-//singleton
-var shouldQuit = app.makeSingleInstance((commandLine, workingDirectory) => {
-  // Someone tried to run a second instance, we should focus our window.
-  if (win) {
-    if (win.isMinimized()) win.restore();
-    win.focus();
-  }
-});
+//singleton（Electron 4+：makeSingleInstance 移除，改 requestSingleInstanceLock + second-instance）
+var gotTheLock = app.requestSingleInstanceLock();
 
-if (shouldQuit) {
+if (!gotTheLock) {
   app.quit();
   process.exit(0);
+} else {
+  app.on("second-instance", () => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
 }
 
 // This method will be called when Electron has finished
@@ -214,14 +238,18 @@ app.on("activate", () => {
   }
 });
 
-// SSL/TSL: this is the self signed certificate support
+// SSL/TSL: 自签名证书支持（D7 开关化：默认拒绝，开关开启时放行）
 app.on(
   "certificate-error",
   (event, webContents, url, error, certificate, callback) => {
-    // On certificate error we disable default behaviour (stop loading the page)
-    // and we then say "it is all fine - true" to the callback
-    event.preventDefault();
-    callback(true);
+    if (ALLOW_INSECURE_TLS) {
+      // 开关开启：阻止默认拒绝行为并放行
+      event.preventDefault();
+      callback(true);
+    } else {
+      // 开关关闭：显式拒绝（等价 Electron 默认阻止行为）
+      callback(false);
+    }
   }
 );
 
@@ -261,12 +289,12 @@ function getMenuTemplate() {
         {
           label: "Undo",
           accelerator: "CmdOrCtrl+Z",
-          selector: "undo:",
+          role: "undo",
         },
         {
           label: "Redo",
           accelerator: "Shift+CmdOrCtrl+Z",
-          selector: "redo:",
+          role: "redo",
         },
         {
           type: "separator",
@@ -274,22 +302,22 @@ function getMenuTemplate() {
         {
           label: "Cut",
           accelerator: "CmdOrCtrl+X",
-          selector: "cut:",
+          role: "cut",
         },
         {
           label: "Copy",
           accelerator: "CmdOrCtrl+C",
-          selector: "copy:",
+          role: "copy",
         },
         {
           label: "Paste",
           accelerator: "CmdOrCtrl+V",
-          selector: "paste:",
+          role: "paste",
         },
         {
           label: "Select All",
           accelerator: "CmdOrCtrl+A",
-          selector: "selectAll:",
+          role: "selectAll",
         },
       ],
     },

@@ -1153,18 +1153,18 @@ git tag -f rollback/P{n}-{主题词}
 | P1-08 | package.json scripts 与构建期依赖清理 | 已完成 | 2026-11-14 | CLEANUP-OK：gulp 系 7 项+babel 2 项+bower/shelljs/del 移除；engines.node ">=22" |
 | P1-09 | Makefile 构建调用替换与 vendor 保留 | 已完成 | 2026-11-14 | watch/build 目标改 node build.mjs；GULP 变量移除；vendor 3 手工文件入 dist（VENDOR-OK） |
 | P1-10 | 产物布局契约逐文件核对 | 已完成 | 2026-11-14 | LAYOUT-CHECK-DONE 零 MISSING，隐式契约未变化 |
-| P2-01 | Electron 版本查询与 D1 决策复核 | 未开始 | | |
-| P2-02 | 目标 Electron 内置 Node 版本核对 | 未开始 | | |
-| P2-03 | 两步走升级第一步（中间版本验证） | 未开始 | | |
-| P2-04 | makeSingleInstance 替换 | 未开始 | | |
-| P2-05 | darwin 菜单 selector 改造 | 未开始 | | |
-| P2-06 | remote.dialog 替代 | 未开始 | | |
-| P2-07 | IPC 通道改造 | 未开始 | | |
-| P2-08 | webPreferences 显式声明与安全核对表 | 未开始 | | |
-| P2-09 | TLS 三处降级开关化 | 未开始 | | |
-| P2-10 | crc64 原生模块处置 | 未开始 | | |
-| P2-11 | Chromium 渲染兼容验证 | 未开始 | | |
-| P2-12 | userData 与本地数据兼容评估 | 未开始 | | |
+| P2-01 | Electron 版本查询与 D1 决策复核 | 已完成 | 2026-11-14 | npm view 复核 45.3.2 与 D1 一致 |
+| P2-02 | 目标 Electron 内置 Node 版本核对 | 已完成 | 2026-11-14 | 内置 Node 24.22.2 ≥ 22，engines.node 保持 ">=22" 无需下调 |
+| P2-03 | 两步走升级第一步（中间版本验证） | 已完成 | 2026-11-14 | 先 22.3.27 验证（server 正常+IPC 正常），再 45.3.2；二进制经 npmmirror 镜像补装 |
+| P2-04 | makeSingleInstance 替换 | 已完成 | 2026-11-14 | requestSingleInstanceLock + second-instance，grep 零残留 |
+| P2-05 | darwin 菜单 selector 改造 | 已完成 | 2026-11-14 | 6 处 selector → role，grep 零残留 |
+| P2-06 | remote.dialog 替代 | 已完成 | 2026-11-14 | ipcRenderer.invoke(dialog:show-open-dialog) + 主进程 handle，filePaths 映射保持 |
+| P2-07 | IPC 通道改造 | 已完成 | 2026-11-14 | 4 消息各自独立通道（app:get-static-server-port/open-dev-tools/refresh-page/install-restart），asynchronous-reply 零残留 |
+| P2-08 | webPreferences 显式声明与安全核对表 | 已完成 | 2026-11-14 | nodeIntegration:true/contextIsolation:false/sandbox:false/plugins:true，核对表见 10.4 |
+| P2-09 | TLS 三处降级开关化 | 已完成 | 2026-11-14 | OSS_BROWSER_ALLOW_INSECURE_TLS 三处条件化（赋值时序移至 require electron 前）；开启时审计日志实测输出、关闭时零输出 |
+| P2-10 | crc64 原生模块处置 | 已完成 | 2026-11-14 | Electron 45 下 prebuild ABI 失效自动回退 pure-js（WASM 兜底）；校验值与 Node 基线一致（12766275973417293146），R-07 触发但缓解有效 |
+| P2-11 | Chromium 渲染兼容验证 | 已完成 | 2026-11-14 | 45.3.2 启动无渲染 JS 错误；module 暂存 hack 保持（nodeIntegration 显式 true 下仍必要，理由已记录） |
+| P2-12 | userData 与本地数据兼容评估 | 已完成 | 2026-11-14 | Global.config_path 保持 ~/.oss-browser（index.html:124 原状），R-09 未触发 |
 | P3-01 | angular 1.5.8 → 1.8.3 与 angular-sanitize 同步升级 | 未开始 | | |
 | P3-02 | angular-ui-router 0.2.18 → 0.4.3 兼容版升级 | 未开始 | | |
 | P3-03 | angular-ui-bootstrap 2.3.1 → 2.5.6 升级 | 未开始 | | |
@@ -1221,6 +1221,15 @@ agent 每次续作（新会话或中断恢复）先执行基线核对：核对�
 | 2026-11-14 | P1-05 决策 | dist 内依赖安装改为 npm install --omit=dev 并以 --dist-install 标志触发（默认 build 跳过）：原 gulp build 每次 build 均在 dist 跑 yarn install（分钟级），该触发时机差异仅影响构建时长，不影响应用运行行为；Makefile build 目标与 npm run build:full 走 --dist-install |
 | 2026-11-14 | P1-03 备注 | gulpfile 原清单中 ./node_modules/codemirror/addon/mode/merge/merge.js 与 merge.css 实际位于 addon/merge/（原路径笔误），gulp3 对不存在字面路径静默跳过，新构建保持同行为（warn 记录），行为等价 |
 | 2026-11-14 | P1 A2 实测 | timeout 12s 启动 Electron 1.8.4：dist/main.js 正确加载、server.js 静态服务启动（listening on port 7123），构建产物契约验证通过；main.js:38 app.commandLine.appendSwitch 处报错为 Electron 1.8.4 二进制在本 Windows 11 环境的预存兼容问题（正是 P2 升级目标，R-01），不阻断 P1 收口 |
+| 2026-11-14 | T-P2-GATE-01 | P2 门禁：rollback/P1-toolchain 存在、npm test 96 用例全绿、build 完整、D1 确认栏已签署（P2-GATE-CHECK-PASSED） |
+| 2026-11-14 | P2-01~03 | 两步走升级完成：electron@22.3.27 中间验证（server 正常 + IPC handle 正常）→ electron@45.3.2（二进制经 npmmirror 补装）；45.3.2 启动实测：server 正常、无渲染 JS 错误 |
+| 2026-11-14 | P2-02 | Electron 45.3.2 内置 Node 实测 24.22.2（≥22），engines.node 保持 >=22 不下调 |
+| 2026-11-14 | P2-04~09 | makeSingleInstance→requestSingleInstanceLock、菜单 6 处 selector→role、remote.dialog→ipcRenderer.invoke、IPC 4 通道独立化、webPreferences 显式过渡态声明、TLS 三处开关化；渲染侧 3 文件（dialog.s.js/index.html/settings.js）同步改造；旧 API grep 零残留 |
+| 2026-11-14 | P2 D9 安全核对表 | 现状：nodeIntegration:true/contextIsolation:false/sandbox:false/plugins:true；与官方安全清单差异：3 项收紧要求被显式豁免；豁免理由：渲染层 9+ 文件直接依赖 Node API（index.html:10-23 require path/os/fs/request），contextBridge 改造列入第 11 章后续增强；书面归档本表 |
+| 2026-11-14 | P2-09 实测 | 开关开启：stdout 输出 [audit][tls] OSS_BROWSER_ALLOW_INSECURE_TLS=1 enabled at 2026-11-14T00:57:16.146Z；开关关闭：audit 计数 0 |
+| 2026-11-14 | R-14 改造 | cipher.js 由 createCipher/createDecipher（Node 22+ 移除）改为 createCipheriv/createDecipheriv + EVP_BytesToKey(MD5 无盐单轮) 等价实现；单测密文锚点断言通过（与 Electron 1.8.4 旧 API 输出一致 b3bdfaf3…），存量登录态兼容保持；new Buffer 同步改 Buffer.from |
+| 2026-11-14 | P2-10 实测 | Electron 45 加载 node/crc64：prebuild（Electron 1.8.4 ABI）加载失败自动回退 pure-js（WASM）；固定样本校验值与 Node 基线一致 12766275973417293146；R-07 触发但 pure-js 兜底缓解，功能不中断 |
+| 2026-11-14 | T-P2-GATE-02 | P2 收口：A1 启动正常、A2 四项 grep 零残留、A3 crc64 一致、A4 TLS 开关审计实测通过；npm test 96 用例全绿（R-14 改造后回归） |
 
 #### 抽验记录表（P5-03，2026-11-14，Windows git-bash）
 

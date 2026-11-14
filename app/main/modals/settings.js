@@ -68,7 +68,7 @@ angular.module('web').controller('settingsCtrl', [
           key == 'uploadPartSize' ||
           key == 'uploadAndDownloadRetryTimes'
         ) {
-          ipcRenderer.send('asynchronous', { key: 'refreshPage' });
+          ipcRenderer.invoke('app:refresh-page');
         }
       }, ttl || 100);
     }
@@ -105,7 +105,7 @@ angular.module('web').controller('settingsCtrl', [
     }
 
     function openDebug() {
-      ipcRenderer.send('asynchronous', { key: 'openDevTools' });
+      ipcRenderer.invoke('app:open-dev-tools');
     }
   }
 ]);

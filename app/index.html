@@ -69,15 +69,16 @@
       const { ipcRenderer, shell } = require("electron");
       var isDev = process.env.NODE_ENV == "development";
 
-      ipcRenderer.on("asynchronous-reply", (event, data) => {
-        switch (data.key) {
-          case "getStaticServerPort":
-            Global.staticServerPort = data.port;
-            break;
-        }
-      });
+      //静态服务端口（invoke/handle 直返，替代原 asynchronous-reply 单通道广播）
       setTimeout(function () {
-        ipcRenderer.send("asynchronous", { key: "getStaticServerPort" });
+        ipcRenderer
+          .invoke("app:get-static-server-port")
+          .then(function (port) {
+            Global.staticServerPort = port;
+          })
+          .catch(function (e) {
+            console.log("getStaticServerPort failed:", e);
+          });
       }, 1000);
 
       //自动升级
@@ -97,13 +98,10 @@
       }
 
       function openDevTools() {
-        ipcRenderer.send("asynchronous", { key: "openDevTools" });
+        ipcRenderer.invoke("app:open-dev-tools");
       }
       function gInstallAndRestart(version) {
-        ipcRenderer.send("asynchronous", {
-          key: "installRestart",
-          version: version,
-        });
+        ipcRenderer.invoke("app:install-restart", version);
         // setTimeout(function(){
         //   process.exit(0);
         // },1);

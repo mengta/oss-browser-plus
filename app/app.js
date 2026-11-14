@@ -43,10 +43,20 @@ angular
       '$rootScope',
       '$translate',
       'Toast',
-      function($rootScope, $translate, Toast) {
+      'SecureStore',
+      function($rootScope, $translate, Toast, SecureStore) {
         $rootScope.openURL = function(url) {
           openExternal(url);
         };
+
+        // CS-02（I-8）：降级/保存失败提示注册
+        // （一次性防重复由 SecureStore 内部 session 标记承担，D-7；文案不含敏感字段）
+        SecureStore.onDegrade(function() {
+          Toast.warn($translate.instant('security.storage.degraded'));
+        });
+        SecureStore.onSaveError(function() {
+          Toast.error($translate.instant('security.storage.savefailed'));
+        });
 
         // //i18n
         var langMap = {};

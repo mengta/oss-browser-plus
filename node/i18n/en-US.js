@@ -537,4 +537,7 @@ module.exports = {
 
   "goto.create.role": "Go to create a role",
   "restore.days.tips.7": "Validity range 1-7 days",
+
+  "security.storage.degraded": "System-level encryption is not available in this environment; credentials will be encrypted with a local random key",
+  "security.storage.savefailed": "Failed to save credentials, please retry",
 };

@@ -1,5 +1,6 @@
 angular.module('web').factory('settingsSvs', [
-  function() {
+  'SecureStore',
+  function(SecureStore) {
     return {
       autoUpgrade: {
         get: function() {
@@ -54,12 +55,22 @@ angular.module('web').factory('settingsSvs', [
       },
       mailSmtp: {
         get: function() {
-          return JSON.parse(
-              localStorage.getItem('mailSender') || '{"port":465}'
-          );
+          // CS-02（I-6）：legacyPlain 开启，v0 明文命中即惰性迁移；
+          // 损坏值回退默认对象（D-11，修正存量抛异常缺陷，原值保留）
+          var str = SecureStore.get('mailSender', null, { legacyPlain: true });
+
+          if (str === null) {
+            return { port: 465 };
+          }
+
+          try {
+            return JSON.parse(str);
+          } catch (e) {
+            return { port: 465 };
+          }
         },
         set: function(v) {
-          return localStorage.setItem('mailSender', JSON.stringify(v));
+          SecureStore.set('mailSender', JSON.stringify(v));
         }
       },
       logFile: {

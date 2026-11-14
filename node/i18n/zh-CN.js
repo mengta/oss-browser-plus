@@ -517,4 +517,7 @@ module.exports = {
 
   "goto.create.role": "去创建角色",
   "restore.days.tips.7": "有效期范围1-7天",
+
+  "security.storage.degraded": "当前环境不支持系统级加密，凭证将以本机随机密钥加密存储",
+  "security.storage.savefailed": "凭证保存失败，请重试",
 };

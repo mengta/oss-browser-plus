@@ -41,7 +41,7 @@ async function loginAndEnterBucket(page) {
 }
 
 test('上传文件后任务列表出现且对象出现在列表', async () => {
-  await loginAndEnterBucket(page);
+  const cred = await loginAndEnterBucket(page);
 
   // spectron 等价：setValue('[ng-model="mock.uploads"]', filePath)
   const uploadName = 'e2e-upload-' + Date.now() + '.md';
@@ -53,4 +53,25 @@ test('上传文件后任务列表出现且对象出现在列表', async () => {
   await page.waitForSelector(`span:text-is("${uploadName}")`, { timeout: 60000 });
 
   expect(fs.existsSync(tmpFile)).toBe(true);
+
+  // CS-04 / T-CS-10：进度文件名脱敏核验（5.6.1-5a，凭证就位时生效）
+  // saveProg 经 DelayDone 1000ms 防抖落盘，轮询等待脱敏命名文件出现
+  const progDir = path.join(os.homedir(), '.oss-browser');
+  let hashed = [];
+  for (let i = 0; i < 20; i++) {
+    // 轮询为串行依赖（后一尝试取决于前一未命中），循环内 await 为正当用法
+    // eslint-disable-next-line no-await-in-loop
+    await page.waitForTimeout(500);
+    if (fs.existsSync(progDir)) {
+      hashed = fs
+        .readdirSync(progDir)
+        .filter((f) => /^upprog_[0-9a-f]{16}\.json$/.test(f));
+      if (hashed.length > 0) break;
+    }
+  }
+  expect(hashed.length > 0).toBe(true);
+
+  // 不存在含明文 AccessKeyId 的进度文件（5.5.1-1）
+  const progFiles = fs.readdirSync(progDir);
+  expect(progFiles.filter((f) => f.includes(cred.ak)).length).toBe(0);
 });

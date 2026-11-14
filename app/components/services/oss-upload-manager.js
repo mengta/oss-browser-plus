@@ -9,6 +9,7 @@ angular.module('web').factory('ossUploadManager', [
   'DelayDone',
   'safeApply',
   'settingsSvs',
+  'ProgNaming',
   function(
       $q,
       $state,
@@ -19,7 +20,8 @@ angular.module('web').factory('ossUploadManager', [
       Const,
       DelayDone,
       safeApply,
-      settingsSvs
+      settingsSvs,
+      ProgNaming
   ) {
     var OssStore = require('./node/ossstore');
     var fs = require('fs');
@@ -386,7 +388,32 @@ angular.module('web').factory('ossUploadManager', [
      */
     function loadProg() {
       try {
-        var data = fs.readFileSync(getUpProgFilePath());
+        var newPath = getUpProgFilePath();
+        var legacyPath = getUpProgLegacyFilePath();
+        var hasNew = fs.existsSync(newPath);
+        var hasLegacy = fs.existsSync(legacyPath);
+
+        if (!hasNew && hasLegacy) {
+          // CS-03：旧名断点续传恢复，先写后删迁移（D-14，任意中断点新旧至少一个完整在位）
+          var legacyData = fs.readFileSync(legacyPath);
+          var jobs = JSON.parse(legacyData ? legacyData.toString() : '[]');
+
+          try {
+            fs.writeFileSync(newPath, JSON.stringify(jobs));
+            fs.unlinkSync(legacyPath);
+          } catch (migrateErr) {
+            // 写新名失败：保留旧文件本次按旧路径读取（5.5.1-3），下次重试
+          }
+
+          return jobs;
+        }
+
+        if (hasNew && hasLegacy) {
+          // 新名在位，旧名残留补删（孤儿清理）
+          try { fs.unlinkSync(legacyPath); } catch (cleanErr) {}
+        }
+
+        var data = fs.readFileSync(newPath);
 
         return JSON.parse(data ? data.toString() : '[]');
       } catch (e) {}
@@ -394,17 +421,30 @@ angular.module('web').factory('ossUploadManager', [
       return [];
     }
 
-    // 上传进度保存路径
+    // 上传进度保存路径（CS-03：sha256 脱敏命名，D-6）
     function getUpProgFilePath() {
+      return path.join(
+          getProgFolder(),
+          ProgNaming.newProgFileName('upprog_', AuthInfo.get().id || '')
+      );
+    }
+
+    // 旧命名路径（仅供迁移探测与孤儿补删，禁止用于新写入）
+    function getUpProgLegacyFilePath() {
+      return path.join(
+          getProgFolder(),
+          ProgNaming.legacyProgFileName('upprog_', AuthInfo.get().id || '')
+      );
+    }
+
+    function getProgFolder() {
       var folder = path.join(os.homedir(), '.oss-browser');
 
       if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder);
       }
 
-      var username = AuthInfo.get().id || '';
-
-      return path.join(folder, 'upprog_' + username + '.json');
+      return folder;
     }
   }
 ]);

@@ -540,4 +540,7 @@ module.exports = {
 
   "goto.create.role": "ロールの作成",
   "restore.days.tips.7": "有効期限 1～7日",
+
+  "security.storage.degraded": "この環境ではシステムレベルの暗号化を利用できないため、認証情報はローカルのランダムキーで暗号化されます",
+  "security.storage.savefailed": "認証情報の保存に失敗しました。再試行してください",
 };

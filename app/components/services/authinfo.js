@@ -2,7 +2,8 @@ angular.module('web').factory('AuthInfo', [
   '$q',
   'Const',
   'Cipher',
-  function($q, Const, Cipher) {
+  'SecureStore',
+  function($q, Const, Cipher, SecureStore) {
     var AUTH_INFO = Const.AUTH_INFO_KEY;
     var AUTH_HIS = Const.AUTH_HIS;
     var AUTH_KEEP = Const.AUTH_KEEP;
@@ -75,18 +76,17 @@ angular.module('web').factory('AuthInfo', [
 
     // /////////////////////////////
     function remove(key) {
-      localStorage.removeItem(key);
+      SecureStore.remove(key);
     }
     function get(key, defv) {
-      var str = localStorage.getItem(key);
+      // v1/v0 命中时 SecureStore.get 已同步完成惰性迁移写回（CS-02）
+      var str = SecureStore.get(key, null);
 
       if (str) {
         try {
-          str = Cipher.decipher(str);
-
           return JSON.parse(str);
         } catch (e) {
-          console.log(e, str);
+          console.log(e, key);
         }
       }
 
@@ -97,13 +97,10 @@ angular.module('web').factory('AuthInfo', [
 
       var str = JSON.stringify(obj || defv || {});
 
-      try {
-        str = Cipher.cipher(str);
-      } catch (e) {
-        console.log(e);
+      // D-9：加密失败不落盘（修正存量 catch 分支明文落盘缺陷，5.2.3-1）
+      if (!SecureStore.set(key, str)) {
+        return;
       }
-
-      localStorage.setItem(key, str);
     }
   }
 ]);

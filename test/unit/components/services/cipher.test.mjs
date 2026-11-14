@@ -1,15 +1,19 @@
 'use strict';
 
 // cipher.js 基线单测（源 app/components/services/cipher.js）
-// R-14 密文锚点：aes192 + 默认 key 'x82m#*lx8vv' 的固定明文→固定密文映射，
-// 升级后（P2 createCipheriv 改造）必须保持该锚点一致，否则存量登录态丢失。
+// R-14 密文锚点：aes192 + 默认 key 的固定明文→固定密文映射。
+// 自凭证安全整改（CS-01）起锚点语义转正（design D-15 前半）：
+//   ① 存量密文兼容读：decipher(ANCHOR_CIPHER_HEX) === ANCHOR_PLAIN（迁移能力存续期冻结）；
+//   ② v2 新格式脱离静态密钥：SecureStore 加密同一明文 !== ANCHOR_CIPHER_HEX 且带 'enc:v2:' 前缀。
 
 import test from 'ava';
 import { stubAngular } from '../../../helpers/angular-stub.js';
+import { stubLocalStorage, restoreEnv } from '../../../helpers/env-stubs.js';
+import { stubModule, unstubAll } from '../../../helpers/module-stubs.js';
 import { installLegacyCrypto } from '../../../helpers/crypto-legacy.js';
 
 const KEY = 'x82m#*lx8vv';
-// 升级后一致性比对锚点：createCipher(aes192) 旧 API 输出（EVP_BytesToKey MD5 无盐单轮派生）
+// 兼容读锚点：createCipher(aes192) 旧 API 输出（EVP_BytesToKey MD5 无盐单轮派生）
 // 权威来源：Electron 1.8.4（内置 Node 8.2.1）旧 createCipher 实测输出，2026-11-14
 const ANCHOR_PLAIN = 'oss-browser-anchor-2026';
 const ANCHOR_CIPHER_HEX =
@@ -33,12 +37,45 @@ test('加解密往返一致且密文异于明文', (t) => {
   t.regex(encrypted, /^[0-9a-f]+$/);
 });
 
-test('固定明文样本输出固定密文样本（升级后一致性比对锚点）', (t) => {
+test('存量密文兼容读锚点（R-14 → CS-01 转正：decipher 可解存量密文）', (t) => {
   const Cipher = loadCipher();
-  const encrypted = Cipher.cipher(ANCHOR_PLAIN);
 
-  // 锚点注释：升级后 createCipheriv 等价改造必须使本断言保持通过
-  t.is(encrypted, ANCHOR_CIPHER_HEX);
+  // 锚点注释：v1 兼容读存续至迁移能力下线（风险台账 R-18），本断言必须保持通过
+  t.is(Cipher.decipher(ANCHOR_CIPHER_HEX), ANCHOR_PLAIN);
+});
+
+test('v2 新格式密文脱离静态密钥（锚点第二断言：SecureStore 加密同一明文）', (t) => {
+  const fakeSafeStorage = {
+    isEncryptionAvailable() {
+      return true;
+    },
+    encryptString(s) {
+      return Buffer.from('fake-os|' + s);
+    },
+    decryptString(buf) {
+      const str = buf.toString('utf8');
+      if (str.indexOf('fake-os|') !== 0) {
+        throw new Error('not protected by fake os');
+      }
+      return str.slice('fake-os|'.length);
+    },
+  };
+  stubModule('electron', { safeStorage: fakeSafeStorage });
+  stubLocalStorage({});
+  const reg = stubAngular();
+  reg.load('app/components/services/cipher.js');
+  reg.load('app/components/services/safe-storage-client.js');
+  reg.load('app/components/services/secure-store.js');
+  const SecureStore = reg.get('SecureStore');
+
+  const enc = SecureStore.encrypt(ANCHOR_PLAIN);
+  t.not(enc, ANCHOR_CIPHER_HEX);
+  t.true(enc.indexOf('enc:v2:') === 0);
+
+  t.teardown(() => {
+    unstubAll();
+    restoreEnv();
+  });
 });
 
 test('自定义 key 与自定义 algorithm 覆盖默认值', (t) => {

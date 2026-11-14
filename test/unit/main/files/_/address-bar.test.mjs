@@ -7,11 +7,29 @@
 import test from 'ava';
 import { stubAngular } from '../../../../helpers/angular-stub.js';
 import { stubLocalStorage } from '../../../../helpers/env-stubs.js';
+import { stubModule } from '../../../../helpers/module-stubs.js';
 import { installLegacyCrypto } from '../../../../helpers/crypto-legacy.js';
 
 function setup(options) {
   installLegacyCrypto();
   stubLocalStorage({ 'auth-info': null });
+  stubModule('electron', {
+    safeStorage: {
+      isEncryptionAvailable() {
+        return true;
+      },
+      encryptString(s) {
+        return Buffer.from('fake-os|' + s);
+      },
+      decryptString(buf) {
+        const str = buf.toString('utf8');
+        if (str.indexOf('fake-os|') !== 0) {
+          throw new Error('not protected by fake os');
+        }
+        return str.slice('fake-os|'.length);
+      },
+    },
+  });
   const reg = stubAngular();
   reg.services.$q = {
     defer() {
@@ -20,6 +38,8 @@ function setup(options) {
   };
   reg.load('app/const.js');
   reg.load('app/components/services/cipher.js');
+  reg.load('app/components/services/safe-storage-client.js');
+  reg.load('app/components/services/secure-store.js');
   reg.load('app/components/services/authinfo.js');
   const AuthInfo = reg.get('AuthInfo');
 

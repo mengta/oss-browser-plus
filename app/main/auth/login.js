@@ -9,6 +9,7 @@ angular.module('web').controller('loginCtrl', [
   'Const',
   'Toast',
   '$uibModal',
+  'SecureStore',
   function(
       $scope,
       _$rootScope,
@@ -19,7 +20,8 @@ angular.module('web').controller('loginCtrl', [
       $location,
       Const,
       Toast,
-      $modal
+      $modal,
+      SecureStore
   ) {
     var DEF_EP_TPL = 'http://{region}.aliyuncs.com';
 
@@ -104,7 +106,12 @@ angular.module('web').controller('loginCtrl', [
       tid = $timeout(function() {
         var authToken = $scope.item.authToken || '';
 
-        localStorage.setItem(KEY_AUTHTOKEN, authToken);
+        // CS-02（I-7）：非空经 SecureStore 加密落盘；空串直写不加密不迁移（D-10）
+        if (authToken) {
+          SecureStore.set(KEY_AUTHTOKEN, authToken);
+        } else {
+          localStorage.setItem(KEY_AUTHTOKEN, '');
+        }
 
         if (!authToken) {
           $scope.authTokenInfo = null;
@@ -171,8 +178,10 @@ angular.module('web').controller('loginCtrl', [
       delete rememberInfo.eptplType;
       angular.extend($scope.item, rememberInfo);
 
-      // 临时token
-      $scope.item.authToken = localStorage.getItem(KEY_AUTHTOKEN) || '';
+      // 临时token（CS-02 I-7：legacyPlain 开启，v0 明文命中即惰性迁移）
+      $scope.item.authToken = SecureStore.get(KEY_AUTHTOKEN, '', {
+        legacyPlain: true
+      });
       authTokenChange();
 
       listHistories();

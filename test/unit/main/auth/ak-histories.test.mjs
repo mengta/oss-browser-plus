@@ -6,14 +6,34 @@
 import test from 'ava';
 import { stubAngular } from '../../../helpers/angular-stub.js';
 import { stubLocalStorage } from '../../../helpers/env-stubs.js';
+import { stubModule } from '../../../helpers/module-stubs.js';
 import { installLegacyCrypto } from '../../../helpers/crypto-legacy.js';
 
 function setup() {
   installLegacyCrypto();
   const storage = stubLocalStorage();
+  stubModule('electron', {
+    safeStorage: {
+      isEncryptionAvailable() {
+        return true;
+      },
+      encryptString(s) {
+        return Buffer.from('fake-os|' + s);
+      },
+      decryptString(buf) {
+        const str = buf.toString('utf8');
+        if (str.indexOf('fake-os|') !== 0) {
+          throw new Error('not protected by fake os');
+        }
+        return str.slice('fake-os|'.length);
+      },
+    },
+  });
   const reg = stubAngular();
   reg.load('app/const.js');
   reg.load('app/components/services/cipher.js');
+  reg.load('app/components/services/safe-storage-client.js');
+  reg.load('app/components/services/secure-store.js');
   reg.services.$q = {
     defer() {
       const df = {};
@@ -177,12 +197,12 @@ test('cancel 关闭弹窗', (t) => {
   t.deepEqual(calls.dismiss, ['close']);
 });
 
-test('历史持久化经 Cipher 加密写入 localStorage（密文异于明文）', (t) => {
+test('历史持久化经 SecureStore v2 加密写入 localStorage（密文异于明文）', (t) => {
   const ctx = setup();
   ctx.AuthInfo.addToHistories({ id: 'ak9', secret: 'sec-9' });
   const raw = ctx.storage.getItem('auth-his');
 
   t.truthy(raw);
   t.false(raw.includes('ak9'));
-  t.regex(raw, /^[0-9a-f]+$/);
+  t.true(raw.indexOf('enc:v2:') === 0);
 });

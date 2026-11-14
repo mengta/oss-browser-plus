@@ -19,3 +19,7 @@ pvl
 
 #tool
 .vscode/
+#test artifacts
+test-results/
+playwright-report/
+

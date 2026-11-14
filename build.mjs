@@ -206,7 +206,7 @@ function taskCopyIndex() {
     './server.js',
     './vendor/*.js',
     './release-notes.md',
-    './tools/.yarnclean',
+
   ];
   for (const rel of list) {
     if (rel.endsWith('/*.js')) {

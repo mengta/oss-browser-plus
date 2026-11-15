@@ -1,6 +1,6 @@
 {
   "name": "oss-browser",
-  "version": "1.20.0",
+  "version": "1.20.1",
   "main": "dist/main.js",
   "scripts": {
     "test": "ava",
@@ -40,6 +40,7 @@
       "target": [
         "zip"
       ],
+      "artifactName": "${productName}-${version}-win.${ext}",
       "icon": "custom/icon-256.png"
     },
     "mac": {
@@ -47,12 +48,14 @@
         "zip",
         "dmg"
       ],
+      "artifactName": "${productName}-${version}-mac.${ext}",
       "icon": "custom/icon.icns"
     },
     "linux": {
       "target": [
         "zip"
-      ]
+      ],
+      "artifactName": "${productName}-${version}-linux.${ext}"
     }
   },
   "engines": {

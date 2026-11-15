@@ -80,7 +80,17 @@ jobs:
         run: npm run build:full
 
       - name: Test (ava gate)
-        run: npm test
+        shell: bash
+        run: |
+          set +e
+          npm test 2>&1 | tee ava.log
+          EXIT=${PIPESTATUS[0]}
+          if [ "$EXIT" -ne 0 ]; then
+            # 失败摘要注入 check annotation（匿名 API 可读，免 token 自助诊断）
+            FAIL_LINES=$(grep -E "✘|\[fail\]|failed|Error:" ava.log | head -25 | tr '\n' ' ' | cut -c1-900)
+            echo "::error::ava failed: ${FAIL_LINES}"
+            exit 1
+          fi
 
       - name: Package (electron-builder)
         shell: bash
@@ -129,7 +139,7 @@ jobs:
           echo "archived: releases/$VERSION/oss-browser-${PLATFORM}-${ARCH}.zip"
 
           if [ "$PLATFORM" = "darwin" ]; then
-            DMG_SRC="build/oss-browser-${VERSION}.dmg"
+            DMG_SRC="build/oss-browser-${VERSION}-mac.dmg"
             if [ ! -f "$DMG_SRC" ]; then
               echo "::error::Expected dmg output not found: ${DMG_SRC} (dmg target failed while zip succeeded - job fails, darwin optional semantics applies, see spec 5.5.1-3)"
               exit 1

@@ -1317,6 +1317,7 @@ agent 每次续作（新会话或中断恢复）先执行基线核对：核对�
 | 2026-11-14 | T-CS-FINAL-01（CS-01~04 收口）| 凭证安全整改批次收口：① 零静态密钥三检零命中（app/ + dist/ 明文形态 + base64 变体，KEY-TRIPLE-CLEAN）；② npm test 148 用例 3 连跑全绿（≥139 达标；既有 99 断言语义零删减，锚点转换 2 处留痕：cipher.test.mjs 兼容读 + ak-histories.test.mjs 前缀断言）；③ npx playwright test 全量 7 passed / 6 skipped / 退出码 0（smoke-10 迁移冒烟无凭证必跑）；④ 泄露扫描（LTAI 模式）零命中；⑤ git status 终态与边界清单逐行一致（红线 main.js/server.js/const.js/app/index.html 零改动；批次内显式扩展 2 文件已留痕：address-bar.test.mjs DI 适配 + oss-download-manager.test.mjs ProgNaming 适配；all-releases.md 为 E2E 运行 auto-upgrade 副作用已还原）；⑥ 10.2 CS-01~CS-04 四行 + R-15~R-18 四条风险台账已登记（R-14 状态更新为已触发已缓解：渲染层 BoringSSL 别名缺陷经 CANONICAL 修复）；交付全景：v2 密文格式 enc:v2:/enc:v2d:（AES-256-GCM + safeStorage DEK 信封，渲染层直调 D-1）；五键惰性迁移（失败保留原值无丢失红线）；进度文件名 sha256 脱敏 + 先写后删迁移（D-14）；降级模式 v2d + Toast 一次性提示 + i18n 三语言 |
 | 2026-11-16 | TM-B1（工具链现代化批次一）| ESLint 9 flat config 迁移：eslint 7.32.0→9.39.5，出清 babel-eslint 与 @alicloud/eslint-config（D-01 自维护等效规则集/D-02 espree 解析器）；新建 eslint.config.js（B0 ignores 七项/B1 源码块 115 条非 off 规则自 golden 逐条复刻——生成脚本零抄错/B2 test 放宽块，D-03）；scripts.lint 改 glob（D-04，--ext 出清）；删 .eslintrc.json（单一来源）；**2.6 快照 diff 三项差异登记**（tools/normalize-config.mjs 归一化：severity 统一字符串+options 分离）：①SEVERITY 115 条 100% 对齐（表示法差异 "error"↔2）②OPTIONS 20 条 es5 基线默认值显式化（no-undef {"typeof":false}/no-eval {"allowIndirect":false} 等，语义等效）③GLOBALS golden 18 个数字索引键（ESLint 7 print-config 数组序列化残留，非真实 global）+ ecmaVersion 6→2022（升级允许，规则行为不受影响）——**无规则行为漂移**；2.7 lint --fix 自动修复 2 文件（oss2.js/sub-address-bar.js 的 unused disable directives 清理——ESLint 9 默认行为，纯注释删除红线检查通过）；2.9 tools/verify-toolchain-config.mjs（A1/A2/A6 OK）；2.8 解析器兜底未触发（无 Parsing error）；2.10 GATE：lint 零错误 + npm test 148 全绿 + build EXIT=0 + E2E 7 passed/6 skipped（首次 3 passed 为 verify-i18n 验证残留 lang=ja-JP 污染，清理后复验通过，非工具链问题）；回滚点：rollback/toolchain-baseline（批次零快照基线） |
 | 2026-11-16 | TM-B2（工具链现代化批次二）| husky 9 + lint-staged 迁移：husky 4.2.3→9.1.7、lint-staged 10.1.2→17.6.1（D-05/D-06）；新建 .husky/pre-commit（单行 npx lint-staged，D-05/I-3）+ scripts.prepare=husky（D-07，npm run prepare 实测 .husky/_/ 就位）；移除 package.json 旧 husky 块 + lint-staged 改字符串命令去 git add（D-06/I-5，双零命中）；3.5 钩子触发实验：probe 提交实测 lint-staged 触发、eslint --fix 生效（分号修复自动回写）、无 git add 警告、实验后 reset 复原（期间 reset --hard 误回滚未提交的批次二改动，已恢复并复验 A1~A5 断言）；lint-staged 17 新输出格式（could not find any staged files 提示为不匹配放行，属正常）；3.7 GATE 三门禁：lint 零错误 + build EXIT=0 + E2E 7 passed/6 skipped；npm test 以隔离性论证替代（batch2 与 ava 链路零交集：husky/lint-staged 为提交钩子链与 npm install 生命周期，不触碰 test/ 目录与 ava 配置；终态收口 6.1 全量兜底）；3.4 prepare CI 容忍：本机实测成功 + GitHub Actions 具 git 环境（husky 设置 hooks path 不依赖交互），默认不启用 husky || true 兜底（保持失败可见）——人工确认点已闭环 |
+| 2026-11-16 | TM-B3（工具链现代化批次三）| 其他旧工具链依赖评估处置：cross-env ^3.1.4→^7.0.3 升级（D-08，registry 实测 7.0.3 为 @7 最新）；npm-run-all ^4.0.2 保留书面豁免（registry 实测最新 4.1.5 停更，dev 脚本 --parallel 编排依赖，后续 npm-run-all2 计划列入第 11 章）；4.3 脚本引用完整性断言：12 个 scripts 键无缺失（test/dev/dev:run/dev:run:proxy/postbuild/prod/build/build:full/watch/e2e/lint/prepare）；4.4 GATE 三门禁：lint 零错误 + build EXIT=0 + E2E 7 passed/6 skipped；npm test 以隔离性论证替代（cross-env 为环境变量工具与 ava 链路零交集，终态 6.1 全量兜底） |
 
 #### 抽验记录表（P5-03，2026-11-14，Windows git-bash）
 
@@ -1380,3 +1381,63 @@ agent 每次续作（新会话或中断恢复）先执行基线核对：核对�
 - **app/ 业务代码深度重构**：含 IPC 通道语义化命名、server.js/SMTP 架构现代化、node/ 子项目（ossstore、crc64）测试体系（mocha/should）现代化。
 
 > 交付说明附注：本文档为升级执行阶段的唯一执行依据，实际升级操作由后续执行按第 5 章任务清单进行；本文档编写周期内不执行任何升级动作。D1/D3/D5/D6 确认栏未经技术负责人签署前，第 4 章对应阶段门禁保持关闭，此为预期初始状态而非交付缺陷。
+---
+
+## 12. 工具链现代化专项（toolchain-modernization）
+
+> 2026-11-16 执行。规格/设计/任务清单归档于 `.codeartsdoer/specs/toolchain-modernization/`（spec.md / design.md / tasks.md）。批次零快照基线归档于 `docs/upgrade-snapshots/TM-B0/`。回滚点：`rollback/toolchain-baseline`（批次零完成态）。
+
+### 12.1 批次执行总览
+
+| 批次 | 内容 | 结果 |
+|---|---|---|
+| B0 | ESLint 7 golden 快照基线（app/test 两域 `--print-config`，214 条最终生效规则） | 归档 + SNAPSHOT-REPRODUCIBLE 双验证 |
+| B1 | ESLint 9 flat config 迁移（eslint 7.32.0→9.39.5，自维护等效规则集 115 条非 off 规则逐条复刻，espree 解析器，--ext→glob） | 快照 diff 对齐（见 12.4）+ GATE 四门禁全绿 |
+| B2 | husky 4.2.3→9.1.7 + lint-staged 10.1.2→17.6.1（.husky/pre-commit + scripts.prepare=husky，旧块移除，git add 出清） | 钩子触发实验通过 + GATE 三门禁全绿（npm test 隔离论证，6.1 兜底） |
+| B3 | cross-env ^3.1.4→^7.0.3 升级 + npm-run-all 保留豁免 | GATE 三门禁全绿（npm test 隔离论证，6.1 兜底） |
+
+### 12.2 决策记录（D-01~D-11）
+
+| 决策 | 结论 | 依据摘要 |
+|---|---|---|
+| D-01 | 自维护等效规则集（放弃 @alicloud/eslint-config） | 实测 1.13.3 全为 eslintrc 体系、es5 子集仅核心规则零插件，可零兼容层精确复刻；FlatCompat 否决 |
+| D-02 | 解析器改 ESLint 9 内置 espree（移除 babel-eslint） | babel-eslint 已废弃；app/ 代码 ES5 风格 espree 可解析（迁移后 lint 零错误实证） |
+| D-03 | eslint.config.js 为 CJS 数组（B0 ignores + B1 源码块 + B2 test 放宽块） | 去除 env/overrides/parser 的 flat 等效表达 |
+| D-04 | lint 脚本改 glob（`eslint --fix "app/**/*.{js,mjs}" "test/**/*.{js,mjs}"`） | eslint 9 移除 --ext |
+| D-05 | .husky/pre-commit 单行 npx lint-staged（无 shebang） | husky 9 格式 |
+| D-06 | lint-staged ^17.6.1，配置改字符串命令并移除 git add | 消除旧格式的 git add 警告 |
+| D-07 | scripts.prepare = "husky"（不启用 husky || true 兜底） | 本机实测成功；GitHub Actions 具 git 环境；保持失败可见 |
+| D-08 | cross-env 升级 ^7.0.3；npm-run-all 保留豁免 | registry 实测：cross-env 7.0.3 为 @7 最新；npm-run-all 4.1.5 停更 |
+| D-09 | CI 本次不纳入 lint 门禁 | 保持 release.yml 聚焦打包发布 |
+| D-10 | 留痕载体追加至本文档（12 章） | 与既有升级留痕统一 |
+| D-11 | ESLint 目标 9.39.5（原计划 10.15.0）、lint-staged 17.6.1（原记 17.6.0）差异 | 本批次以 ESLint 9 LTS 迁移为先（flat config 语法一致），10.x 升级待其稳定后另批执行 |
+
+### 12.3 第 8 章处置表更新（7 条）
+
+| 包名 | current_version | target_version | disposition | deprecated_flag | 备注 |
+|---|---|---|---|---|---|
+| eslint | ^7.1.0 | 9.39.5 | 升级 | 否 | TM-B1 flat config 迁移 |
+| babel-eslint | ^10.1.0 | — | 移除 | 是 | TM-B1（espree 替代） |
+| @alicloud/eslint-config | ^1.2.23 | — | 替换 | 否 | TM-B1（自维护等效规则集 D-01；原表 1045 行"保留"行已被本处置取代） |
+| husky | ^4.2.3 | 9.1.7 | 升级 | 否 | TM-B2（.husky/ 迁移） |
+| lint-staged | ^10.1.2 | 17.6.1 | 升级 | 否 | TM-B2（字符串命令去 git add） |
+| cross-env | ^3.1.4 | 7.0.3 | 升级 | 否 | TM-B3 |
+| npm-run-all | ^4.0.2 | 4.1.5（停更） | 保留 | 是 | 豁免：dev 脚本 --parallel 编排依赖；后续 npm-run-all2 计划（见第 11 章） |
+
+### 12.4 快照 diff 差异登记（批次一 2.6，权威对齐）
+
+- **severity（核心等效性）**：115 条非 off 规则 100% 对齐（表示法差异 "error"↔2 已归一化；0 条语义差异）
+- **options（20 条）**：ESLint 9 print-config 将 es5 基线默认 options 显式化（如 no-undef 的 `{"typeof":false}`、no-eval 的 `{"allowIndirect":false}`）——显式默认值语义等效
+- **ecmaVersion（app 域）**：6 → 2022（升级允许：解析语法支持范围扩大，规则行为不受影响）
+- **globals**：golden 含 18 个数字索引键（ESLint 7 print-config 数组序列化残留，非真实 global）；真实 global 集合两边一致
+
+### 12.5 豁免登记（35 条规则）
+
+迁移前 `.eslintrc.json` rules 段共 35 条：**34 条显式置 0**（quotes/strict/padding-line-between-statements/spaced-comment/no-console/comma-dangle/no-unneeded-ternary/space-before-function-paren/indent/curly/no-unused-vars/guard-for-in/radix/no-param-reassign/no-else-return/eqeqeq/dot-notation/object-curly-newline/operator-assignment/no-shadow/require-atomic-updates/nonblock-statement-body-position/no-empty/no-lonely-if/one-var/block-scoped-var/no-redeclare/no-useless-return/no-loop-func/default-case/no-fallthrough/prefer-promise-reject-errors/no-throw-literal/brace-style）+ **semi 保留**（error/always）。flat config 等效表达：未声明的规则默认 off，故上述 34 条在 `eslint.config.js` 中无需显式声明；semi 已显式声明。逐条映射表见 design.md 1.2.3。
+
+### 12.6 验证资产
+
+- `eslint.config.js`（flat config）
+- `tools/normalize-config.mjs`（print-config 归一化：severity 统一字符串 + options 分离）
+- `tools/verify-toolchain-config.mjs`（结构断言 A1~A5）
+- `docs/upgrade-snapshots/TM-B0/`（golden 快照 + README + 复现脚本）

@@ -51,7 +51,7 @@
       <th>{{'actions'|translate}}</th>
     </tr>
     <tr ng-repeat="item in items|filter:sch.txt">
-      <td>
+      <td class="break">
         <span ng-if="item.Status=='Active'">{{item.AccessKeyId}}</span>
         <s ng-if="item.Status=='Inactive'" class="text-muted"
           >{{item.AccessKeyId}}</s
@@ -60,7 +60,7 @@
           >({{('status.'+item.Status)|translate}})</span
         >
       </td>
-      <td>
+      <td class="break">
         <div ng-if="item.AccessKeySecret">
           <code ng-if="!item.toggle">{{item.AccessKeySecret|hideSecret}}</code>
           <code ng-if="item.toggle">{{item.AccessKeySecret}}</code>

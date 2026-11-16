@@ -20,7 +20,7 @@
       <th>{{'actions'|translate}}</th>
     </tr>
     <tr ng-repeat="item in items">
-      <td><a href="" ng-click="goTo(item.url)">{{item.url}}</a></td>
+      <td class="break"><a href="" ng-click="goTo(item.url)">{{item.url}}</a></td>
       <td>{{item.time|timeFormat}}</td>
       <td>
         <a href="" class="text-danger" ng-click="removeFav(item)"

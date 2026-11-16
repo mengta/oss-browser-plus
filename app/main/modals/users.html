@@ -61,7 +61,7 @@
       <th>{{'actions'|translate}}</th>
     </tr>
     <tr ng-repeat="item in items|filter:sch.txt">
-      <td>
+      <td class="break">
         <a href="" ng-click="showUpdate(item)">{{item.UserName}}</a>
         <span ng-if="item.DisplayName">({{item.DisplayName}})</span>
       </td>

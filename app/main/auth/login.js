@@ -174,7 +174,7 @@ angular.module('web').controller('loginCtrl', [
 
       const rememberInfo = AuthInfo.getRemember();
 
-      $scope.eptplType = rememberInfo.eptplType;
+      $scope.eptplType = rememberInfo.eptplType || 'default';
       delete rememberInfo.eptplType;
       angular.extend($scope.item, rememberInfo);
 

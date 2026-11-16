@@ -74,7 +74,7 @@
             </label>
             <div class="col-sm-8" style="padding: 0">
               <div
-                ng-class="{'col-sm-9':eptplType=='default','col-sm-4':eptplType=='customize'||eptplType=='cname'||eptplType=='privateLink'}"
+                ng-class="{'col-sm-12':eptplType=='default','col-sm-4':eptplType=='customize'||eptplType=='cname'||eptplType=='privateLink'}"
               >
                 <select
                   class="form-control"
@@ -91,8 +91,8 @@
               </div>
               <div
                 ng-if="eptplType=='default'"
-                class="col-sm-3"
-                style="height: 34px"
+                class="col-sm-12 text-right"
+                style="height: 24px; line-height: 24px"
               >
                 <label
                   style="

@@ -220,6 +220,7 @@ angular.module('web').controller('loginCtrl', [
         templateUrl: 'main/auth/ak-histories.html',
         controller: 'akHistoriesCtrl',
         size: 'lg',
+        windowClass: 'ak-histories-modal',
         resolve: {
           onUse: function() {
             return useHis;

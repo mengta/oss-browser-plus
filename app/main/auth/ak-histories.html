@@ -42,51 +42,55 @@
     ng-if="his.length"
     class="mg0 table table-bordered table-striped table-condensed"
   >
-    <tr>
-      <th style="width: 40px">#</th>
-      <th>AccessKeyId</th>
-      <th>AccessKeySecret</th>
-      <th>{{'auth.description'|translate}}</th>
-      <th>{{'region'|translate}}</th>
-      <th>{{'auth.presetOssPath'|translate}}</th>
-      <th>{{'actions'|translate}}</th>
-    </tr>
-    <tr ng-repeat="h in his|filter:keyword">
-      <td>{{$index+1}}</td>
-      <td>
-        <span>{{h.id}}</span>
-        <span class="label label-info" ng-if="h.stoken">STS</span>
-        <span class="label label-warning" ng-if="h.requestpaystatus=='YES'">
-          {{'requestPay'|translate}}
-        </span>
-      </td>
-      <td ng-if="h.secret">
-        <code>{{showSecrets[h.id] ? h.secret : (h.secret|hideSecret)}}</code>
-        <a
-          href=""
-          uib-tooltip="{{(showSecrets[h.id] ? 'hide' : 'show')|translate}}"
-          ng-click="toggleSecret(h)"
-        >
-          <i
-            class="fa"
-            ng-class="{'fa-eye':!showSecrets[h.id], 'fa-eye-slash':showSecrets[h.id]}"
-          ></i>
-        </a>
-      </td>
-      <td ng-if="!h.secret" class="text-muted">-</td>
-      <td>{{h.desc || '-'}}</td>
-      <td>
-        <div>{{regionText(h)}}</div>
-        <small class="text-muted">{{h.eptplcname || h.privateLink || h.eptpl}}</small>
-      </td>
-      <td>{{h.osspath || '-'}}</td>
-      <td>
-        <a href="" ng-click="use(h)">{{'use'|translate}}</a> |
-        <a href="" class="text-danger" ng-click="remove(h)"
-          >{{'delete'|translate}}</a
-        >
-      </td>
-    </tr>
+    <thead>
+      <tr>
+        <th style="width: 40px">#</th>
+        <th>AccessKeyId</th>
+        <th>AccessKeySecret</th>
+        <th>{{'auth.description'|translate}}</th>
+        <th>{{'region'|translate}}</th>
+        <th>{{'auth.presetOssPath'|translate}}</th>
+        <th>{{'actions'|translate}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="h in his|filter:keyword">
+        <td>{{$index+1}}</td>
+        <td>
+          <span>{{h.id}}</span>
+          <span class="label label-info" ng-if="h.stoken">STS</span>
+          <span class="label label-warning" ng-if="h.requestpaystatus=='YES'">
+            {{'requestPay'|translate}}
+          </span>
+        </td>
+        <td ng-if="h.secret">
+          <code>{{showSecrets[h.id] ? h.secret : (h.secret|hideSecret)}}</code>
+          <a
+            href=""
+            uib-tooltip="{{(showSecrets[h.id] ? 'hide' : 'show')|translate}}"
+            ng-click="toggleSecret(h)"
+          >
+            <i
+              class="fa"
+              ng-class="{'fa-eye':!showSecrets[h.id], 'fa-eye-slash':showSecrets[h.id]}"
+            ></i>
+          </a>
+        </td>
+        <td ng-if="!h.secret" class="text-muted">-</td>
+        <td>{{h.desc || '-'}}</td>
+        <td>
+          <div>{{regionText(h)}}</div>
+          <small class="text-muted">{{h.eptplcname || h.privateLink || h.eptpl}}</small>
+        </td>
+        <td>{{h.osspath || '-'}}</td>
+        <td>
+          <a href="" ng-click="use(h)">{{'use'|translate}}</a> |
+          <a href="" class="text-danger" ng-click="remove(h)"
+            >{{'delete'|translate}}</a
+          >
+        </td>
+      </tr>
+    </tbody>
   </table>
 </div>
 <div class="modal-footer">

@@ -1,7 +1,3 @@
-/* eslint-disable no-console */
-/* eslint-disable object-curly-newline */
-/* eslint-disable brace-style */
-/* eslint-disable padding-line-between-statements */
 angular.module('web').controller('subAddressBarCtrl', [
   '$scope',
   '$translate',

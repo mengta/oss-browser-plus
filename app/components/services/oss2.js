@@ -13,7 +13,7 @@ angular.module('web').factory('ossSvs2', [
     var stopDeleteFilesFlag = false;
     var stopCopyFilesFlag = false;
     // 同一时间只能有一个查询，上一个查询如果没有完成，则会被abort
-    // eslint-disable-next-line no-unused-vars
+     
     var keepListFilesJob;
 
     var DEF_ADDR = 'oss://';
@@ -1974,8 +1974,7 @@ angular.module('web').factory('ossSvs2', [
         key: key
       };
     }
-
-    // eslint-disable-next-line no-unused-vars
+     
     function getOssUrl(region, bucket, key) {
       var eptpl = AuthInfo.get().eptpl || 'http://{region}.aliyuncs.com';
 

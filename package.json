@@ -13,7 +13,7 @@
     "build:full": "node build.mjs --dist-install",
     "watch": "node build.mjs --watch",
     "e2e": "playwright test",
-    "lint": "eslint --fix --ext .js,.mjs app test"
+    "lint": "eslint --fix \"app/**/*.{js,mjs}\" \"test/**/*.{js,mjs}\""
   },
   "build": {
     "appId": "com.aliyun.oss-browser",
@@ -74,7 +74,6 @@
     "serial": true
   },
   "devDependencies": {
-    "@alicloud/eslint-config": "^1.2.23",
     "@playwright/test": "^1.65.1",
     "angular": "^1.8.3",
     "angular-bootstrap-contextmenu": "^1.1.0",
@@ -83,7 +82,6 @@
     "angular-ui-codemirror": "0.3.0",
     "angular-ui-router": "^0.4.3",
     "ava": "^8.4.0",
-    "babel-eslint": "^10.1.0",
     "bootstrap": "^3.4.1",
     "clipboard": "^1.7.1",
     "codemirror": "^5.65.21",
@@ -91,7 +89,7 @@
     "electron": "^45.3.2",
     "electron-builder": "^26.18.0",
     "esbuild": "^0.28.2",
-    "eslint": "^7.1.0",
+    "eslint": "^9.39.5",
     "font-awesome": "^4.7.0",
     "husky": "^4.2.3",
     "jquery": "^3.7.1",
@@ -104,7 +102,6 @@
   "dependencies": {
     "ali-oss": "^6.23.0",
     "aliyun-sdk": "^1.12.10",
-
     "electron-log": "^5.4.4",
     "emoji-regex": "^9.0.0",
     "koa": "^2.16.4",

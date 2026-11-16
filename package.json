@@ -13,7 +13,8 @@
     "build:full": "node build.mjs --dist-install",
     "watch": "node build.mjs --watch",
     "e2e": "playwright test",
-    "lint": "eslint --fix \"app/**/*.{js,mjs}\" \"test/**/*.{js,mjs}\""
+    "lint": "eslint --fix \"app/**/*.{js,mjs}\" \"test/**/*.{js,mjs}\"",
+    "prepare": "husky"
   },
   "build": {
     "appId": "com.aliyun.oss-browser",
@@ -91,10 +92,10 @@
     "esbuild": "^0.28.2",
     "eslint": "^9.39.5",
     "font-awesome": "^4.7.0",
-    "husky": "^4.2.3",
+    "husky": "^9.1.7",
     "jquery": "^3.7.1",
     "jquery.qrcode": "^1.0.3",
-    "lint-staged": "^10.1.2",
+    "lint-staged": "^17.6.1",
     "moment": "^2.31.0",
     "npm-run-all": "^4.0.2",
     "showdown": "^2.1.0"
@@ -111,15 +112,7 @@
     "nodemailer": "^6.10.1",
     "platform": "^1.3.5"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
   "lint-staged": {
-    "app/**/*.js": [
-      "eslint --fix",
-      "git add"
-    ]
+    "app/**/*.js": "eslint --fix"
   }
 }

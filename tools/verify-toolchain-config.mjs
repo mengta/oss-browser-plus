@@ -42,6 +42,25 @@ check('A6', () => {
   return /^(\^|~)?9\./.test(v);
 });
 
+// A3：package.json 无 husky 旧块且 scripts.prepare === 'husky'（spec 5.2.1-7/4.4-1）
+check('A3', () => {
+  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  if ('husky' in pkg) return false;
+  return pkg.scripts && pkg.scripts.prepare === 'husky';
+});
+
+// A4：.husky/pre-commit 存在且内容含 lint-staged（D-05/I-3）
+check('A4', () => {
+  const content = fs.readFileSync(path.join('.husky', 'pre-commit'), 'utf8');
+  return content.includes('lint-staged');
+});
+
+// A5：lint-staged 配置不含 git add（D-06/I-5）
+check('A5', () => {
+  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  return !JSON.stringify(pkg['lint-staged'] || {}).includes('git add');
+});
+
 console.log(results.join('\n'));
 console.log(allOk ? 'TOOLCHAIN-ASSERT-OK' : 'TOOLCHAIN-ASSERT-FAILED');
 process.exit(allOk ? 0 : 1);

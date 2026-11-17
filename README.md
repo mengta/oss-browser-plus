@@ -1,68 +1,39 @@
-# Quick start
+# OSS Browser Plus
 
 > This repository (**oss-browser-plus**) is forked from [aliyun/oss-browser](https://github.com/aliyun/oss-browser). The upstream commit history is kept, and our own changes are added on top of it.
 
-Ossbrowser is a graphical management tool developed by Alibaba Cloud. It provides features similar to those of Windows Explorer. Using ossbrowser, you can view, upload, download, and manage items with ease.
+## Key improvements over upstream (aliyun/oss-browser)
 
-## [README of Chinese](README-CN.md)
+### Runtime & dependencies
 
-## Platform
+- Electron upgraded to 45.3.2, modernizing the Chromium / Node runtime.
+- Removed 6 unused zombie devDependencies and a duplicate clipboard declaration; `npm audit` critical vulnerabilities reduced to zero.
 
-Windows 7 above, Linux and Mac. We do not recommend using WindowsXP and WindowServer
+### Credential security
 
-## Procedure
+- AK / SK are now stored with OS-level safeStorage envelope encryption, with lossless lazy migration from legacy plaintext storage.
+- Download progress file names are sanitized to avoid leaking sensitive path information.
 
-1.  Download and install ossbrowser.
+### Build & release pipeline rebuild
 
-    | Supported platform | Download link                                                                                                     |
-    | :----------------- |:------------------------------------------------------------------------------------------------------------------|
-    | Window x32         | [Window x32](https://oss-attachment.oss-cn-zhangjiakou.aliyuncs.com/ossbrowser/1.19.0/oss-browser-win32-ia32.zip) |
-    | Window x64         | [Window x64](https://oss-attachment.oss-cn-zhangjiakou.aliyuncs.com/ossbrowser/1.19.0/oss-browser-win32-x64.zip)  |
-    | MAC                | [MAC](https://oss-attachment.oss-cn-zhangjiakou.aliyuncs.com/ossbrowser/1.19.0/oss-browser-darwin-x64.zip)        |
-    | Linux x32          | [Linux x32](https://oss-attachment.oss-cn-zhangjiakou.aliyuncs.com/ossbrowser/1.19.0/oss-browser-linux-ia32.zip)  |
-    | Linux x64          | [Linux x64](https://oss-attachment.oss-cn-zhangjiakou.aliyuncs.com/ossbrowser/1.19.0/oss-browser-linux-x64.zip)   |
+- release.yml rewritten: electron-builder + pinned Node 24; the release matrix is narrowed to win64 / darwin / linux64 (Electron 45 no longer ships ia32 binaries).
+- Built-in locales trimming (zh-CN / en-US / ja), reducing the package size by roughly 11 MB.
+- CI now enforces lint and test gates.
 
-2.  Launch ossbrowser.
-3.  Log in to ossbrowser.
-4.  Manage buckets. You can do the following:
+### Engineering toolchain
 
-- create a bucket
-- delete a bucket
-- modify the ACL for a bucket
-- manage the fragments in a bucket.
+- ESLint 9 flat config with a self-maintained rule set, replacing @alicloud/eslint-config.
+- husky 9 + lint-staged 17 pre-commit gate; cross-env 7.0.3 for cross-platform scripts.
 
-5.  Manage items. You can do the following:
+### Test coverage
 
-- upload \(resumable\)
-- download \(resumable\)
-- delete
-- copy
-- move
-- rename
-- search for
-- preview an object
-- modify the ACL or set an HTTP header of an item.
+- Unit tests grown from 148 to 246 all-green cases (new: 69 for the ossSvs2 service, 29 for the filesCtrl controller, plus legacy batches for credential security / download manager).
+- Graded E2E smoke verification (7 passed / 6 skipped).
 
-## Debugging
+## Download
 
-If you encounter any problems during using ossbrowser, you can switch to the debugging mode and observe the console panel. To switch to the debugging mode, click the icon in the upper left corner (see Figure 1 below) ten times. Note that in post-1.8.0 versions you can also open debug mode in settings page ((see Figure 2 below).
+Grab the latest build from [Releases](https://github.com/mengta/oss-browser-plus/releases) (v1.20.x). For the full history, see [all-releases.md](all-releases.md).
 
-![left-icon](preview/left-icon.png "Figure 1")
-Figure 1
+## License
 
-![setting-page](preview/setting-debug.png "Figure 2")
-Figure 2
-
-## Qr code
-
-1. OssBrowser answering questions
-   <img src="preview/oss-browser.png" height="400" title="oss-browser" width="300">
-2. Group number:21985509
-
-## Links
-
-[ossbrowser](https://www.alibabacloud.com/help/doc-detail/61872.htm)
-
-## LICENSE
-
-[Apache License 2.0](LICENSE)
+[Apache License 2.0](LICENSE) (inherited from upstream)

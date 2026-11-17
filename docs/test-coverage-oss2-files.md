@@ -13,9 +13,10 @@
 
 ## TC-02 批次二收口（filesCtrl）
 
-- 单文件 `npx ava test/unit/main/files/files.test.mjs`：29 例全绿（规划 29 / 底线 ≥20）
-- lint 零错误 / 全量回归不倒退（GATE 执行记录）
-- git 边界核对：仅新增 files.test.mjs
+- 单文件 `npx ava test/unit/main/files/files.test.mjs`：**29 tests passed / 2461ms（G1 ≤15s）**——冒烟 2 + canSetHeader filter 3 + 选择族 6 + 事件族 9 + 列表族 4 + 状态/下载族 2 + P1 模态抽查 3（规划 29 / 底线 ≥20）
+- lint 零错误：`npm run lint` EXIT=0（G2）
+- 全量回归：`npm test` **246 tests passed**（148 基线 + 批次一 69 + 批次二 29），EXIT=0（G3）
+- git 边界核对：仅新增 files.test.mjs；`app/` 与 `test/helpers/*` 零变更（G4）
 
 ## 疑似缺陷登记（4+2 处候选——只锁定当前行为，不修业务代码；修复时须同步更新锚定用例）
 
@@ -29,8 +30,21 @@
 | 候选⑥ | oss2.js:1894+837 | handleError 返回 Promise.reject(err) 而 moveFile 调用后未消费 → unhandledRejection。测试进程级静默（removeAllListeners+空处理器） | moveFile 失败用例（进程级静默） |
 | 候选③次序 | oss2.js:2120 | listUsableAccelarateDomains 第 3 次 list 的 Error 经 `catch(() => [])` 转为 **resolve([])（非 reject）**——实测 d3=[] | listUsableAccelarateDomains 第 3 次锚定 |
 
+## 替身策略关键决策（执行期确认记录）
+
+| # | 决策 | 实测确认 |
+|---|---|---|
+| D-01 | package.json 注入走 resolve 层补丁重定向（方案 A）：require-cache 替身对"解析目标不存在"的文件天然无效（Module._resolveFilename 先于 cache 查询抛 MODULE_NOT_FOUND） | USER_AGENT `9.9.9-test` 动态拼接断言通过 |
+| D-02 | platform 真实加载不替身 | getClient2 userAgent 动态拼接断言通过 |
+| D-03 | ali-oss 双入口分注（`ali-oss` / `ali-oss/dist/aliyun-oss-sdk`），注入先于 reg.load | FakeAliOss/FakeSdkOss 各通道命中 |
+| D-04 | global.ALY 升级纳入替身（util.xUserAgent spy + OSS 构造），setup 赋值 teardown 还原 | getClient 通道 xUserAgent 覆写断言通过 |
+| D-06 | $timeout 替身：pending 队列 + flushAll 循环出队 + cancel + **1000 轮上限防死循环** | 删除/复制编排 dig 链全量驱动，未触上限 |
+| D-07 | 批次二走 invokeController 模式（angular-stub，13 项 locals 全量；global.os/stubLocalStorage 构造期前置） | filesCtrl 构造 + init/addEvents 链路就绪（files.js:46/57） |
+| D-08 | 批次解耦：files.test.mjs 不加载真实 oss2.js，ossSvs2 用手工 spy（录制参数回放 Promise，支持 listFilesError 失败注入） | 29 例零真实网络、加载链稳定 |
+| 行为锚点 | files.js:5 canSetHeader 短路链返回短路操作数原值（空数组 → 0、缺 has → undefined），非布尔——falsy 语义与模板一致，按实测锚定，**非缺陷不登记候选** | filter 空选择用例（t.is 0 / t.true !undefined） |
+
 ## 终态收口
 
-- `npm test` 全量 ≥208 全绿（批次二后）
-- `npm run lint` 零错误
-- git 终态核对：仅新增 3 个测试文件与本文档
+- `npm test` 全量 **246 tests passed**（148 + 69 + 29，≥208 达标），EXIT=0
+- `npm run lint` 零错误，EXIT=0
+- git 终态核对：交付物为 `test/unit/components/services/oss2.test.mjs`（批次一，已随 caf0a87 提交）、`test/unit/main/files/files.test.mjs`（批次二新增）、本文档（TC-02 补录 + 替身决策节补齐）；`app/` 与 `test/helpers/*` 零变更

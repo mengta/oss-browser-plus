@@ -89,6 +89,11 @@ jobs:
             # 失败摘要注入 check annotation（匿名 API 可读，免 token 自助诊断）
             FAIL_LINES=$(grep -E "✘|\[fail\]|failed|Error:" ava.log | head -25 | tr '\n' ' ' | cut -c1-900)
             echo "::error::ava failed: ${FAIL_LINES}"
+            # 诊断增强：失败用例完整报告块（含 expected/actual diff，annotation 上限 4096 内截断）
+            FAIL_DETAIL=$(grep -A45 "✘ \[fail\]" ava.log | tr '\n' ' ' | tr -d '\r' | cut -c1-3600)
+            if [ -n "$FAIL_DETAIL" ]; then
+              echo "::error::ava fail detail: ${FAIL_DETAIL}"
+            fi
             exit 1
           fi
 

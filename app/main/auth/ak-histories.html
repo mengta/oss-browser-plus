@@ -40,11 +40,20 @@
 
   <table
     ng-if="his.length"
-    class="mg0 table table-bordered table-striped table-condensed"
+    class="mg0 table table-bordered table-striped table-condensed ak-histories-table"
   >
+    <colgroup>
+      <col style="width: 4%" />
+      <col style="width: 18%" />
+      <col style="width: 18%" />
+      <col style="width: 13%" />
+      <col style="width: 14%" />
+      <col style="width: 15%" />
+      <col style="width: 18%" />
+    </colgroup>
     <thead>
       <tr>
-        <th style="width: 40px">#</th>
+        <th>#</th>
         <th>AccessKeyId</th>
         <th>AccessKeySecret</th>
         <th>{{'auth.description'|translate}}</th>
@@ -57,34 +66,84 @@
       <tr ng-repeat="h in his|filter:keyword">
         <td>{{$index+1}}</td>
         <td>
-          <span>{{h.id}}</span>
-          <span class="label label-info" ng-if="h.stoken">STS</span>
-          <span class="label label-warning" ng-if="h.requestpaystatus=='YES'">
-            {{'requestPay'|translate}}
-          </span>
+          <div
+            class="ak-ellipsis"
+            uib-tooltip="{{h.id}}"
+            tooltip-append-to-body="true"
+          >
+            {{h.id}}
+          </div>
+          <div
+            class="ak-cell-tags"
+            ng-if="h.stoken || h.requestpaystatus=='YES'"
+          >
+            <span class="label label-info" ng-if="h.stoken">STS</span>
+            <span class="label label-warning" ng-if="h.requestpaystatus=='YES'">
+              {{'requestPay'|translate}}
+            </span>
+          </div>
         </td>
         <td ng-if="h.secret">
-          <code>{{showSecrets[h.id] ? h.secret : (h.secret|hideSecret)}}</code>
-          <a
-            href=""
-            uib-tooltip="{{(showSecrets[h.id] ? 'hide' : 'show')|translate}}"
-            ng-click="toggleSecret(h)"
-          >
-            <i
-              class="fa"
-              ng-class="{'fa-eye':!showSecrets[h.id], 'fa-eye-slash':showSecrets[h.id]}"
-            ></i>
-          </a>
+          <div class="ak-cell">
+            <code
+              class="ak-ellipsis"
+              uib-tooltip="{{showSecrets[h.id] ? h.secret : (h.secret|hideSecret)}}"
+              tooltip-append-to-body="true"
+            >
+              {{showSecrets[h.id] ? h.secret : (h.secret|hideSecret)}}
+            </code>
+            <a
+              class="ak-cell-action"
+              href=""
+              uib-tooltip="{{(showSecrets[h.id] ? 'hide' : 'show')|translate}}"
+              ng-click="toggleSecret(h)"
+            >
+              <i
+                class="fa"
+                ng-class="{'fa-eye':!showSecrets[h.id], 'fa-eye-slash':showSecrets[h.id]}"
+              ></i>
+            </a>
+          </div>
         </td>
         <td ng-if="!h.secret" class="text-muted">-</td>
-        <td>{{h.desc || '-'}}</td>
         <td>
-          <div>{{regionText(h)}}</div>
-          <small class="text-muted">{{h.eptplcname || h.privateLink || h.eptpl}}</small>
+          <div
+            class="ak-ellipsis"
+            uib-tooltip="{{h.desc || '-'}}"
+            tooltip-append-to-body="true"
+          >
+            {{h.desc || '-'}}
+          </div>
         </td>
-        <td>{{h.osspath || '-'}}</td>
         <td>
+          <div
+            class="ak-ellipsis"
+            uib-tooltip="{{regionText(h)}}"
+            tooltip-append-to-body="true"
+          >
+            {{regionText(h)}}
+          </div>
+          <small
+            ng-if="h.eptplcname || h.privateLink || h.eptpl"
+            class="text-muted ak-ellipsis"
+            uib-tooltip="{{h.eptplcname || h.privateLink || h.eptpl}}"
+            tooltip-append-to-body="true"
+          >
+            {{h.eptplcname || h.privateLink || h.eptpl}}
+          </small>
+        </td>
+        <td>
+          <div
+            class="ak-ellipsis"
+            uib-tooltip="{{h.osspath || '-'}}"
+            tooltip-append-to-body="true"
+          >
+            {{h.osspath || '-'}}
+          </div>
+        </td>
+        <td class="ak-actions">
           <a href="" ng-click="use(h)">{{'use'|translate}}</a> |
+          <a href="" ng-click="copy(h)">{{'copy'|translate}}</a> |
           <a href="" class="text-danger" ng-click="remove(h)"
             >{{'delete'|translate}}</a
           >

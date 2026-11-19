@@ -12,7 +12,14 @@ import { installLegacyCrypto } from '../../../helpers/crypto-legacy.js';
 function setup() {
   installLegacyCrypto();
   const storage = stubLocalStorage();
+  const clipboard = {
+    text: '',
+    writeText(v) {
+      clipboard.text = v;
+    },
+  };
   stubModule('electron', {
+    clipboard,
     safeStorage: {
       isEncryptionAvailable() {
         return true;
@@ -51,7 +58,7 @@ function setup() {
   };
   reg.load('app/components/services/authinfo.js');
   const AuthInfo = reg.get('AuthInfo');
-  return { reg, storage, AuthInfo };
+  return { reg, storage, AuthInfo, clipboard };
 }
 
 function createController(ctx, overrides) {
@@ -195,6 +202,61 @@ test('cancel 关闭弹窗', (t) => {
   scope.cancel();
 
   t.deepEqual(calls.dismiss, ['close']);
+});
+
+test('copy 以 key:value 形式将所有非空 OSS 信息写入剪贴板并 Toast 成功', (t) => {
+  const ctx = setup();
+  const { scope, calls } = createController(ctx);
+  const h = {
+    id: 'ak1',
+    secret: 'sec1',
+    stoken: 'sts1',
+    region: 'oss-cn-hangzhou',
+    eptpl: 'https://oss-cn-hangzhou.aliyuncs.com',
+    osspath: 'oss://bucket/path/',
+    desc: '备注信息',
+  };
+
+  scope.copy(h);
+
+  t.is(
+    ctx.clipboard.text,
+    [
+      'AccessKeyId: ak1',
+      'AccessKeySecret: sec1',
+      'STS Token: sts1',
+      'Region: oss-cn-hangzhou',
+      'Endpoint: https://oss-cn-hangzhou.aliyuncs.com',
+      'Preset OSS Path: oss://bucket/path/',
+      'Description: 备注信息',
+    ].join('\n')
+  );
+  t.deepEqual(calls.toast, ['copy.successfully']);
+});
+
+test('copy 跳过空字段，Endpoint 优先级为 eptplcname > privateLink > eptpl', (t) => {
+  const ctx = setup();
+  const { scope } = createController(ctx);
+
+  scope.copy({
+    id: 'ak2',
+    eptpl: 'https://{region}.aliyuncs.com',
+    privateLink: 'https://oss-cn-hangzhou-internal.aliyuncs.com',
+    eptplcname: 'https://custom.example.com',
+  });
+  t.is(
+    ctx.clipboard.text,
+    [
+      'AccessKeyId: ak2',
+      'Endpoint: https://custom.example.com',
+    ].join('\n')
+  );
+
+  scope.copy({ id: 'ak3', privateLink: 'https://oss-cn-hangzhou-internal.aliyuncs.com' });
+  t.is(
+    ctx.clipboard.text,
+    ['AccessKeyId: ak3', 'Endpoint: https://oss-cn-hangzhou-internal.aliyuncs.com'].join('\n')
+  );
 });
 
 test('历史持久化经 SecureStore v2 加密写入 localStorage（密文异于明文）', (t) => {

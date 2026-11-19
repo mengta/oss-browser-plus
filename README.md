@@ -14,6 +14,11 @@
 - AK / SK are now stored with OS-level safeStorage envelope encryption, with lossless lazy migration from legacy plaintext storage.
 - Download progress file names are sanitized to avoid leaking sensitive path information.
 
+### Login experience
+
+- One-click config import: paste credentials in JSON / XML / YAML / key:value format on the login page and the form is parsed & filled in one step.
+- AK histories modal reworked: long values are truncated with ellipsis (no horizontal overflow) and revealed via hover tooltips; a new Copy action puts the AK / OSS info on the clipboard in `key: value` format.
+
 ### Build & release pipeline rebuild
 
 - release.yml rewritten: electron-builder + pinned Node 24; the release matrix is narrowed to win64 / darwin / linux64 (Electron 45 no longer ships ia32 binaries).
@@ -27,7 +32,7 @@
 
 ### Test coverage
 
-- Unit tests grown from 148 to 246 all-green cases (new: 69 for the ossSvs2 service, 29 for the filesCtrl controller, plus legacy batches for credential security / download manager).
+- Unit tests grown from 148 to 248 all-green cases (new: 69 for the ossSvs2 service, 29 for the filesCtrl controller, plus legacy batches for credential security / download manager / AK histories).
 - Graded E2E smoke verification (7 passed / 6 skipped).
 
 ## Download

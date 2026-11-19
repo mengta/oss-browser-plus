@@ -15,6 +15,7 @@ angular.module('web').controller('akHistoriesCtrl', [
       showSecrets: {},
       cancel: cancel,
       use: use,
+      copy: copy,
       regionText: regionText,
       toggleSecret: toggleSecret,
       remove: remove,
@@ -36,6 +37,29 @@ angular.module('web').controller('akHistoriesCtrl', [
     function use(h) {
       onUse(h);
       $modalInstance.dismiss('close');
+    }
+
+    function copy(h) {
+      var lines = [];
+
+      addLine(lines, 'AccessKeyId', h.id);
+      addLine(lines, 'AccessKeySecret', h.secret);
+      addLine(lines, 'STS Token', h.stoken);
+      addLine(lines, 'Region', h.region);
+      addLine(lines, 'Endpoint', h.eptplcname || h.privateLink || h.eptpl);
+      addLine(lines, 'Preset OSS Path', h.osspath);
+      addLine(lines, 'Description', h.desc);
+
+      try {
+        require('electron').clipboard.writeText(lines.join('\n'));
+        Toast.success(T('copy.successfully'));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function addLine(lines, label, value) {
+      if (value) { lines.push(label + ': ' + value); }
     }
 
     function toggleSecret(h) {

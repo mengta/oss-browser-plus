@@ -50,7 +50,9 @@ jobs:
           # -------------------------------------------------------------------
           - { os: windows-latest, platform: win32, arch: x64 }
           - { os: ubuntu-22.04, platform: linux, arch: x64 }
-          - { os: macos-14, platform: darwin, arch: x64, optional: true }
+          # macos-14 runner 已被 GitHub 淘汰（"configuration not supported"，2026-11-20 实测），
+          # 升级为 macos-15（同为 arm64，交叉构建 darwin-x64 行为一致）
+          - { os: macos-15, platform: darwin, arch: x64, optional: true }
     # -----------------------------------------------------------------------
     # [镜像决策留痕] 本 CI 显式不设置以下镜像变量：
     #   ELECTRON_MIRROR / ELECTRON_BUILDER_BINARIES_MIRROR / npm_config_registry

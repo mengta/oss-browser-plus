@@ -111,7 +111,11 @@ jobs:
             linux)  TARGET=linux ;;
             darwin) TARGET=mac ;;
           esac
-          npx electron-builder --"$TARGET" --"$ARCH"
+          # --publish never：禁用 electron-builder 的 implicit publishing
+          # （tag push 时它会自动尝试发布并要求 GH_TOKEN，报错
+          #   "GitHub Personal Access Token is not set"，2026-11-20 mac job 实测；
+          #  发布统一由 release job 通过 artifacts 完成）
+          npx electron-builder --"$TARGET" --"$ARCH" --publish never
 
       # E2E 豁免留痕：仅在 win32-x64 job 执行（Windows runner 具交互桌面会话，
       # 可直接启动 Electron；Linux runner 无显示服务需 xvfb（本次不引入）；

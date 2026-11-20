@@ -100,3 +100,79 @@ module.exports.crc64File = function (filename, callback) {
     return callback(undefined, ret);
   });
 };
+module.exports.crc64Stream = function (stream, callback) {
+  let errored = false;
+  let crc = "0";
+  stream.on("error", function (err) {
+    errored = true;
+    stream.destroy();
+    return callback(err);
+  });
+  stream.on("data", function (chunk) {
+    crc = module.exports.crc64(chunk, crc);
+  });
+  stream.on("end", function () {
+    if (errored) return;
+    return callback(undefined, crc);
+  });
+};
+
+// 分片 crc64 合并：combined = shift(crc1, len2) ^ crc2
+// crc1/crc2 均为以 0 初始态计算的寄存器值（数字字符串），len2 为第二段字节数
+// 采用 GF(2) 矩阵快速幂，多项式方向与引擎一致（reflected: 0xC96C5795D7870F42）
+const COMBINE_POLY = 0xc96c5795d7870f42n;
+
+function gf2MatrixTimes(mat, vec) {
+  let sum = 0n;
+  for (let i = 0; i < 64; i++) {
+    if ((vec >> BigInt(i)) & 1n) {
+      sum ^= mat[i];
+    }
+  }
+  return sum;
+}
+
+function gf2MatrixSquare(square, mat) {
+  for (let i = 0; i < 64; i++) {
+    square[i] = gf2MatrixTimes(mat, mat[i]);
+  }
+}
+
+module.exports.combileCrc64 = function (str1, str2, len2, callback) {
+  try {
+    let crc1 = BigInt(str1);
+    const crc2 = BigInt(str2);
+    const len = Number(len2);
+    if (!Number.isFinite(len) || len < 0) {
+      throw new Error("Invalid combine length: " + len2);
+    }
+    if (len > 0) {
+      // 单 bit 转移算子：S' = (S >> 1) ^ (LSB(S) ? POLY : 0)
+      const odd = new Array(64);
+      for (let i = 0; i < 64; i++) {
+        odd[i] = i === 0 ? COMBINE_POLY : 1n << BigInt(i - 1);
+      }
+      const even = new Array(64);
+      gf2MatrixSquare(even, odd);
+      gf2MatrixSquare(odd, even);
+      gf2MatrixSquare(even, odd);
+      // even 现在是单字节（8 bit）转移算子，对其做 len2 次快速幂
+      let n = len;
+      let mat = even;
+      while (n > 0) {
+        if (n & 1) {
+          crc1 = gf2MatrixTimes(mat, crc1);
+        }
+        n >>= 1;
+        if (n === 0) break;
+        const next = new Array(64);
+        gf2MatrixSquare(next, mat);
+        mat = next;
+      }
+      crc1 ^= crc2;
+    }
+    return callback(undefined, crc1.toString());
+  } catch (err) {
+    return callback(err);
+  }
+};

@@ -27,13 +27,29 @@ function broadcast(payload) {
 }
 
 function storeFor(auth) {
-  const key = auth.accessKeyId + '|' + (auth.region || '');
+  // Vue3-B3 前置：支持渲染层传入的 securityToken（STS）与显式 endpoint（getOssEndpoint 已含内网/自定义域名解析）
+  const key = [
+    auth.accessKeyId,
+    auth.accessKeySecret,
+    auth.securityToken || '',
+    auth.endpoint || '',
+  ].join('|');
   if (store && storeKey === key) return store;
-  const endpoint = auth.endpoint || 'https://' + (auth.region || 'oss-cn-hangzhou') + '.aliyuncs.com';
-  store = new OssStore({
-    aliyunCredential: { accessKeyId: auth.accessKeyId, secretAccessKey: auth.accessKeySecret },
-    endpoint: endpoint,
-  });
+  const opts = {
+    endpoint: auth.endpoint || 'https://' + (auth.region || 'oss-cn-hangzhou') + '.aliyuncs.com',
+  };
+  if (auth.securityToken) {
+    opts.stsToken = {
+      Credentials: {
+        AccessKeyId: auth.accessKeyId,
+        AccessKeySecret: auth.accessKeySecret,
+        SecurityToken: auth.securityToken,
+      },
+    };
+  } else {
+    opts.aliyunCredential = { accessKeyId: auth.accessKeyId, secretAccessKey: auth.accessKeySecret };
+  }
+  store = new OssStore(opts);
   storeKey = key;
   return store;
 }
@@ -64,8 +80,14 @@ function bind(taskId, entry) {
   job.on('progress', function () {
     broadcast(snapshot(taskId, entry));
   });
-  job.on('statuschange', function () {
-    broadcast(snapshot(taskId, entry));
+  // Vue3-B3 前置：透传 ossstore job 真实状态与 retryTimes（渲染层桥接适配依赖原语义事件）
+  job.on('statuschange', function (status, retryTimes) {
+    broadcast(
+      Object.assign(snapshot(taskId, entry), {
+        status: status || job.status || 'waiting',
+        retryTimes: retryTimes || 0,
+      })
+    );
   });
   job.on('error', function (err) {
     entry.status = 'failed';

@@ -830,20 +830,20 @@ module.exports = {
       },
     },
     upgrade: {
-      note: 'check/download/install 经主进程通道；状态事件经 upgrade:state 推送，subscribe 返回 subscriptionId（主进程实现见 P0-12c）',
+      note: 'check/download/install 经主进程通道（Vue3-B3 前置已落地主进程实现 node/capabilities/upgrade.js）；状态事件经 upgrade:state 推送，subscribe 返回 subscriptionId',
       methods: {
         check: {
           name: '检查升级',
           purpose: '拉取升级清单并比较版本',
-          params: '无（清单地址来自 bootstrap.upgradeUrl）',
-          result: '成功 { ok:true, data:{hasNew,version,notes?,url?} }；清单不可达返回 NETWORK',
+          params: '无（清单地址主进程自读，与 bootstrap.upgradeUrl 同源）',
+          result: '成功 { ok:true, data:{hasNew,version,currentVersion,packageUrl,packageUrls,files} }；清单不可达返回 NETWORK',
           scope: '仅关于页与启动检查',
         },
         download: {
           name: '下载升级包',
-          purpose: '下载并校验升级包',
-          params: '{ version, url }，url 须来自升级清单',
-          result: '成功 { ok:true }；失败 NETWORK|CHECKSUM',
+          purpose: '下载并校验升级包（crc64/md5 校验 + rename 落位）',
+          params: '{ version, url, fileName? }，url 须来自升级清单；fileName 默认 app.asar；落位 RESOURCES/<version>-<fileName>',
+          result: '成功 { ok:true, data:{path,finished} }；失败 NETWORK|CHECKSUM|INVALID_ARG',
           scope: '仅升级流程',
         },
         install: {

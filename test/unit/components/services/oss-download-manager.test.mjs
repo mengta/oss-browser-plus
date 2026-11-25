@@ -1,59 +1,25 @@
 'use strict';
 
 // oss-download-manager createJob endpoint 契约单测（源 app/components/services/oss-download-manager.js）
-// 锚点：createJob 的 STS 与非 STS 两分支，OssStore 的 endpoint 均取
-// ossSvs2.getOssEndpoint(opt.region, opt.from.bucket, eptpl) —— 下载源 bucket。
+// 锚点：createJob 的 endpoint 取 ossSvs2.getOssEndpoint(opt.region, opt.from.bucket, eptpl) —— 下载源 bucket。
 // 背景：download 版 createJob 复制自 upload 版（upload 的 opt.to={bucket,key} 含 bucket），
 // STS 分支曾残留 opt.to.bucket；而下载任务的 opt.to={name,path}（见源文件 @param 注释）
 // 无 bucket 字段，该值恒为 undefined，导致 getOssEndpoint 跳过 bucketMap
 // 专属 endpoint 解析、直落 region 模板兜底。
-// OssStore 以 require-cache 替身注入（进程边界隔离，无真实 OSS 交互）；
-// './node/ossstore' 相对路径经 Module._resolveFilename 重定向至仓库根
-// node/ossstore/lib/index.js（与 dist 运行时布局等价语义）。
+// Vue3-B3 前置：OssStore 下沉主进程，渲染层经 TransferBridge 白名单桥接；
+// 本用例以 TransferBridge 替身注入，断言桥接 authPayload（securityToken/endpoint）等价原 OssStore 构造语义。
 
 import test from 'ava';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import Module from 'node:module';
 import { stubAngular } from '../../../helpers/angular-stub.js';
 import { createBridge } from '../../../helpers/bridge-stub.js';
-import { stubModuleByPath, unstubAll } from '../../../helpers/module-stubs.js';
 
-const OSSSTORE_PATH = path.resolve('node/ossstore/lib/index.js');
 const SOURCE_SUFFIX = path.join('oss-download-manager.js');
 
-function patchOssstoreResolve() {
-  const orig = Module._resolveFilename;
-  Module._resolveFilename = function (request, parent, ...rest) {
-    if (
-      request === './node/ossstore' &&
-      parent &&
-      parent.filename &&
-      parent.filename.endsWith(SOURCE_SUFFIX)
-    ) {
-      return OSSSTORE_PATH;
-    }
-    return orig.call(this, request, parent, ...rest);
-  };
-  return () => {
-    Module._resolveFilename = orig;
-  };
-}
-
 function loadManager(auth) {
-  const calls = { ossStoreCtors: [], endpoints: [] };
-
-  class FakeOssStore {
-    constructor(cfg) {
-      calls.ossStoreCtors.push(cfg);
-      this.cfg = cfg;
-    }
-    createDownloadJob(opt) {
-      return { opt, status: 'finished', on() {}, stop() {}, start() {} };
-    }
-  }
-  stubModuleByPath(OSSSTORE_PATH, FakeOssStore);
+  const calls = { bridge: [], endpoints: [] };
 
   const ossSvs2 = {
     getOssEndpoint(region, bucket, eptpl) {
@@ -74,6 +40,12 @@ function loadManager(auth) {
   reg.services.DelayDone = { delayRun() {} };
   reg.services.safeApply = function () {};
   reg.services.settingsSvs = { maxDownloadJobCount: { get: () => 3 } };
+  reg.services.TransferBridge = {
+    createJob(authPayload, opt, type, endpoint) {
+      calls.bridge.push({ authPayload, opt, type, endpoint });
+      return { status: 'waiting', on() {}, start() {}, stop() {} };
+    },
+  };
 
   reg.load('app/components/services/prog-naming.js');
   reg.load('app/components/services/oss-download-manager.js');
@@ -82,14 +54,11 @@ function loadManager(auth) {
 }
 
 function setup(t, auth) {
-  const restoreResolve = patchOssstoreResolve();
   const origHomedir = os.homedir;
   const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'osb-dlmgr-'));
   os.homedir = () => tmpHome;
   t.teardown(() => {
     os.homedir = origHomedir;
-    restoreResolve();
-    unstubAll();
     fs.rmSync(tmpHome, { recursive: true, force: true });
   });
 
@@ -130,17 +99,18 @@ test('STS 分支 endpoint 取 opt.from.bucket（下载源 bucket，修复锚点�
   });
   driveCreateJob(mgr, path.join(os.tmpdir(), 'osb-dl-target'));
 
-  t.is(calls.endpoints.length, 1, '恰好构造一次 OssStore');
+  t.is(calls.endpoints.length, 1, '恰好构造一次桥接 job');
   t.is(calls.endpoints[0].bucket, 'bkt-src', 'endpoint bucket 必须取 opt.from.bucket（下载源）');
   t.is(calls.endpoints[0].region, 'cn-hangzhou');
   t.is(calls.endpoints[0].eptpl, 'http://{region}.aliyuncs.com');
   t.is(
-    calls.ossStoreCtors[0].endpoint,
+    calls.bridge[0].endpoint,
     'EP(cn-hangzhou,bkt-src,http://{region}.aliyuncs.com)',
-    'OssStore endpoint 必须为 getOssEndpoint(from.bucket) 的返回值'
+    '桥接 endpoint 必须为 getOssEndpoint(from.bucket) 的返回值'
   );
-  t.is(calls.ossStoreCtors[0].stsToken.Credentials.SecurityToken, 'tok-1');
-  t.is(calls.ossStoreCtors[0].cname, false);
+  t.is(calls.bridge[0].authPayload.stoken, 'tok-1', 'STS 凭据原样透传桥（桥内 buildAuthPayload 转 securityToken）');
+  t.is(calls.bridge[0].authPayload.id, 'STS.abc123');
+  t.is(calls.bridge[0].type, 'download');
 });
 
 test('非 STS 分支 endpoint 取 opt.from.bucket（基线锁定）', (t) => {
@@ -156,9 +126,10 @@ test('非 STS 分支 endpoint 取 opt.from.bucket（基线锁定）', (t) => {
 
   t.is(calls.endpoints.length, 1);
   t.is(calls.endpoints[0].bucket, 'bkt-src');
-  t.is(calls.ossStoreCtors[0].aliyunCredential.accessKeyId, 'LTAI5tFake');
-  t.is(calls.ossStoreCtors[0].aliyunCredential.secretAccessKey, 'sk');
-  t.is(calls.ossStoreCtors[0].endpoint, 'EP(cn-hangzhou,bkt-src,http://{region}.aliyuncs.com)');
+  t.is(calls.bridge[0].authPayload.id, 'LTAI5tFake');
+  t.is(calls.bridge[0].authPayload.secret, 'sk');
+  t.is(calls.bridge[0].authPayload.stoken, null, '非 STS 不得携带 stoken');
+  t.is(calls.bridge[0].endpoint, 'EP(cn-hangzhou,bkt-src,http://{region}.aliyuncs.com)');
 });
 
 test('cname 开启时 endpoint 模板取 eptplcname', (t) => {
@@ -174,6 +145,6 @@ test('cname 开启时 endpoint 模板取 eptplcname', (t) => {
 
   t.is(calls.endpoints.length, 1);
   t.is(calls.endpoints[0].bucket, 'bkt-src');
-  t.is(calls.endpoints[0].eptpl, 'http://cname.example.com');
-  t.is(calls.ossStoreCtors[0].cname, true);
+  t.is(calls.endpoints[0].eptpl, 'http://cname.example.com', 'cname 模板经 getOssEndpoint 消化');
+  t.is(calls.bridge[0].endpoint, 'EP(cn-hangzhou,bkt-src,http://cname.example.com)');
 });

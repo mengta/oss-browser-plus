@@ -29,6 +29,7 @@ if (!global.localStorage) {
 }
 
 const transferModule = require('./transfer');
+const upgradeModule = require('./upgrade');
 
 function codedError(code, message) {
   const err = new Error(message || code);
@@ -77,6 +78,14 @@ function dispatch(domain, method, auth, args) {
       }
       return await api[method].apply(null, [auth].concat(callArgs));
     }
+    if (domain === 'upgrade') {
+      // Vue3-B3 前置：升级主进程化，无需 OSS 凭据
+      const api = upgradeModule.api;
+      if (!api || typeof api[method] !== 'function') {
+        throw codedError('UNAVAILABLE', domain + '.' + method + ' is unavailable');
+      }
+      return await api[method].apply(null, callArgs);
+    }
     if (!auth || typeof auth.accessKeyId !== 'string' || !auth.accessKeyId) {
       throw codedError('InvalidAccessKeyId', 'auth.accessKeyId is required');
     }
@@ -96,5 +105,6 @@ module.exports = {
   serviceOf: serviceOf,
   setSender: function (webContents) {
     transferModule.setSender(webContents);
+    upgradeModule.setSender(webContents);
   },
 };

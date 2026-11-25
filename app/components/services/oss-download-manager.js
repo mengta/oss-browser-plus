@@ -10,6 +10,7 @@ angular.module('web').factory('ossDownloadManager', [
   'safeApply',
   'settingsSvs',
   'ProgNaming',
+  'TransferBridge',
   function(
       $q,
       $state,
@@ -21,10 +22,11 @@ angular.module('web').factory('ossDownloadManager', [
       DelayDone,
       safeApply,
       settingsSvs,
-      ProgNaming
+      ProgNaming,
+      TransferBridge
   ) {
-    var OssStore = null;
-    try { OssStore = require('./node/ossstore'); } catch (e) { OssStore = null; }
+    // Vue3-B3 前置：OssStore 下沉主进程（transfer 白名单承载），渲染层零 require
+
     var fs = null;
     function bridgeStorage() {
       if (typeof window === 'undefined' || !window.ossBrowser) { return null; }
@@ -341,57 +343,16 @@ angular.module('web').factory('ossDownloadManager', [
      * @return job  { start(), stop(), status, progress }
      */
     function createJob(auth, opt) {
-      if (!OssStore) {
-        return {
-          region: opt.region,
-          from: opt.from,
-          to: opt.to,
-          status: 'error',
-          prog: { loaded: 0, total: (opt.from && opt.from.size) || 0 },
-          checkPoints: opt.checkPoints,
-          message: '传输能力待 B3 迁移',
-          on: function() {},
-          start: function() {},
-          stop: function() {}
-        };
-      }
+      // Vue3-B3 前置：经 TransferBridge 走主进程 transfer 白名单
       var cname = AuthInfo.get().cname || false;
-
       var endpointname = cname ? auth.eptplcname : auth.eptpl;
+      var endpoint = ossSvs2.getOssEndpoint(
+          opt.region,
+          opt.from.bucket,
+          endpointname
+      );
 
-      // stsToken
-      if (auth.stoken && auth.id.indexOf('STS.') == 0) {
-        var store = new OssStore({
-          stsToken: {
-            Credentials: {
-              AccessKeyId: auth.id,
-              AccessKeySecret: auth.secret,
-              SecurityToken: auth.stoken
-            }
-          },
-          endpoint: ossSvs2.getOssEndpoint(
-              opt.region,
-              opt.from.bucket,
-              endpointname
-          ),
-          cname: cname
-        });
-      } else {
-        var store = new OssStore({
-          aliyunCredential: {
-            accessKeyId: auth.id,
-            secretAccessKey: auth.secret
-          },
-          endpoint: ossSvs2.getOssEndpoint(
-              opt.region,
-              opt.from.bucket,
-              endpointname
-          ),
-          cname: cname
-        });
-      }
-
-      return store.createDownloadJob(opt);
+      return TransferBridge.createJob(auth, opt, 'download', endpoint);
     }
 
     function saveProg() {

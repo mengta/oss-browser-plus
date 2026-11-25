@@ -843,6 +843,13 @@ module.exports = {
           result: '成功 { ok:true, data:[{path,name,size,relative,isDir}] }（relative 相对根，Windows \\\\ → /；目录项 relative 以 / 结尾）；失败 ENOENT|INVALID_ARG',
           scope: '仅文件页上传入口',
         },
+        ensureDirs: {
+          name: '创建本地目录',
+          purpose: '目录下载的本地 mkdir -p（Vue3-B3-07，渲染层无 fs 后由主进程承载）',
+          params: '{ paths:string[] }（本地绝对路径数组）',
+          result: '成功 { ok:true, data:created[] }（单个目录失败不阻断，未创建项不出现在返回）；失败 INVALID_ARG',
+          scope: '仅文件页下载入口',
+        },
       },
     },
     upgrade: {

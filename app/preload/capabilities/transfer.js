@@ -68,6 +68,14 @@ function scanFolder(localPath) {
   return invokeChannel('transfer:scanFolder', [null, [localPath]], CHANNEL_TIMEOUT);
 }
 
+// Vue3-B3-07：下载本地目录创建（mkdir -p，渲染层无 fs）
+function ensureDirs(paths) {
+  if (!Array.isArray(paths)) {
+    throw codedError('INVALID_ARG', 'paths must be an array');
+  }
+  return invokeChannel('transfer:ensureDirs', [null, [paths]], CHANNEL_TIMEOUT);
+}
+
 const subscriptions = new Map();
 let subSeq = 0;
 
@@ -102,6 +110,7 @@ module.exports = {
   clearFailed,
   errorDetail,
   scanFolder,
+  ensureDirs,
   subscribe,
   unsubscribe,
 };

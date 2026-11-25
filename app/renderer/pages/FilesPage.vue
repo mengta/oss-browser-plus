@@ -35,12 +35,26 @@
       </DropZone>
     </div>
 
-    <!-- B3-06 传输 dock（折叠头+上传面板；B3-08 完整传输中心 tab/dock 在此扩展） -->
+    <!-- B3-06/07 传输 dock（折叠头 + 上传/下载面板；B3-08 完整传输中心在此扩展） -->
     <div class="transfer-dock" data-testid="transfer-dock">
       <div class="dock-head">
-        <a href="javascript:void(0)" data-testid="dock-upload" @click="transferStore.setVisible(true, 'upload')">
+        <a
+          href="javascript:void(0)"
+          data-testid="dock-upload"
+          :class="{ active: transferStore.activeTab === 'upload' }"
+          @click="transferStore.setVisible(true, 'upload')"
+        >
           {{ t('upload') }} {{ transferStore.uploads.length }}
         </a>
+        <a
+          href="javascript:void(0)"
+          data-testid="dock-download"
+          :class="{ active: transferStore.activeTab === 'download' }"
+          @click="transferStore.setVisible(true, 'download')"
+        >
+          {{ t('download') }} {{ transferStore.downloads.length }}
+        </a>
+        <span class="spacer" />
         <button
           v-if="transferStore.visible"
           type="button"
@@ -51,7 +65,10 @@
           ×
         </button>
       </div>
-      <UploadsPanel v-if="transferStore.visible" />
+      <template v-if="transferStore.visible">
+        <UploadsPanel v-if="transferStore.activeTab !== 'download'" />
+        <DownloadsPanel v-else />
+      </template>
     </div>
   </div>
 </template>
@@ -69,6 +86,7 @@ import FileToolbar from '../components/business/files/FileToolbar.vue';
 import FileList from '../components/business/files/FileList.vue';
 import DropZone from '../components/base/DropZone.vue';
 import UploadsPanel from '../components/business/transfer/UploadsPanel.vue';
+import DownloadsPanel from '../components/business/transfer/DownloadsPanel.vue';
 import { useFilesStore } from '../stores/files.js';
 import { useAuthStore } from '../stores/auth.js';
 import { useTransferStore } from '../stores/transfer.js';
@@ -113,10 +131,14 @@ watch(
   }
 );
 
-// 工具栏动作分发：上传经 B3-06 链路落地；其余弹窗由 B3-09~B3-14 承接（暂静默）
+// 工具栏动作分发：上传/下载经 B3-06/07 链路落地；其余弹窗由 B3-09~B3-14 承接（暂静默）
 function onToolbarAction(type, payload) {
   if (type === 'upload') {
     pickFiles(!!payload);
+    return;
+  }
+  if (type === 'download') {
+    pickDownloadFolder(payload);
     return;
   }
   void payload;
@@ -162,9 +184,33 @@ function onPreview(item) {
   void item;
 }
 
-// 行内操作（address/download/restore/delete）：B3-09~B3-13 承接
+// 行内操作（address/download/restore/delete）：download 经 B3-07 落地；其余 B3-09~B3-13 承接
 function onFileAction(event) {
+  if (!event) return;
+  if (event.type === 'download') {
+    pickDownloadFolder([event.item]);
+    return;
+  }
   void event;
+}
+
+// 等价 Dialog.showDownloadDialog：openDirectory 选择下载目录 → createDownloadJobs
+async function pickDownloadFolder(items) {
+  if (!items || items.length === 0 || !filesStore.bucket) return;
+  const system = typeof window !== 'undefined' && window.ossBrowser ? window.ossBrowser.system : null;
+  if (!system || typeof system.showOpenDialog !== 'function') return;
+  try {
+    const res = await system.showOpenDialog({ title: 'Download', properties: ['openDirectory'] });
+    const data = res && res.ok ? res.data : null;
+    if (!data || data.canceled || !data.filePaths || data.filePaths.length === 0) return;
+    const toLocal = String(data.filePaths[0]).replace(/[\\/]+$/, '');
+    toastStore.push(t('download.addtolist.on'), 'info', 1000);
+    await transferStore.createDownloadJobs(items, toLocal, bucketInfo());
+    toastStore.push(t('download.addtolist.success'), 'success', 2000);
+    transferStore.setVisible(true, 'download');
+  } catch (err) {
+    /* 取消/失败静默 */
+  }
 }
 </script>
 

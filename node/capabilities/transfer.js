@@ -250,6 +250,25 @@ function scanFolder(localPath) {
   return out;
 }
 
+// Vue3-B3-07：下载侧本地目录创建（P0 后渲染层无 fs，目录下载需 mkdir -p）。
+// 入参为本地绝对路径数组（目录自身）；逐个 recursive 创建，单个失败不阻断其他。
+function ensureDirs(paths) {
+  if (!Array.isArray(paths)) {
+    throw codedError('INVALID_ARG', 'paths must be an array');
+  }
+  const created = [];
+  for (const p of paths) {
+    if (!p || typeof p !== 'string') continue;
+    try {
+      fs.mkdirSync(p, { recursive: true });
+      created.push(p);
+    } catch (err) {
+      // 单个目录创建失败不阻断（下载任务自身会暴露错误）
+    }
+  }
+  return created;
+}
+
 const api = {
   createUpload,
   createDownload,
@@ -262,6 +281,7 @@ const api = {
   clearFailed,
   errorDetail,
   scanFolder,
+  ensureDirs,
 };
 
 module.exports = { api, setSender };

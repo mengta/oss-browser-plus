@@ -574,6 +574,7 @@ var CAPABILITY_CHANNELS = [
   "transfer:clearFailed",
   "transfer:errorDetail",
   "transfer:scanFolder",
+  "transfer:ensureDirs",
   "upgrade:check",
   "upgrade:download",
   "upgrade:install",

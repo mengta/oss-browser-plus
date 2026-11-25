@@ -827,6 +827,13 @@ module.exports = {
           result: '成功 { ok:true, data:{ecCode,requestId,message} }；失败 NOT_FOUND',
           scope: '仅传输中心',
         },
+        scanFolder: {
+          name: '递归扫描目录',
+          purpose: '文件夹上传的目录递归（Vue3-B3-06 O-14，渲染层无 fs 后由主进程承载）',
+          params: '{ localPath }（目录或单文件路径）',
+          result: '成功 { ok:true, data:[{path,name,size,relative,isDir}] }（relative 相对根，Windows \\\\ → /；目录项 relative 以 / 结尾）；失败 ENOENT|INVALID_ARG',
+          scope: '仅文件页上传入口',
+        },
       },
     },
     upgrade: {

@@ -60,6 +60,14 @@ function errorDetail(taskId) {
   return invokeChannel('transfer:errorDetail', [null, [taskId]], CHANNEL_TIMEOUT);
 }
 
+// Vue3-B3-06 / O-14：目录递归（主进程遍历，返回 [{path,name,size,relative,isDir}]）
+function scanFolder(localPath) {
+  if (!localPath || typeof localPath !== 'string') {
+    throw codedError('INVALID_ARG', 'localPath is required');
+  }
+  return invokeChannel('transfer:scanFolder', [null, [localPath]], CHANNEL_TIMEOUT);
+}
+
 const subscriptions = new Map();
 let subSeq = 0;
 
@@ -93,6 +101,7 @@ module.exports = {
   retry,
   clearFailed,
   errorDetail,
+  scanFolder,
   subscribe,
   unsubscribe,
 };

@@ -1,6 +1,7 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs');
 const OssStore = require(path.join(__dirname, '..', 'ossstore', 'lib', 'index.js'));
 
 const jobs = new Map();
@@ -194,6 +195,61 @@ function errorDetail(taskId) {
   };
 }
 
+// Vue3-B3-06 / O-14：目录递归能力主进程化（P0 后渲染层无 fs，Angular 版递归分支已失效）。
+// 返回扁平条目：[{ path, name, size, relative, isDir }]；relative 相对所选根（Windows "\" → "/"），
+// 目录条目 relative 以 "/" 结尾（供渲染层建目录）；跳过符号链接（防循环）；深度上限防失控。
+const SCAN_MAX_DEPTH = 64;
+
+function scanFolder(localPath) {
+  if (!localPath || typeof localPath !== 'string') {
+    throw codedError('INVALID_ARG', 'localPath is required');
+  }
+  let stat;
+  try {
+    stat = fs.statSync(localPath);
+  } catch (err) {
+    throw codedError('ENOENT', 'path not found');
+  }
+  const root = stat.isDirectory() ? localPath : path.dirname(localPath);
+  const toRel = (abs) => path.relative(root, abs).split(path.sep).join('/');
+  const out = [];
+
+  if (!stat.isDirectory()) {
+    out.push({ path: localPath, name: path.basename(localPath), size: stat.size, relative: path.basename(localPath), isDir: false });
+    return out;
+  }
+
+  const walk = (dir, depth) => {
+    if (depth > SCAN_MAX_DEPTH) return;
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch (err) {
+      return;
+    }
+    for (const ent of entries) {
+      const abs = path.join(dir, ent.name);
+      let st;
+      try {
+        st = fs.lstatSync(abs);
+      } catch (err) {
+        continue;
+      }
+      if (st.isSymbolicLink()) continue;
+      if (st.isDirectory()) {
+        out.push({ path: abs, name: ent.name, size: 0, relative: toRel(abs) + '/', isDir: true });
+        walk(abs, depth + 1);
+        continue;
+      }
+      if (!st.isFile()) continue;
+      out.push({ path: abs, name: ent.name, size: st.size, relative: toRel(abs), isDir: false });
+    }
+  };
+
+  walk(localPath, 0);
+  return out;
+}
+
 const api = {
   createUpload,
   createDownload,
@@ -205,6 +261,7 @@ const api = {
   retry,
   clearFailed,
   errorDetail,
+  scanFolder,
 };
 
 module.exports = { api, setSender };

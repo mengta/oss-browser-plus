@@ -10,19 +10,27 @@
     </div>
 
     <div v-else class="section" data-testid="object-section">
-      <!-- B3-05：FileToolbar/FileList/LongScrollList 在位后替换占位；B3-06/08：传输中心 -->
+      <!-- B3-05：FileToolbar + FileList（list/blocks、选中、分页触底、空态）；
+           上传/下载/移动/复制/重命名/删除/恢复/软链/授权/地址弹窗由 B3-06~B3-14 接入（事件暂静默） -->
+      <FileToolbar
+        :paste-pending="false"
+        @upload="onToolbarAction('upload', $event)"
+        @mkdir="onToolbarAction('mkdir', $event)"
+        @download="onToolbarAction('download', $event)"
+        @copy="onToolbarAction('copy', $event)"
+        @move="onToolbarAction('move', $event)"
+        @rename="onToolbarAction('rename', $event)"
+        @grant="onToolbarAction('grant', $event)"
+        @grant-token="onToolbarAction('grant-token', $event)"
+        @address="onToolbarAction('address', $event)"
+        @restore="onToolbarAction('restore', $event)"
+        @symlink="onToolbarAction('symlink', $event)"
+        @delete="onToolbarAction('delete', $event)"
+        @paste="onToolbarAction('paste', $event)"
+        @cancel-paste="onToolbarAction('cancel-paste', $event)"
+      />
       <div v-if="filesStore.isLoading" class="loading" data-testid="files-loading">…</div>
-      <EmptyState v-else-if="filesStore.items.length === 0" icon="inbox" :text="t('files.noData')" />
-      <div v-else class="placeholder-list" data-testid="object-placeholder">
-        <div
-          v-for="(item, index) in filesStore.items"
-          :key="item.path"
-          class="placeholder-row"
-          @dblclick="enterFolder(item)"
-        >
-          {{ item.name }}
-        </div>
-      </div>
+      <FileList v-else @preview="onPreview" @action="onFileAction" />
     </div>
 
     <!-- B3-08：TransferDock 占位 -->
@@ -32,21 +40,19 @@
 <script setup>
 // B3-02：文件页骨架（等价 files.html 顶层布局）。
 // 未登录 onMounted 判定跳 /login（无全局守卫）；账号切换先 filesStore.reset() 再重写会话。
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import AddressBar from '../components/business/files/AddressBar.vue';
 import BucketToolbar from '../components/business/files/BucketToolbar.vue';
 import BucketList from '../components/business/files/BucketList.vue';
-import EmptyState from '../components/base/EmptyState.vue';
+import FileToolbar from '../components/business/files/FileToolbar.vue';
+import FileList from '../components/business/files/FileList.vue';
 import { useFilesStore } from '../stores/files.js';
 import { useAuthStore } from '../stores/auth.js';
 
-const { t } = useI18n();
 const router = useRouter();
 const filesStore = useFilesStore();
 const authStore = useAuthStore();
-const addressBar = ref(null);
 
 function initSession() {
   const osspath = authStore.info && authStore.info.osspath;
@@ -78,16 +84,20 @@ watch(
   }
 );
 
-function enterBucket(b) {
-  if (addressBar.value && typeof addressBar.value.setAddress === 'function') {
-    addressBar.value.setAddress('oss://' + b.name + '/');
-  } else {
-    filesStore.navigate('oss://' + b.name + '/');
-  }
+// 工具栏动作分发：弹窗本体由 B3-06（上传/下载）/B3-09~B3-11（文件操作）承接
+function onToolbarAction(type, payload) {
+  void type;
+  void payload;
 }
 
-function enterFolder(item) {
-  filesStore.enterFolder(item);
+// 名称链接/双击：预览弹窗由 B3-12 承接
+function onPreview(item) {
+  void item;
+}
+
+// 行内操作（address/download/restore/delete）：B3-09~B3-13 承接
+function onFileAction(event) {
+  void event;
 }
 </script>
 
@@ -106,18 +116,5 @@ function enterFolder(item) {
   padding: 24px;
   text-align: center;
   color: #999;
-}
-.placeholder-list {
-  padding: 4px 0;
-}
-.placeholder-row {
-  padding: 6px 14px;
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.placeholder-row:hover {
-  background: #f5f5f5;
 }
 </style>

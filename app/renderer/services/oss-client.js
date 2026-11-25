@@ -62,6 +62,8 @@ export const ossClient = {
   listFiles: function (region, bucket, key, marker) {
     return proxy('listFiles')(region, bucket, key, marker || '');
   },
+  // B3-03：bucket 删除（B3-04 弹窗补齐 createBucket/getBucketACL/updateBucketACL）
+  deleteBucket: proxy('deleteBucket'),
 };
 
 export default ossClient;

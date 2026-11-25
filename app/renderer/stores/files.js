@@ -69,6 +69,8 @@ export const useFilesStore = defineStore('files', {
     sortKey: null,
     sortDir: 'asc',
     searchKeyword: '',
+    bucketFilter: '',
+    bucketSelected: null,
     selectedAll: false,
     selectedMap: {},
     selectedList: [],
@@ -79,6 +81,14 @@ export const useFilesStore = defineStore('files', {
     isBucketList: (state) => !state.bucket,
     hasMore: (state) => !!state.marker,
     objectCount: (state) => state.items.length,
+    filteredBuckets(state) {
+      const kw = (state.bucketFilter || '').toLowerCase();
+      if (!kw) {
+        return state.buckets;
+      }
+      // 等价 buckets|filter:sch.bucketName（客户端名称过滤）
+      return state.buckets.filter((b) => (b.name || '').toLowerCase().indexOf(kw) !== -1);
+    },
     address(state) {
       return state.bucket ? 'oss://' + state.bucket + '/' + state.prefix : '';
     },
@@ -113,6 +123,15 @@ export const useFilesStore = defineStore('files', {
     regionOf(bucketName) {
       const b = buildBucketMap(this.buckets)[bucketName];
       return (b && b.region) || this.region || '';
+    },
+
+    // 等价 selectBucket（files.js:1138-1144）：单选切换式
+    selectBucket(bucket) {
+      if (this.bucketSelected && this.bucketSelected.name === bucket.name) {
+        this.bucketSelected = null;
+      } else {
+        this.bucketSelected = bucket;
+      }
     },
 
     // ---------- 对象列表 ----------

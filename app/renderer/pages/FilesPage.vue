@@ -4,14 +4,9 @@
     <!-- SubAddressBar：与原版 files.html 一致保持禁用（STS 授权场景备用） -->
 
     <div v-if="filesStore.isBucketList" class="section" data-testid="bucket-section">
-      <!-- B3-03：BucketToolbar / BucketList 在位后替换占位 -->
+      <BucketToolbar />
       <div v-if="filesStore.isLoading" class="loading" data-testid="files-loading">…</div>
-      <EmptyState v-else-if="filesStore.buckets.length === 0" icon="inbox" :text="t('files.noData')" />
-      <div v-else class="placeholder-list" data-testid="bucket-placeholder">
-        <div v-for="b in filesStore.buckets" :key="b.name" class="placeholder-row" @click="enterBucket(b)">
-          {{ b.name }}
-        </div>
-      </div>
+      <BucketList v-else />
     </div>
 
     <div v-else class="section" data-testid="object-section">
@@ -41,6 +36,8 @@ import { onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import AddressBar from '../components/business/files/AddressBar.vue';
+import BucketToolbar from '../components/business/files/BucketToolbar.vue';
+import BucketList from '../components/business/files/BucketList.vue';
 import EmptyState from '../components/base/EmptyState.vue';
 import { useFilesStore } from '../stores/files.js';
 import { useAuthStore } from '../stores/auth.js';

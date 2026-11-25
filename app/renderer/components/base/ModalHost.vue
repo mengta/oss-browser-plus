@@ -32,6 +32,9 @@ import FavListModal from '../business/modals/FavListModal.vue';
 import UpdateAclModal from '../business/modals/UpdateAclModal.vue';
 import UpdateHttpHeadersModal from '../business/modals/UpdateHttpHeadersModal.vue';
 import DiffModal from '../business/modals/DiffModal.vue';
+import AddBucketModal from '../business/modals/AddBucketModal.vue';
+import UpdateBucketModal from '../business/modals/UpdateBucketModal.vue';
+import BucketMultipartModal from '../business/modals/BucketMultipartModal.vue';
 
 // 弹窗宿主：渲染 ui.stack。
 // dialog-* 项由 ConfirmDialog 承载；业务弹窗按 registry 注册表渲染。
@@ -46,6 +49,10 @@ const registry = {
   'update-acl': UpdateAclModal,
   'update-http-headers': UpdateHttpHeadersModal,
   diff: DiffModal,
+  // B3-04：Bucket 管理弹窗（名称与 BucketToolbar/BucketList uiStore.open 调用对齐）
+  'add-bucket': AddBucketModal,
+  'update-bucket': UpdateBucketModal,
+  'bucket-multipart': BucketMultipartModal,
 };
 
 const ui = useUiStore();

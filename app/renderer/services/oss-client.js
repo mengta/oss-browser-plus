@@ -64,6 +64,12 @@ export const ossClient = {
   },
   // B3-03：bucket 删除（B3-04 弹窗补齐 createBucket/getBucketACL/updateBucketACL）
   deleteBucket: proxy('deleteBucket'),
+  // B3-04：Bucket 管理弹窗
+  createBucket: proxy('createBucket'),
+  getBucketACL: proxy('getBucketACL'),
+  updateBucketACL: proxy('updateBucketACL'),
+  listAllUploads: proxy('listAllUploads'),
+  abortAllUploads: proxy('abortAllUploads'),
 };
 
 export default ossClient;

@@ -32,3 +32,191 @@ export const REG = {
   EMAIL: /^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z0-9]{2,6}$/,
   USERNAME: /^[a-zA-Z0-9.@\-_]+$/,
 };
+// B3-04：Bucket 管理弹窗常量（等价 app/const.js：getStorageClasses/bucketACL/regions 逐项一致）
+export function getStorageClasses(f) {
+      var storageClasses = [
+        {
+          value: 'Standard',
+          name: '标准类型'
+        }, // 标准类型
+        {
+          value: 'IA',
+          name: '低频访问类型'
+        } // 低频访问类型
+      ];
+
+      switch (f) {
+        case 3:
+          return storageClasses.concat([
+            {
+              value: 'Archive',
+              name: '归档类型'
+            }
+          ]); // 归档类型
+        case 2:
+          return storageClasses;
+        default:
+          return [
+            {
+              value: 'Standard',
+              name: '标准类型'
+            }
+          ]; // 标准类型
+      }
+}
+export const BUCKET_ACL = [
+        {
+          acl: 'private',
+          label: '私有'
+        }, // 私有
+        {
+          acl: 'public-read',
+          label: '公共读'
+        }, // 公共读
+        {
+          acl: 'public-read-write',
+          label: '公共读写'
+        } // 公共读写
+      ];
+export const REGIONS = [
+        {
+          id: 'oss-cn-hangzhou',
+          label: '华东1(杭州)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-shanghai',
+          label: '华东2(上海)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-nanjing',
+          label: '华东5(南京本地地域)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-fuzhou',
+          label: '华东6(福州本地地域)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-qingdao',
+          label: '华北1(青岛)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-beijing',
+          label: '华北2(北京)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-zhangjiakou',
+          label: '华北3(张家口)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-huhehaote',
+          label: '华北5(呼和浩特)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-wulanchabu',
+          label: '华北6(乌兰察布)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-shenzhen',
+          label: '华南1(深圳)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-heyuan',
+          label: '华南2(河源)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-guangzhou',
+          label: '华南3（广州）',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-chengdu',
+          label: '西南1(成都)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-cn-hongkong',
+          label: '中国(香港)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-us-west-1',
+          label: '美国西部1(硅谷)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-us-east-1',
+          label: '美国东部1(弗吉尼亚)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-ap-northeast-1',
+          label: '日本(东京)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-ap-northeast-2',
+          label: '韩国(首尔)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-ap-southeast-1',
+          label: '亚太东南1(新加坡)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-ap-southeast-2',
+          label: '亚太东南2(悉尼)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-ap-southeast-3',
+          label: '亚太东南3(吉隆坡)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-ap-southeast-5',
+          label: '亚太东南5(雅加达)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-ap-southeast-6',
+          label: '菲律宾(马尼拉)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-ap-southeast-7',
+          label: '泰国(曼谷)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-ap-south-1',
+          label: '印度(孟买)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-eu-central-1',
+          label: '德国(法兰克福)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-eu-west-1',
+          label: '英国(伦敦)',
+          storageClasses: getStorageClasses(3)
+        },
+        {
+          id: 'oss-me-east-1',
+          label: '阿联酋(迪拜)',
+          storageClasses: getStorageClasses(3)
+        }
+      ];

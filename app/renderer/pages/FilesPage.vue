@@ -30,10 +30,29 @@
         @cancel-paste="onToolbarAction('cancel-paste', $event)"
       />
       <div v-if="filesStore.isLoading" class="loading" data-testid="files-loading">…</div>
-      <FileList v-else @preview="onPreview" @action="onFileAction" />
+      <DropZone v-else class="drop-area" @dropped="uploadFromPaths">
+        <FileList @preview="onPreview" @action="onFileAction" />
+      </DropZone>
     </div>
 
-    <!-- B3-08：TransferDock 占位 -->
+    <!-- B3-06 传输 dock（折叠头+上传面板；B3-08 完整传输中心 tab/dock 在此扩展） -->
+    <div class="transfer-dock" data-testid="transfer-dock">
+      <div class="dock-head">
+        <a href="javascript:void(0)" data-testid="dock-upload" @click="transferStore.setVisible(true, 'upload')">
+          {{ t('upload') }} {{ transferStore.uploads.length }}
+        </a>
+        <button
+          v-if="transferStore.visible"
+          type="button"
+          class="dock-close"
+          data-testid="dock-close"
+          @click="transferStore.setVisible(false)"
+        >
+          ×
+        </button>
+      </div>
+      <UploadsPanel v-if="transferStore.visible" />
+    </div>
   </div>
 </template>
 
@@ -42,17 +61,27 @@
 // 未登录 onMounted 判定跳 /login（无全局守卫）；账号切换先 filesStore.reset() 再重写会话。
 import { onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import AddressBar from '../components/business/files/AddressBar.vue';
 import BucketToolbar from '../components/business/files/BucketToolbar.vue';
 import BucketList from '../components/business/files/BucketList.vue';
 import FileToolbar from '../components/business/files/FileToolbar.vue';
 import FileList from '../components/business/files/FileList.vue';
+import DropZone from '../components/base/DropZone.vue';
+import UploadsPanel from '../components/business/transfer/UploadsPanel.vue';
 import { useFilesStore } from '../stores/files.js';
 import { useAuthStore } from '../stores/auth.js';
+import { useTransferStore } from '../stores/transfer.js';
+import { useToastStore } from '../stores/toast.js';
+import { useBootstrapStore } from '../stores/bootstrap.js';
 
+const { t } = useI18n();
 const router = useRouter();
 const filesStore = useFilesStore();
 const authStore = useAuthStore();
+const transferStore = useTransferStore();
+const toastStore = useToastStore();
+const bootstrapStore = useBootstrapStore();
 
 function initSession() {
   const osspath = authStore.info && authStore.info.osspath;
@@ -84,10 +113,48 @@ watch(
   }
 );
 
-// 工具栏动作分发：弹窗本体由 B3-06（上传/下载）/B3-09~B3-11（文件操作）承接
+// 工具栏动作分发：上传经 B3-06 链路落地；其余弹窗由 B3-09~B3-14 承接（暂静默）
 function onToolbarAction(type, payload) {
-  void type;
+  if (type === 'upload') {
+    pickFiles(!!payload);
+    return;
+  }
   void payload;
+}
+
+function bucketInfo() {
+  return { region: filesStore.region, bucket: filesStore.bucket, key: filesStore.prefix };
+}
+
+// 等价 Dialog.showUploadDialog：isFolder → openDirectory+多选；Mac 覆盖三属性
+async function pickFiles(isFolder) {
+  const system = typeof window !== 'undefined' && window.ossBrowser ? window.ossBrowser.system : null;
+  if (!system || typeof system.showOpenDialog !== 'function') return;
+  const isMac = (bootstrapStore.snapshot && bootstrapStore.snapshot.platform) === 'darwin';
+  const properties = isMac
+    ? ['openFile', 'openDirectory', 'multiSelections']
+    : isFolder
+      ? ['openDirectory', 'multiSelections']
+      : ['openFile', 'multiSelections'];
+  try {
+    const res = await system.showOpenDialog({ title: 'Upload', properties });
+    const data = res && res.ok ? res.data : null;
+    if (data && !data.canceled && data.filePaths && data.filePaths.length > 0) {
+      await uploadFromPaths(data.filePaths);
+    }
+  } catch (err) {
+    /* 取消/失败静默 */
+  }
+}
+
+// 选择/拖拽共用：入队 → Toast（等价 upload.addtolist.on/success）→ 展示面板 → 刷新当前目录
+async function uploadFromPaths(paths) {
+  if (!filesStore.bucket || !paths || paths.length === 0) return;
+  toastStore.push(t('upload.addtolist.on'), 'info', 1000);
+  await transferStore.createUploadJobs(paths, bucketInfo());
+  toastStore.push(t('upload.addtolist.success'), 'success', 2000);
+  transferStore.setVisible(true, 'upload');
+  filesStore.loadObjects(true);
 }
 
 // 名称链接/双击：预览弹窗由 B3-12 承接

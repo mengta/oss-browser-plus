@@ -142,6 +142,15 @@ module.exports = {
           result: '返回相对路径字符串',
           scope: '全局可用，纯计算',
         },
+        getPathForFile: {
+          name: '拖拽文件取路径',
+          sync: true,
+          channel: false,
+          purpose: 'Electron 32+ 移除 File.path 后的官方替代（webUtils.getPathForFile），供拖拽上传',
+          params: 'file:File（DragEvent.dataTransfer.files 项）',
+          result: '返回绝对路径字符串；不可解析返回空串',
+          scope: '仅文件页拖拽上传',
+        },
       },
     },
     credentials: {

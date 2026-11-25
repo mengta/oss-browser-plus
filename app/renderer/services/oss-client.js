@@ -70,6 +70,8 @@ export const ossClient = {
   updateBucketACL: proxy('updateBucketACL'),
   listAllUploads: proxy('listAllUploads'),
   abortAllUploads: proxy('abortAllUploads'),
+  // B3-06：上传链路（目录条目建目录）
+  createFolder: proxy('createFolder'),
 };
 
 export default ossClient;

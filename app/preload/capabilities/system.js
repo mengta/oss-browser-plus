@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { ipcRenderer, shell } = require('electron');
+const { ipcRenderer, shell, webUtils } = require('electron');
 
 const CHANNELS = {
   staticServerPort: 'app:get-static-server-port',
@@ -212,6 +212,19 @@ function pathRelative(from, to) {
   return path.relative(from, to);
 }
 
+// Vue3-B3-06：拖拽取路径（Electron 32+ 移除 File.path，官方替代 webUtils.getPathForFile）
+// 同步方法（channel:false）：contextBridge 传入的 File 对象经 webUtils 解析为绝对路径；不可解析返回 ''。
+function getPathForFile(file) {
+  if (!file) {
+    throw codedError('INVALID_ARG', 'file is required');
+  }
+  try {
+    return webUtils && typeof webUtils.getPathForFile === 'function' ? webUtils.getPathForFile(file) : '';
+  } catch (err) {
+    return '';
+  }
+}
+
 module.exports = {
   getStaticServerPort,
   openDevTools,
@@ -228,4 +241,5 @@ module.exports = {
   pathJoin,
   pathBasename,
   pathRelative,
+  getPathForFile,
 };

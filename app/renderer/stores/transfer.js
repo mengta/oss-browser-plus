@@ -64,7 +64,19 @@ export const useTransferStore = defineStore('transfer', {
     uploadRunning: (state) => state.uploads.filter((t) => t.status === 'running').length,
     uploadStopped: (state) => state.uploads.filter((t) => t.status === 'stopped').length,
     uploadFailed: (state) => state.uploads.filter((t) => t.status === 'failed').length,
-    uploadDone: (state) => state.uploads.filter((t) => t.status === 'finished').length,
+    uploadDone: (state) => {
+      // 等价 frame.js calcTotalProg：upDone = 总数 − running/waiting/verifying/stopped 计数
+      const active = state.uploads.filter(
+        (t) => ['running', 'waiting', 'verifying', 'stopped'].indexOf(t.status) !== -1
+      ).length;
+      return state.uploads.length - active;
+    },
+    downloadDone: (state) => {
+      const active = state.downloads.filter(
+        (t) => ['running', 'waiting', 'verifying', 'stopped'].indexOf(t.status) !== -1
+      ).length;
+      return state.downloads.length - active;
+    },
     activeCount: (state) => state.uploads.length + state.downloads.length,
   },
 

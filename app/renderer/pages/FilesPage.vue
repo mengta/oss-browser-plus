@@ -35,41 +35,8 @@
       </DropZone>
     </div>
 
-    <!-- B3-06/07 传输 dock（折叠头 + 上传/下载面板；B3-08 完整传输中心在此扩展） -->
-    <div class="transfer-dock" data-testid="transfer-dock">
-      <div class="dock-head">
-        <a
-          href="javascript:void(0)"
-          data-testid="dock-upload"
-          :class="{ active: transferStore.activeTab === 'upload' }"
-          @click="transferStore.setVisible(true, 'upload')"
-        >
-          {{ t('upload') }} {{ transferStore.uploads.length }}
-        </a>
-        <a
-          href="javascript:void(0)"
-          data-testid="dock-download"
-          :class="{ active: transferStore.activeTab === 'download' }"
-          @click="transferStore.setVisible(true, 'download')"
-        >
-          {{ t('download') }} {{ transferStore.downloads.length }}
-        </a>
-        <span class="spacer" />
-        <button
-          v-if="transferStore.visible"
-          type="button"
-          class="dock-close"
-          data-testid="dock-close"
-          @click="transferStore.setVisible(false)"
-        >
-          ×
-        </button>
-      </div>
-      <template v-if="transferStore.visible">
-        <UploadsPanel v-if="transferStore.activeTab !== 'download'" />
-        <DownloadsPanel v-else />
-      </template>
-    </div>
+    <!-- B3-08：传输中心（折叠双计数 + 双 tab 面板，等价 frame.html） -->
+    <TransferDock />
   </div>
 </template>
 
@@ -85,8 +52,7 @@ import BucketList from '../components/business/files/BucketList.vue';
 import FileToolbar from '../components/business/files/FileToolbar.vue';
 import FileList from '../components/business/files/FileList.vue';
 import DropZone from '../components/base/DropZone.vue';
-import UploadsPanel from '../components/business/transfer/UploadsPanel.vue';
-import DownloadsPanel from '../components/business/transfer/DownloadsPanel.vue';
+import TransferDock from '../components/business/transfer/TransferDock.vue';
 import { useFilesStore } from '../stores/files.js';
 import { useAuthStore } from '../stores/auth.js';
 import { useTransferStore } from '../stores/transfer.js';

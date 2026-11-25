@@ -57,6 +57,11 @@ export const ossClient = {
   updateACL: proxy('updateACL'),
   getMeta: proxy('getMeta'),
   setMeta2: proxy('setMeta2'),
+  // B3-01：bucket/对象列表（签名与 node/capabilities/services/oss2.js 冻结清单一致）
+  listAllBuckets: proxy('listAllBuckets'),
+  listFiles: function (region, bucket, key, marker) {
+    return proxy('listFiles')(region, bucket, key, marker || '');
+  },
 };
 
 export default ossClient;

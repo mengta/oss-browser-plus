@@ -29,8 +29,6 @@ angular
           '$timeout',
           '$location',
           function($scope, $timeout) {
-            const { clipboard } = require('electron');
-
             $scope.alerts = [];
 
             // $scope.closeAlert = function(index){
@@ -47,7 +45,8 @@ angular
             });
 
             $scope.copyClip = function(text) {
-              clipboard.writeText(text);
+              var sys = window.ossBrowser && window.ossBrowser.system;
+              if (sys) { sys.clipboardWriteText(text); }
             };
 
             function showMessage(msg, type, ttl, requestId) {

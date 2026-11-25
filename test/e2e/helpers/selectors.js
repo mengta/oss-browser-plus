@@ -11,10 +11,11 @@ module.exports = {
   navbarBrand: '.navbar-brand',
   navbarBrandText: 'OSS浏览器',
 
-  // 登录表单（app/main/auth/login.html）
-  loginId: '[ng-model="item.id"]',
-  loginSecret: '[ng-model="item.secret"]',
-  loginSubmit: '[type="submit"]',
+  // 登录表单（B1-18 起由 Vue 承载：app/renderer/pages/LoginPage.vue + CredentialForm.vue）
+  // loginId/loginSecret/loginSubmit 改为 data-testid；logout/langSettings 仍由 Angular 顶部栏承载（B4 迁移）
+  loginId: '[data-testid="login-id"]',
+  loginSecret: '[data-testid="login-secret"]',
+  loginSubmit: '[data-testid="login-submit"]',
   logoutBtn: '[ng-click="logout()"]',
   logoutConfirm: 'button[ng-click="ok()"]',
   langSettings: '[ng-model="langSettings.lang"]',
@@ -39,6 +40,19 @@ module.exports = {
 
   // 上传（input[type=file] 注入）
   uploadInput: '[ng-model="mock.uploads"]',
+
+  // B2 迁移弹窗（Vue 承载，data-testid 见各 SFC；入口按钮属 top 栏 Angular，B4 迁移时改写）
+  settingsModal: '[data-testid="settings-modal"]',
+  settingsClose: '[data-testid="settings-close"]',
+  settingsSmtpHost: '[data-testid="settings-smtp-host"]',
+  settingsSmtpFrom: '[data-testid="settings-smtp-from"]',
+  settingsSmtpTest: '[data-testid="settings-smtp-test"]',
+  aboutModal: '[data-testid="about-modal"]',
+  favListModal: '[data-testid="fav-modal"]',
+  usersModal: '[data-testid="users-modal"]',
+  updateAclModal: '[data-testid="acl-editor"]',
+  updateHttpHeadersModal: '[data-testid="http-headers-editor"]',
+  diffModal: '[data-testid="diff-editor"]',
 
   // 文本语义定位辅助（替代 spectron span=/div.item-block= 文本选择器）
   bucketByName: (name) => `span:text-is("${name}")`,

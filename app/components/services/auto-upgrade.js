@@ -1,8 +1,16 @@
 angular.module('web').factory('autoUpgradeSvs', [
   'settingsSvs',
   function(settingsSvs) {
-    var util = require('./node/ossstore/lib/util');
+    var util = null;
+    try { util = require('./node/ossstore/lib/util'); } catch (e) { util = null; }
+    var fs = null;
     var NAME = 'oss-browser';
+    var __plat = (function () {
+      try {
+        var boot = window.ossBrowser.bootstrap.get();
+        return boot && boot.ok ? boot.data : {};
+      } catch (e) { return {}; }
+    })();
 
     var release_notes_url = Global.release_notes_url;
     var upgrade_url = Global.upgrade_url;
@@ -70,6 +78,11 @@ angular.module('web').factory('autoUpgradeSvs', [
       this.check = function(crc, md5, fn) {
         // crc
         console.log('crc64 check');
+
+        if (!util) {
+          if (typeof fn === 'function') { fn(null); }
+          return;
+        }
 
         return util.checkFileHash(to + '.download', crc, md5, fn);
       };
@@ -214,7 +227,7 @@ angular.module('web').factory('autoUpgradeSvs', [
         upgradeOpt.lastVersion = lastVersion;
 
         var fileName =
-          NAME + '-' + process.platform + '-' + process.arch + '.zip';
+          NAME + '-' + __plat.platform + '-' + __plat.arch + '.zip';
 
         if (isLastVersion) {
           // 无需更新
@@ -246,14 +259,14 @@ angular.module('web').factory('autoUpgradeSvs', [
 
             var jobs = [];
 
-            // var fileName = NAME + '-' + process.platform + '-' + process.arch + '.zip';
+            // var fileName = NAME + '-' + __plat.platform + '-' + __plat.arch + '.zip';
 
             var pkgLink =
               linkPre +
               '/' +
-              process.platform +
+              __plat.platform +
               '-' +
-              process.arch +
+              __plat.arch +
               '/' +
               data.file;
 
@@ -284,7 +297,7 @@ angular.module('web').factory('autoUpgradeSvs', [
           }
 
           // 全量更新
-          // var fileName = NAME + '-' + process.platform + '-' + process.arch + '.zip';
+          // var fileName = NAME + '-' + __plat.platform + '-' + __plat.arch + '.zip';
           // var link = data['package_url'].replace(/(\/*$)/g, '') + '/' + lastVersion + '/' + fileName;
 
           var link = linkPre + '/' + fileName;
@@ -305,7 +318,7 @@ angular.module('web').factory('autoUpgradeSvs', [
 
     function getFasterUrl(arr, lastVersion, fn) {
       var fileName =
-        NAME + '-' + process.platform + '-' + process.arch + '.zip';
+        NAME + '-' + __plat.platform + '-' + __plat.arch + '.zip';
       var c = 0;
       var t = [];
 

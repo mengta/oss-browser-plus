@@ -33,6 +33,7 @@ const sourceBlock = {
       ...globals.es2021,
       angular: 'readonly',
       moment: 'readonly',
+      dayjs: 'readonly',
       CodeMirror: 'readonly',
       Global: 'readonly',
       openExternal: 'readonly',
@@ -618,8 +619,52 @@ const testBlock = {
       navigator: 'readonly',
       angular: 'readonly',
       moment: 'readonly',
+      dayjs: 'readonly',
     },
   },
 };
 
-module.exports = [ignores, sourceBlock, testBlock];
+// P0-22 preload 块（CommonJS + Node/Electron 宿主全局；仅追加，不改既有块语义）
+const preloadBlock = {
+  files: ['app/preload/**/*.js'],
+  languageOptions: {
+    ecmaVersion: 2022,
+    sourceType: 'commonjs',
+    globals: {
+      window: 'readonly',
+      process: 'readonly',
+      console: 'readonly',
+      URL: 'readonly',
+      fetch: 'readonly',
+      AbortController: 'readonly',
+      Buffer: 'readonly',
+      setTimeout: 'readonly',
+      clearTimeout: 'readonly',
+      module: 'readonly',
+      require: 'readonly',
+      __dirname: 'readonly',
+      __filename: 'readonly',
+      global: 'readonly',
+    },
+  },
+};
+
+// B1-05 Vue SFC 块（仅追加；既有块语义不变）
+const vueEslintParser = require('vue-eslint-parser');
+const vuePlugin = require('eslint-plugin-vue');
+
+const vueBlock = {
+  files: ['app/renderer/**/*.vue'],
+  plugins: { vue: vuePlugin },
+  languageOptions: {
+    ecmaVersion: 2022,
+    sourceType: 'module',
+    parser: vueEslintParser,
+    parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  },
+  rules: {
+    'vue/no-bare-strings-in-template': 'warn',
+  },
+};
+
+module.exports = [ignores, sourceBlock, testBlock, preloadBlock, vueBlock];

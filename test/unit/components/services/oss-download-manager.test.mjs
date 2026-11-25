@@ -17,6 +17,7 @@ import os from 'node:os';
 import path from 'node:path';
 import Module from 'node:module';
 import { stubAngular } from '../../../helpers/angular-stub.js';
+import { createBridge } from '../../../helpers/bridge-stub.js';
 import { stubModuleByPath, unstubAll } from '../../../helpers/module-stubs.js';
 
 const OSSSTORE_PATH = path.resolve('node/ossstore/lib/index.js');
@@ -60,6 +61,7 @@ function loadManager(auth) {
       return `EP(${region},${bucket},${eptpl})`;
     },
   };
+  createBridge();
 
   const reg = stubAngular();
   reg.services.$q = {};

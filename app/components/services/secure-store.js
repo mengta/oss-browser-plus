@@ -4,10 +4,8 @@ angular.module('web').factory('SecureStore', [
   function(Cipher, SafeStorageClient) {
     // SecureStore：v2 凭证存储门面（credential-security design I-2 / D-2 / D-3 / D-5 / D-8 / D-13）。
     // 密文体系：'enc:v2:'（safeStorage 信封 DEK + AES-256-GCM）/ 'enc:v2d:'（降级实例级随机 DEK）；
-    // 四格式判定不依赖键名：null/空 → v2 前缀 → v2d 前缀 → hex+v1 解密成功 → legacyPlain(v0) → 损坏。
-    // 惰性迁移内聚于 get 读取路径，失败保留原值下次重试；事件日志仅输出“事件+键名+结果”，严禁明文载荷。
-    var crypto = require('crypto');
-
+    // Vue3-P0-16：AES-GCM/随机数改经 credentials 白名单与 Web Crypto，渲染层不再 require('crypto')；
+    // 密文前缀、DEK 槽格式（dek:p:/dek:d:）、四格式判定与惰性迁移顺序保持零变更。
     var DEK_SLOT = 'enc-dek';
     var V2_PREFIX = 'enc:v2:';
     var V2D_PREFIX = 'enc:v2d:';
@@ -23,6 +21,39 @@ angular.module('web').factory('SecureStore', [
 
     function log(evt, key, result) {
       console.log('[SecureStore] ' + evt + ' ' + key + ' ' + result);
+    }
+
+    function credentials() {
+      if (typeof window === 'undefined' || !window.ossBrowser) { return null; }
+      return window.ossBrowser.credentials || null;
+    }
+
+    function bytesToB64(bytes) {
+      var out = '';
+      for (var i = 0; i < bytes.length; i++) { out += String.fromCharCode(bytes[i]); }
+      return btoa(out);
+    }
+
+    function b64ToBytes(b64) {
+      var bin = atob(b64);
+      var out = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) { out[i] = bin.charCodeAt(i); }
+      return out;
+    }
+
+    function utf8ToB64(text) {
+      return btoa(unescape(encodeURIComponent(text)));
+    }
+
+    function b64ToUtf8(b64) {
+      return decodeURIComponent(escape(atob(b64)));
+    }
+
+    function randomBytes(length) {
+      var source = typeof crypto !== 'undefined' ? crypto : window.crypto;
+      var buf = new Uint8Array(length);
+      source.getRandomValues(buf);
+      return buf;
     }
 
     // DEK 装载状态机（design 2.1.3-(2)）：
@@ -45,19 +76,19 @@ angular.module('web').factory('SecureStore', [
           released = SafeStorageClient.release(slot.slice(DEK_P_PREFIX.length));
         }
         if (released) {
-          dekBytes = Buffer.from(released, 'base64');
+          dekBytes = b64ToBytes(released);
           return dekBytes;
         }
-        dekBytes = crypto.randomBytes(32);
-        localStorage.setItem(DEK_SLOT, DEK_D_PREFIX + dekBytes.toString('base64'));
+        dekBytes = randomBytes(32);
+        localStorage.setItem(DEK_SLOT, DEK_D_PREFIX + bytesToB64(dekBytes));
         log('dek-degrade-rebuild', DEK_SLOT, 'ok');
         return dekBytes;
       }
 
       if (slot && slot.indexOf(DEK_D_PREFIX) === 0) {
-        dekBytes = Buffer.from(slot.slice(DEK_D_PREFIX.length), 'base64');
+        dekBytes = b64ToBytes(slot.slice(DEK_D_PREFIX.length));
         if (SafeStorageClient.isAvailable()) {
-          var prot = SafeStorageClient.protect(dekBytes.toString('base64'));
+          var prot = SafeStorageClient.protect(bytesToB64(dekBytes));
           if (prot) {
             localStorage.setItem(DEK_SLOT, DEK_P_PREFIX + prot);
             log('dek-reprotect', DEK_SLOT, 'ok');
@@ -66,29 +97,30 @@ angular.module('web').factory('SecureStore', [
         return dekBytes;
       }
 
-      dekBytes = crypto.randomBytes(32);
+      dekBytes = randomBytes(32);
       if (SafeStorageClient.isAvailable()) {
-        var p = SafeStorageClient.protect(dekBytes.toString('base64'));
+        var p = SafeStorageClient.protect(bytesToB64(dekBytes));
         if (p) {
           localStorage.setItem(DEK_SLOT, DEK_P_PREFIX + p);
         } else {
-          localStorage.setItem(DEK_SLOT, DEK_D_PREFIX + dekBytes.toString('base64'));
+          localStorage.setItem(DEK_SLOT, DEK_D_PREFIX + bytesToB64(dekBytes));
         }
       } else {
-        localStorage.setItem(DEK_SLOT, DEK_D_PREFIX + dekBytes.toString('base64'));
+        localStorage.setItem(DEK_SLOT, DEK_D_PREFIX + bytesToB64(dekBytes));
       }
       return dekBytes;
     }
 
-    // 密文 = prefix + base64(iv12 | tag16 | ct)，AES-256-GCM
+    // 密文 = prefix + base64(iv12 | tag16 | ct)，AES-256-GCM（白名单返回同一字节布局）
     function gcmEncrypt(plain, prefix) {
       try {
+        var api = credentials();
+        if (!api) { return null; }
         var dek = getDek();
-        var iv = crypto.randomBytes(12);
-        var cip = crypto.createCipheriv('aes-256-gcm', dek, iv);
-        var ct = Buffer.concat([cip.update(plain, 'utf8'), cip['final']()]);
-        var tag = cip.getAuthTag();
-        return prefix + Buffer.concat([iv, tag, ct]).toString('base64');
+        if (!dek) { return null; }
+        var res = api.aesGcmEncrypt(bytesToB64(dek), utf8ToB64(plain));
+        if (!res || !res.ok || typeof res.data !== 'string') { return null; }
+        return prefix + res.data;
       } catch (e) {
         return null;
       }
@@ -96,17 +128,13 @@ angular.module('web').factory('SecureStore', [
 
     function gcmDecrypt(raw, prefix) {
       try {
+        var api = credentials();
+        if (!api) { return null; }
         var dek = getDek();
-        var buf = Buffer.from(raw.slice(prefix.length), 'base64');
-        if (buf.length < 28) {
-          return null;
-        }
-        var iv = buf.slice(0, 12);
-        var tag = buf.slice(12, 28);
-        var ct = buf.slice(28);
-        var dcp = crypto.createDecipheriv('aes-256-gcm', dek, iv);
-        dcp.setAuthTag(tag);
-        return Buffer.concat([dcp.update(ct), dcp['final']()]).toString('utf8');
+        if (!dek) { return null; }
+        var res = api.aesGcmDecrypt(bytesToB64(dek), raw.slice(prefix.length));
+        if (!res || !res.ok || typeof res.data !== 'string') { return null; }
+        return b64ToUtf8(res.data);
       } catch (e) {
         return null;
       }

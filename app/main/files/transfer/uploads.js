@@ -209,9 +209,10 @@ angular.module('web').controller('transferUploadsCtrl', [
 
     /** 复制到剪贴板 */
     function copyMessage(item) {
-      const { clipboard } = require('electron');
+      var sys = window.ossBrowser && window.ossBrowser.system;
       const { message, ecCode, requestId } = item;
-      clipboard.writeText(`Message: ${message}${ecCode ? '\nEC Code: ' + ecCode : ''}${requestId ? '\nRequest Id: ' + requestId : '' }`);
+      if (!sys) { return; }
+      sys.clipboardWriteText(`Message: ${message}${ecCode ? '\nEC Code: ' + ecCode : ''}${requestId ? '\nRequest Id: ' + requestId : '' }`);
       Toast.success(T('copy.successfully'));
     }
   }

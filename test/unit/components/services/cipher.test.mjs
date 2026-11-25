@@ -11,6 +11,7 @@ import { stubAngular } from '../../../helpers/angular-stub.js';
 import { stubLocalStorage, restoreEnv } from '../../../helpers/env-stubs.js';
 import { stubModule, unstubAll } from '../../../helpers/module-stubs.js';
 import { installLegacyCrypto } from '../../../helpers/crypto-legacy.js';
+import { createBridge } from '../../../helpers/bridge-stub.js';
 
 const KEY = 'x82m#*lx8vv';
 // 兼容读锚点：createCipher(aes192) 旧 API 输出（EVP_BytesToKey MD5 无盐单轮派生）
@@ -20,6 +21,7 @@ const ANCHOR_CIPHER_HEX =
   'b3bdfaf3ea17bbb93edc996b5e3cd1c06c388187cc904886186a26b0d44f18c0';
 
 function loadCipher() {
+  createBridge();
   installLegacyCrypto();
   const reg = stubAngular();
   reg.load('app/components/services/cipher.js');
@@ -61,6 +63,7 @@ test('v2 新格式密文脱离静态密钥（锚点第二断言：SecureStore �
     },
   };
   stubModule('electron', { safeStorage: fakeSafeStorage });
+  createBridge();
   stubLocalStorage({});
   const reg = stubAngular();
   reg.load('app/components/services/cipher.js');

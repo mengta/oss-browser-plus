@@ -3,8 +3,7 @@ angular
     .factory('Dialog', [
       '$uibModal',
       function($modal) {
-        // remote 模块已于 Electron 14 起移除（D8）：改经 ipcRenderer.invoke 走主进程 dialog
-        var { ipcRenderer } = require('electron');
+        // Vue3-P0-19：对话框经 system.showOpenDialog 白名单（renderer 不再 require electron）
 
         return {
           alert: alert,
@@ -20,25 +19,25 @@ angular
               ? ['openDirectory', 'multiSelections']
               : ['openFile', 'multiSelections'];
 
-          ipcRenderer
-              .invoke('dialog:show-open-dialog', {
+          window.ossBrowser.system
+              .showOpenDialog({
                 title: 'Upload',
                 properties: isMac
                     ? ['openFile', 'openDirectory', 'multiSelections']
                     : selopt
               })
-              .then(function(r) {
-                if (typeof fn === 'function') { fn(r.filePaths); }
+              .then(function(res) {
+                if (typeof fn === 'function' && res && res.ok) { fn(res.data.filePaths); }
               });
         }
         function showDownloadDialog(fn) {
-          ipcRenderer
-              .invoke('dialog:show-open-dialog', {
+          window.ossBrowser.system
+              .showOpenDialog({
                 title: 'Download',
                 properties: ['openDirectory']
               })
-              .then(function(r) {
-                if (typeof fn === 'function') { fn(r.filePaths); }
+              .then(function(res) {
+                if (typeof fn === 'function' && res && res.ok) { fn(res.data.filePaths); }
               });
         }
 
@@ -166,6 +165,39 @@ angular
         $scope.ok = function() {
           $modalInstance.dismiss('cancel');
           putData.callback(true);
+        };
+      }
+    ]);
+
+// BRIDGE-B2（B2-16）：diff 弹窗工厂自 diff-modal.js 并入（diff-modal.* 已删除，
+// B3-19 随本文件一并收口删除）。diff 弹窗本体已迁移 Vue，经临时桥打开。
+angular
+    .module('web')
+    .factory('DiffModal', [
+      '$uibModal',
+      function($modal) {
+        return {
+          /**
+           * @param title
+           * @param originalContent
+           * @param content
+           * @param callback
+           * @param editable
+           */
+          show: function(title, originalContent, content, callback, editable) {
+            editable = editable !== false;
+
+            // BRIDGE-B2：diff 弹窗已迁移 Vue，经临时桥打开（B3-19 后删除桥）。
+            // 结果语义与原 $uibModal 版一致：editable 时确定回调 getValue，取消不回调。
+            window.vueModalHost.open('diff', {
+              title: title || 'Diff',
+              editable: editable,
+              originalContent: originalContent,
+              content: content
+            }).then(function(v) {
+              if (editable && v != null) { callback(v); }
+            });
+          }
         };
       }
     ]);

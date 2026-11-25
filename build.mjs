@@ -13,10 +13,12 @@
 // 用法：node build.mjs [--watch] [--dist-install]
 
 import fs from 'fs';
+import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 import * as esbuild from 'esbuild';
+import vuePlugin from './tools/esbuild-vue-plugin.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -64,7 +66,15 @@ function concatWrite(files, dest, { transform } = {}) {
 // ---------- 任务：js（app.js） ----------
 async function taskAppJS() {
   console.log('--rebuilding app.js...');
-  const files = walk(path.join(ROOT, 'app'), (p) => p.endsWith('.js') && !p.endsWith('_test.js'));
+  const files = walk(path.join(ROOT, 'app'), (p) => {
+    const rel = toPosix(path.relative(ROOT, p));
+    return (
+      p.endsWith('.js') &&
+      !p.endsWith('_test.js') &&
+      !rel.startsWith('app/preload/') &&
+      !rel.startsWith('app/renderer/')
+    );
+  });
   concatWrite(files, path.join(DIST, 'app.js'), {
     // 目标 Chromium（Electron 45）原生支持 ES2020+：不转译，仅经 esbuild 做语法标准化
     transform: (code) => {
@@ -106,6 +116,7 @@ function taskLibJS() {
     './node_modules/jquery/dist/jquery.js',
     './node_modules/jquery.qrcode/jquery.qrcode.min.js',
     './node_modules/moment/min/moment-with-locales.js',
+    './node_modules/dayjs/dayjs.min.js',
     './node_modules/bootstrap/dist/js/bootstrap.js',
     './node_modules/angular/angular.js',
     './node_modules/angular-sanitize/angular-sanitize.js',
@@ -150,7 +161,7 @@ function taskLibJS() {
 function taskLibCSS() {
   const list = [
     './node_modules/bootstrap/dist/css/bootstrap.css',
-    './node_modules/font-awesome/css/font-awesome.css',
+
     './node_modules/codemirror/lib/codemirror.css',
     './node_modules/codemirror/addon/mode/merge/merge.css',
   ];
@@ -162,7 +173,7 @@ function taskLibCSS() {
 function taskCopyFonts() {
   const dirs = [
     path.join(ROOT, 'node_modules', 'bootstrap', 'fonts'),
-    path.join(ROOT, 'node_modules', 'font-awesome', 'fonts'),
+
   ];
   for (const d of dirs) {
     if (!fs.existsSync(d)) continue;
@@ -202,6 +213,7 @@ function taskCopyStatic() {
 function taskCopyIndex() {
   const list = [
     './app/index.html',
+    './app/vue.html',
     './main.js',
     './server.js',
     './vendor/*.js',
@@ -218,6 +230,29 @@ function taskCopyIndex() {
     }
   }
   console.log('--done copy-index');
+  recalcCspHashes();
+}
+
+function recalcCspHashes() {
+  const file = path.join(DIST, 'index.html');
+  if (!fs.existsSync(file)) return;
+  let html = fs.readFileSync(file, 'utf8');
+  const hashes = [];
+  const re = /<script>([\s\S]*?)<\/script>/g;
+  let match;
+  while ((match = re.exec(html))) {
+    hashes.push("'sha256-" + crypto.createHash('sha256').update(match[1], 'utf8').digest('base64') + "'");
+  }
+  if (hashes.length === 0) return;
+  html = html.replace(
+    /(<meta http-equiv="Content-Security-Policy" content=")([^"]*)(")/,
+    (all, head, csp, tail) => {
+      const next = csp.replace(/script-src [^;]*/, 'script-src ' + ["'self'"].concat(hashes).join(' '));
+      return head + next + tail;
+    }
+  );
+  fs.writeFileSync(file, html);
+  console.log('--done CSP hashes (' + hashes.length + ')');
 }
 
 // ---------- 任务：gen-package（D4：npm install --omit=dev 替代 yarn） ----------
@@ -257,6 +292,43 @@ function taskRemoveRedundant() {
   }
 }
 
+// ---------- 任务：preload（app/preload/net-bridge.js → dist/preload.js） ----------
+async function taskPreload() {
+  console.log('--rebuilding preload.js...');
+  await esbuild.build({
+    entryPoints: [path.join(ROOT, 'app', 'preload', 'net-bridge.js')],
+    bundle: true,
+    platform: 'node',
+    format: 'cjs',
+    target: 'node22',
+    outfile: path.join(DIST, 'preload.js'),
+    external: ['electron', 'ali-oss', 'aliyun-sdk', 'nodemailer', 'electron-log'],
+    logLevel: 'silent',
+  });
+  console.log('--done dist/preload.js');
+}
+
+
+// ---------- 任务：renderer（app/renderer/main.js → dist/renderer.js，Vue 3 SFC） ----------
+async function taskRenderer() {
+  console.log('--rebuilding renderer.js...');
+  await esbuild.build({
+    entryPoints: [path.join(ROOT, 'app', 'renderer', 'main.js')],
+    bundle: true,
+    platform: 'browser',
+    format: 'iife',
+    target: 'chrome120',
+    outfile: path.join(DIST, 'renderer.js'),
+    plugins: [vuePlugin()],
+    loader: { '.svg': 'text', '.css': 'css' },
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(OPTS.watch ? 'development' : 'production'),
+    },
+    logLevel: 'silent',
+  });
+  console.log('--done dist/renderer.js');
+}
+
 // ---------- 任务：watch ----------
 function debounce(fn, ms = 200) {
   let t = null;
@@ -273,6 +345,9 @@ function taskWatch() {
   const reCopyIndex = debounce(taskCopyIndex);
   const reCopyStatic = debounce(taskCopyStatic);
   const reCopyNode = debounce(taskCopyNode);
+  const rePreload = debounce(() => taskPreload().catch((e) => console.error(e)));
+  const reRenderer = debounce(() => taskRenderer().catch((e) => console.error(e)));
+
 
   function watchDir(dir, onChange) {
     if (!fs.existsSync(dir)) return;
@@ -290,7 +365,13 @@ function taskWatch() {
   }
 
   watchDir(path.join(ROOT, 'app'), (name) => {
-    if (name.endsWith('.js') && !name.endsWith('_test.js')) rebuildJS();
+    if (name.startsWith('preload/') && name.endsWith('.js')) rePreload();
+    else if (
+      name.startsWith('renderer/') &&
+      (name.endsWith('.js') || name.endsWith('.vue') || name.endsWith('.css'))
+    )
+      reRenderer();
+    else if (name.endsWith('.js') && !name.endsWith('_test.js')) rebuildJS();
     else if (name.endsWith('.html') && name !== 'index.html') rebuildTpl();
     else if (name.endsWith('.css')) rebuildCSS();
     else if (name === 'index.html') reCopyIndex();
@@ -318,6 +399,12 @@ async function runBuild() {
   taskCopyIcons();
   taskCopyStatic();
   taskGenPackage();
+  await taskPreload();
+fs.copyFileSync(
+    path.join(DIST, 'package.json'),
+    path.join(DIST, 'node', 'capabilities', 'services', 'package.json')
+  );
+  await taskRenderer();
   if (!OPTS.distInstall) taskRemoveRedundant();
   console.log('--build complete');
 }

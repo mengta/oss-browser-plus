@@ -1,6 +1,12 @@
 angular.module('web').factory('upgradeSvs', [
   function() {
     var NAME = Global.app.id || 'oss-browser';
+    var __plat = (function () {
+      try {
+        var boot = window.ossBrowser.bootstrap.get();
+        return boot && boot.ok ? boot.data : {};
+      } catch (e) { return {}; }
+    })();
 
     var release_notes_url = Global.release_notes_url;
     var upgrade_url = Global.upgrade_url;
@@ -52,7 +58,7 @@ angular.module('web').factory('upgradeSvs', [
         var lastVersion = data.version;
 
         var fileName =
-          NAME + '-' + process.platform + '-' + process.arch + '.zip';
+          NAME + '-' + __plat.platform + '-' + __plat.arch + '.zip';
         var link =
           data.package_url.replace(/(\/*$)/g, '') +
           '/' +
@@ -95,14 +101,14 @@ angular.module('web').factory('upgradeSvs', [
     }
 
     function getUpgradeFileName() {
-      if (process.platform == 'darwin') {
+      if (__plat.platform == 'darwin') {
         return NAME + '.dmg';
       }
  
-      return NAME + '-' + process.platform + '-' + process.arch + '.zip';
+      return NAME + '-' + __plat.platform + '-' + __plat.arch + '.zip';
 
       // if ((navigator.platform == "Win32") || (navigator.platform == "Windows")) {
-      //   return NAME + '-'+process.platform+'-'+process.arch+'.zip';
+      //   return NAME + '-'+__plat.platform+'-'+__plat.arch+'.zip';
       // } else if ((navigator.platform == "Mac68K") || (navigator.platform == "MacPPC") || (navigator.platform == "Macintosh") || (navigator.platform == "MacIntel")) {
       //   return NAME + '.dmg';
       //   //return NAME + '-darwin-x64.zip';

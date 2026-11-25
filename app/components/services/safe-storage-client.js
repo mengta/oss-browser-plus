@@ -1,44 +1,40 @@
 angular.module('web').factory('SafeStorageClient', function() {
-  // SafeStorageClient：Electron safeStorage 渲染层直调封装（credential-security D-1，
-  // Electron 45 官方文档标注 safeStorage "Process: Main and Renderer"，nodeIntegration 过渡态下可达）。
-  // 非 Electron 宿主（单测 Node 进程）require('electron') 失败 → 恒不可用；
-  // 一切 OS/keychain 异常内部 catch 返回 null/false，绝不抛出（spec 4.2.2-1）。
-  var safeStorage = null;
-
-  try {
-    safeStorage = require('electron').safeStorage || null;
-  } catch (e) {
-    safeStorage = null;
+  // Vue3-P0-16：safeStorage 原语改经 preload 白名单（同步返回），渲染层不再 require('electron'）。
+  // 非 Electron 宿主（单测 Node 进程）无 window.ossBrowser → 恒不可用；
+  // 一切 OS/keychain 异常由白名单内部消化并返回 false/null，本层绝不抛出。
+  function bridge() {
+    if (typeof window === 'undefined' || !window.ossBrowser) { return null; }
+    return window.ossBrowser.credentials || null;
   }
 
   function isAvailable() {
-    if (!safeStorage || typeof safeStorage.isEncryptionAvailable !== 'function') {
-      return false;
-    }
+    var api = bridge();
+    if (!api) { return false; }
     try {
-      return safeStorage.isEncryptionAvailable() === true;
+      var res = api.isAvailable();
+      return !!(res && res.ok && res.data === true);
     } catch (e) {
       return false;
     }
   }
 
   function protect(plainB64) {
-    if (!safeStorage) {
-      return null;
-    }
+    var api = bridge();
+    if (!api) { return null; }
     try {
-      return Buffer.from(safeStorage.encryptString(plainB64)).toString('base64');
+      var res = api.protect(plainB64);
+      return res && res.ok ? res.data : null;
     } catch (e) {
       return null;
     }
   }
 
   function release(protectedB64) {
-    if (!safeStorage) {
-      return null;
-    }
+    var api = bridge();
+    if (!api) { return null; }
     try {
-      return safeStorage.decryptString(Buffer.from(protectedB64, 'base64'));
+      var res = api.release(protectedB64);
+      return res && res.ok ? res.data : null;
     } catch (e) {
       return null;
     }

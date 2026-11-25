@@ -13,8 +13,10 @@
     "build:full": "node build.mjs --dist-install",
     "watch": "node build.mjs --watch",
     "e2e": "playwright test",
-    "lint": "eslint --fix \"app/**/*.{js,mjs}\" \"test/**/*.{js,mjs}\"",
-    "prepare": "husky"
+    "lint": "eslint --fix \"app/**/*.{js,mjs,vue}\" \"test/**/*.{js,mjs}\"",
+    "prepare": "husky",
+    "test:renderer": "vitest run",
+    "test:all": "npm test && npm run test:renderer"
   },
   "build": {
     "appId": "com.aliyun.oss-browser",
@@ -75,7 +77,16 @@
     "serial": true
   },
   "devDependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/merge": "^6.12.3",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
     "@playwright/test": "^1.65.1",
+    "@vitejs/plugin-vue": "^6.0.11",
+    "@vue/compiler-sfc": "^3.5.46",
+    "@vue/test-utils": "^2.6.0",
     "angular": "^1.8.3",
     "angular-bootstrap-contextmenu": "^1.1.0",
     "angular-sanitize": "^1.8.3",
@@ -91,18 +102,21 @@
     "electron-builder": "^26.18.0",
     "esbuild": "^0.28.2",
     "eslint": "^9.39.5",
-    "font-awesome": "^4.7.0",
+    "eslint-plugin-vue": "^10.12.1",
     "husky": "^9.1.7",
     "jquery": "^3.7.1",
     "jquery.qrcode": "^1.0.3",
+    "jsdom": "^29.1.1",
     "lint-staged": "^17.6.1",
     "moment": "^2.31.0",
     "npm-run-all": "^4.0.2",
-    "showdown": "^2.1.0"
+    "showdown": "^2.1.0",
+    "vitest": "^5.1.1"
   },
   "dependencies": {
     "ali-oss": "^6.23.0",
     "aliyun-sdk": "^1.12.10",
+    "dayjs": "^1.11.23",
     "electron-log": "^5.4.4",
     "emoji-regex": "^9.0.0",
     "koa": "^2.16.4",
@@ -110,7 +124,11 @@
     "koa-static-server": "^1.5.2",
     "mime": "^4.1.2",
     "nodemailer": "^6.10.1",
-    "platform": "^1.3.5"
+    "pinia": "^3.0.4",
+    "platform": "^1.3.5",
+    "vue": "^3.5.46",
+    "vue-i18n": "^11.4.23",
+    "vue-router": "^4.6.5"
   },
   "lint-staged": {
     "app/**/*.js": "eslint --fix"

@@ -27,8 +27,6 @@ angular.module('web').controller('topCtrl', [
       autoUpgradeSvs,
       safeApply
   ) {
-    var fs = require('fs');
-    var path = require('path');
     var T = $translate.instant;
 
     angular.extend($scope, {
@@ -61,7 +59,7 @@ angular.module('web').controller('topCtrl', [
 
     // $scope.aid = AuthInfo.get().id;
     $scope.authInfo = AuthInfo.get();
-    $scope.authInfo.expirationStr = moment(
+    $scope.authInfo.expirationStr = dayjs(
         new Date($scope.authInfo.expiration)
     ).format('YYYY-MM-DD HH:mm:ss');
 
@@ -80,15 +78,10 @@ angular.module('web').controller('topCtrl', [
       }
     });
 
+    // BRIDGE-B2：设置页已迁移 Vue（B3-19 后桥删除）
     $rootScope.showSettings = function(fn) {
-      $modal.open({
-        templateUrl: 'main/modals/settings.html',
-        controller: 'settingsCtrl',
-        resolve: {
-          callback: function() {
-            return fn;
-          }
-        }
+      window.vueModalHost.open('settings').then(function() {
+        if (typeof fn === 'function') { fn(); }
       });
     };
 
@@ -112,50 +105,36 @@ angular.module('web').controller('topCtrl', [
 
     function showReleaseNote() {
       var converter = new showdown.Converter();
+      var version = Global.app.version;
+      var lang = autoUpgradeSvs.compareVersion(version, '1.5.1') <= 0 ? '' : $scope.langSettings.lang;
 
-      var url =
-        autoUpgradeSvs.compareVersion(Global.app.version, '1.5.1') <= 0
-          ? path.join(__dirname, 'release-notes', Global.app.version + '.md')
-          : path.join(
-              __dirname,
-              'release-notes',
-              Global.app.version + '.' + $scope.langSettings.lang + '.md'
-          );
-
-      fs.readFile(url, function(err, text) {
-        if (err) {
-          console.error(err);
-
+      window.ossBrowser.system.readReleaseNotes(version, lang || '').then(function(res) {
+        if (!res || !res.ok || !res.data || !res.data.found) {
+          console.error('release notes not found: ' + version);
           return;
         }
 
-        text += '';
-        var html = converter.makeHtml(text);
+        var html = converter.makeHtml(res.data.markdown);
         var message = T('main.upgration'); // '主要更新'
 
         Dialog.alert(message, html, function() {}, { size: 'lg' });
       });
     }
 
+    // BRIDGE-B2：书签/关于已迁移 Vue（B3-19 后桥删除）
     function showFavList() {
-      $modal.open({
-        templateUrl: 'main/modals/fav-list.html',
-        controller: 'favListCtrl',
-        size: 'lg'
-      });
+      window.vueModalHost.open('fav-list');
     }
 
     function showAbout() {
-      $modal.open({
-        templateUrl: 'main/modals/about.html',
-        controller: 'aboutCtrl',
-        size: 'md',
-        resolve: {
-          pscope: function() {
-            return $scope;
-          }
-        }
-      });
+      window.vueModalHost.open('about');
     }
+
+    // Vue 弹窗 → Angular 广播转发器（收藏跳转 goToOssAddress）
+    window.vueModalAngularHost = {
+      broadcast: function(event, data) {
+        $rootScope.$broadcast(event, data);
+      }
+    };
   }
 ]);

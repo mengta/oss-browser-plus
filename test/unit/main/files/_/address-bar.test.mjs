@@ -6,6 +6,7 @@
 
 import test from 'ava';
 import { stubAngular } from '../../../../helpers/angular-stub.js';
+import { createBridge } from '../../../../helpers/bridge-stub.js';
 import { stubLocalStorage } from '../../../../helpers/env-stubs.js';
 import { stubModule } from '../../../../helpers/module-stubs.js';
 import { installLegacyCrypto } from '../../../../helpers/crypto-legacy.js';
@@ -30,6 +31,7 @@ function setup(options) {
       },
     },
   });
+  createBridge();
   const reg = stubAngular();
   reg.services.$q = {
     defer() {

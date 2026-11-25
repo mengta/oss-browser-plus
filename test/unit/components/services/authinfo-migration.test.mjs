@@ -10,6 +10,7 @@ import test from 'ava';
 import { stubAngular } from '../../../helpers/angular-stub.js';
 import { stubLocalStorage, restoreEnv } from '../../../helpers/env-stubs.js';
 import { stubModule, unstubAll } from '../../../helpers/module-stubs.js';
+import { createBridge } from '../../../helpers/bridge-stub.js';
 
 function setup(t, initial) {
   const storage = stubLocalStorage(initial || {});
@@ -30,6 +31,7 @@ function setup(t, initial) {
       },
     },
   });
+  createBridge();
   const reg = stubAngular();
   reg.load('app/const.js');
   reg.load('app/components/services/cipher.js');

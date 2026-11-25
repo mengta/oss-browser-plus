@@ -1,92 +1,99 @@
 'use strict';
 
-// mailer 单测（源 app/components/services/mailer.js，P4-02 改造后形态）
-// nodemailer 以 module-stubs 注入替身；
-// 断言 send() 的 opt 构造（from/to/subject/html||content）与 createTransport(smtp) 直传。
-// 注：P4-02 升级后 createTransport(smtp) 直传（nodemailer-smtp-transport 已废弃移除），
-// 替身断言同步为直传形态（升级后行为等价性验证）。
+// mailer 单测（源 app/components/services/mailer.js，Vue3-P0-18 改造后形态）
+// nodemailer 已下沉主进程：渲染层断言"经 mail.send 白名单透传 smtp 与 info，失败 reject + Toast"。
 
 import test from 'ava';
 import { stubAngular } from '../../../helpers/angular-stub.js';
-import { stubModule, unstubAll } from '../../../helpers/module-stubs.js';
+import { unstubAll } from '../../../helpers/module-stubs.js';
+
+const DEFAULT_SMTP = {
+  from: 'sender@example.com',
+  host: 'smtp.example.com',
+  port: 465,
+  secure: true,
+};
 
 function setupMailer(smtp) {
-  const calls = { transports: [], mails: [] };
-  stubModule('nodemailer', {
-    createTransport(t) {
-      calls.transports.push(t);
-      return {
-        sendMail(opt, cb) {
-          calls.mails.push(opt);
-          if (opt.subject === '__FAIL__') {
-            cb(new Error('send failed'), null);
-          } else {
-            cb(null, { messageId: 'mid-1', accepted: opt.to });
+  const calls = { sends: [], toasts: [] };
+  globalThis.window = {
+    ossBrowser: {
+      mail: {
+        send(smtpConfig, info) {
+          calls.sends.push({ smtp: smtpConfig, info });
+          if (info && info.subject === '__FAIL__') {
+            const err = new Error('send failed');
+            err.code = 'SMTP_ERROR';
+            return Promise.reject(err);
           }
+          return Promise.resolve(true);
         },
-      };
-    },
-  });
-
-  const reg = stubAngular();
-  reg.services.settingsSvs = {
-    mailSmtp: {
-      get() {
-        return smtp || {
-          from: 'sender@example.com',
-          host: 'smtp.example.com',
-          port: 465,
-          secure: true,
-        };
       },
     },
   };
+
+  const reg = stubAngular();
+  reg.services.$q = {
+    reject(reason) {
+      return Promise.reject(reason);
+    },
+    when(value) {
+      return Promise.resolve(value);
+    },
+    all(promises) {
+      return Promise.all(promises);
+    },
+  };
+  reg.services.settingsSvs = {
+    mailSmtp: {
+      get() {
+        return smtp || DEFAULT_SMTP;
+      },
+    },
+  };
+  reg.services.Toast = {
+    error(message) {
+      calls.toasts.push(message);
+    },
+    success() {},
+    warn() {},
+    warning() {},
+  };
   reg.load('app/components/services/mailer.js');
   const Mailer = reg.get('Mailer');
-  return { Mailer, calls, cleanup: unstubAll };
+  return { Mailer, calls };
 }
 
 test.afterEach(() => {
+  delete globalThis.window;
   unstubAll();
 });
 
-test('send 组装 from/to/subject/html 并以 createTransport(smtp) 直传创建 transport', async (t) => {
+test('send 经白名单透传 smtp 配置与 info（to/subject/html）', async (t) => {
   const { Mailer, calls } = setupMailer();
 
-  const info = await Mailer.send({
-    to: 'user@example.com',
-    subject: '测试主题',
-    html: '<b>hello</b>',
-  });
+  const info = { to: 'user@example.com', subject: '测试主题', html: '<b>hello</b>' };
+  const result = await Mailer.send(info);
 
-  t.is(calls.transports.length, 1);
-  t.is(calls.transports[0].from, 'sender@example.com');
-  t.is(calls.transports[0].host, 'smtp.example.com');
-  t.is(calls.mails.length, 1);
-  t.is(calls.mails[0].from, 'sender@example.com');
-  t.is(calls.mails[0].to, 'user@example.com');
-  t.is(calls.mails[0].subject, '测试主题');
-  t.is(calls.mails[0].html, '<b>hello</b>');
-  t.is(info.messageId, 'mid-1');
+  t.is(result, true);
+  t.is(calls.sends.length, 1);
+  t.deepEqual(calls.sends[0].smtp, DEFAULT_SMTP);
+  t.deepEqual(calls.sends[0].info, info);
 });
 
-test('send 缺 html 时回退 content 字段', async (t) => {
+test('send 缺 html 时原样透传 content 字段（回退在主进程执行）', async (t) => {
   const { Mailer, calls } = setupMailer();
 
-  await Mailer.send({
-    to: 'u@example.com',
-    subject: 's',
-    content: 'plain content',
-  });
+  await Mailer.send({ to: 'user@example.com', subject: 's', content: 'plain-content' });
 
-  t.is(calls.mails[0].html, 'plain content');
+  t.is(calls.sends[0].info.html, undefined);
+  t.is(calls.sends[0].info.content, 'plain-content');
 });
 
-test('send 失败时 reject 错误', async (t) => {
-  const { Mailer } = setupMailer();
+test('send 失败时 reject 错误并弹出 Toast', async (t) => {
+  const { Mailer, calls } = setupMailer();
 
-  const err = await t.throwsAsync(() =>
-    Mailer.send({ to: 'u@example.com', subject: '__FAIL__' }));
-
-  t.is(err.message, 'send failed');
+  await t.throwsAsync(() => Mailer.send({ to: 'user@example.com', subject: '__FAIL__' }));
+  t.is(calls.toasts.length, 1);
+  t.true(calls.toasts[0].indexOf('SMTP_ERROR') >= 0);
 });

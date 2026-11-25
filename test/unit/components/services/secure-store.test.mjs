@@ -15,6 +15,7 @@ import nodeCrypto from 'node:crypto';
 import { stubAngular } from '../../../helpers/angular-stub.js';
 import { stubLocalStorage, restoreEnv } from '../../../helpers/env-stubs.js';
 import { stubModule, unstubAll } from '../../../helpers/module-stubs.js';
+import { createBridge } from '../../../helpers/bridge-stub.js';
 
 const V2_PREFIX = 'enc:v2:';
 const V2D_PREFIX = 'enc:v2d:';
@@ -51,6 +52,7 @@ function setupSecureStore(t, opts) {
   const storage = stubLocalStorage(o.initial || {});
   const fake = makeFakeSafeStorage(o.state || 'on');
   stubModule('electron', { safeStorage: fake });
+  createBridge();
 
   const reg = stubAngular();
   reg.load('app/components/services/cipher.js');

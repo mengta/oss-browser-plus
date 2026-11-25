@@ -1,14 +1,20 @@
 angular.module('web').factory('ProgNaming', [function() {
   // ProgNaming：进度文件脱敏命名纯函数（credential-security design I-4 / D-6）。
-  // 新名 = 前缀 + sha256(AccessKeyId) hex 前 16 字符 + '.json'（不可逆、确定性）；
-  // 旧名仅供 loadProg 迁移探测与孤儿补删，禁止用于新写入。
-  var crypto = require('crypto');
+  // Vue3-P0-16：sha256 改经 digest 白名单（同步），渲染层不再 require('crypto')。
+  function digestApi() {
+    if (typeof window === 'undefined' || !window.ossBrowser) { return null; }
+    return window.ossBrowser.digest || null;
+  }
+
+  function sha256Hex(text) {
+    var api = digestApi();
+    if (!api) { return ''; }
+    var res = api.sha256Hex(text);
+    return res && res.ok ? res.data : '';
+  }
 
   function newProgFileName(prefix, ak) {
-    var hash = crypto
-        .createHash('sha256')
-        .update(String(ak == null ? '' : ak), 'utf8')
-        .digest('hex');
+    var hash = sha256Hex(String(ak == null ? '' : ak));
     return prefix + hash.slice(0, 16) + '.json';
   }
 

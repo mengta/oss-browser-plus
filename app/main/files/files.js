@@ -43,7 +43,14 @@ angular
           },
 
           keepMoveOptions: null,
-          isMac: os.platform() == 'darwin',
+          isMac: (function() {
+            try {
+              var boot = window.ossBrowser.bootstrap.get();
+              return !!(boot && boot.ok && boot.data.platform === 'darwin');
+            } catch (e) {
+              return false;
+            }
+          })(),
 
           sch: {
             bucketName: '',
@@ -1406,32 +1413,18 @@ angular
 
         // acl
         function showACL(item) {
-          $modal.open({
-            templateUrl: 'main/files/modals/update-acl-modal.html',
-            controller: 'updateACLModalCtrl',
-            resolve: {
-              item: function() {
-                return angular.copy(item);
-              },
-              currentInfo: function() {
-                return angular.copy($scope.currentInfo);
-              }
-            }
+          // BRIDGE-B2：update-acl 已迁移 Vue，经临时桥打开（B3-19 后删除桥）
+          window.vueModalHost.open('update-acl', {
+            item: angular.copy(item),
+            currentInfo: angular.copy($scope.currentInfo)
           });
         }
 
         function showHttpHeaders(item) {
-          $modal.open({
-            templateUrl: 'main/files/modals/update-http-headers-modal.html',
-            controller: 'updateHttpHeadersModalCtrl',
-            resolve: {
-              item: function() {
-                return angular.copy(Array.isArray(item) ? item : [item]);
-              },
-              currentInfo: function() {
-                return angular.copy($scope.currentInfo);
-              }
-            }
+          // BRIDGE-B2：update-http-headers 已迁移 Vue，经临时桥打开（B3-19 后删除桥）
+          window.vueModalHost.open('update-http-headers', {
+            item: angular.copy(Array.isArray(item) ? item : [item]),
+            currentInfo: angular.copy($scope.currentInfo)
           });
         }
 
@@ -1532,13 +1525,9 @@ angular
           });
         }
 
+        // BRIDGE-B2：子用户管理已迁移 Vue（B3-19 后桥删除）
         function showUserList() {
-          $modal.open({
-            templateUrl: 'main/modals/users.html',
-            controller: 'usersCtrl',
-            size: 'lg',
-            backdrop: 'static'
-          });
+          window.vueModalHost.open('users');
         }
       }
     ]);

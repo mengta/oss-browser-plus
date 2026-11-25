@@ -1,25 +1,52 @@
 <!DOCTYPE html>
-<html ng-app="web" ng-controller="mainCtrl">
+<html ng-app="web" ng-controller="mainCtrl" ng-csp>
   <head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-hwKS3cEKvlWGBmabWLMlhHZQXWJ3uwRfrvnlWoP0RJM=' 'sha256-pUhfbXp1I/T6lkr0fNIHRH+4X8mE3VPZpSONDPe1/H0=' 'sha256-1txp5IDa2RJP+jXGrosDGOtSQXGck2ebC1g6qu7wz34=' 'sha256-N5INwltTfLgEQzTBWK87iWj1jnlxlGQfNLgBt9O9eKg='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: http://127.0.0.1:* http://localhost:*; connect-src 'self' https: http://127.0.0.1:* http://localhost:*; font-src 'self' data:" />
     <meta charset="utf-8" />
+    <style>
+      #vue-app {
+        display: none;
+      }
+      body.vue-mode #vue-app {
+        display: block;
+      }
+      body.vue-modal-open #vue-app {
+        display: block;
+      }
+    </style>
     <meta
       name="viewport"
       content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width"
     />
     <title>OSS Browser</title>
     <script>
-      var path = require("path");
-      var os = require("os");
-      var fs = require("fs");
-      // P4-01：request 包已废弃移除，网络请求改用原生 fetch（auto-upgrade.js 等价重写）
-      // var OSS = require('ali-oss');
-      var custom = {};
-      try {
-        custom = require(path.join(__dirname, "../custom/index.js"));
-      } catch (e) {
-        console.log("没有自定义模块");
-      }
-      document.title = custom.title || "OSS Browser";
+      var __boot =
+        window.ossBrowser && window.ossBrowser.bootstrap
+          ? window.ossBrowser.bootstrap.get()
+          : null;
+      var __bootData = __boot && __boot.ok ? __boot.data : {};
+      document.title = __bootData.appTitle || "OSS Browser";
+
+      var Global = {
+        app: {
+          id: __bootData.appId || "oss-browser",
+          logo: __bootData.logo || "icons/icon.png",
+          version: __bootData.appVersion || "0.0.0",
+        },
+        i18n: __bootData.locales || {},
+        config_path: __bootData.configPath || "",
+        release_notes_url: __bootData.releaseNotesUrl,
+        upgrade_url: __bootData.upgradeUrl,
+        about_html: __bootData.aboutHtml,
+      };
+      (function () {
+        if (__bootData.appName)
+          for (var k in __bootData.appName) {
+            if (Global.i18n[k])
+              Global.i18n[k].content["app.name"] =
+                __bootData.appName[k] || "OSS Browser";
+          }
+      })();
     </script>
     <!-- <link href="icons/icon.ico" rel="shortcut icon"/> -->
     <link href="css/lib.css" rel="stylesheet" />
@@ -66,15 +93,14 @@
     <script src="aliyun-sdk-oss.js"></script>
     <script src="templates.js"></script>
     <script>
-      const { ipcRenderer, shell } = require("electron");
-      var isDev = process.env.NODE_ENV == "development";
+      var isDev = __bootData.isDev === true;
 
-      //静态服务端口（invoke/handle 直返，替代原 asynchronous-reply 单通道广播）
+      //静态服务端口：就绪后写入 Global（VR-01-05）
       setTimeout(function () {
-        ipcRenderer
-          .invoke("app:get-static-server-port")
-          .then(function (port) {
-            Global.staticServerPort = port;
+        window.ossBrowser.system
+          .getStaticServerPort()
+          .then(function (r) {
+            if (r && r.ok) Global.staticServerPort = r.data;
           })
           .catch(function (e) {
             console.log("getStaticServerPort failed:", e);
@@ -90,54 +116,19 @@
       // },60000);
 
       function openExternal(url) {
-        // Open a URL in the default way
-        shell.openExternal(url);
+        return window.ossBrowser.system.openExternal(url);
       }
       function openLocaleFolder(p) {
-        shell.showItemInFolder(p);
+        return window.ossBrowser.system.showItemInFolder(p);
       }
 
       function openDevTools() {
-        ipcRenderer.invoke("app:open-dev-tools");
+        return window.ossBrowser.system.openDevTools();
       }
       function gInstallAndRestart(version) {
-        ipcRenderer.invoke("app:install-restart", version);
-        // setTimeout(function(){
-        //   process.exit(0);
-        // },1);
+        return window.ossBrowser.system.installAndRestart(version);
       }
 
-      var pkg = require("./package");
-      // var ALYD = require('aliyun-sdk');
-      // ALYD.util.isBrowser = function(){
-      //   return false;
-      // };
-
-      var Global = {
-        //ossEndpointProtocol:'https:',
-        app: {
-          id: custom.appId || "oss-browser",
-          logo: custom.logo_png || "icons/icon.png", //logo
-          version: custom.version || pkg.version, //自定义版本号
-        },
-        i18n: require("./node/i18n"),
-        config_path: path.join(os.homedir(), ".oss-browser"),
-
-        //release notes目录后缀，里面有 ${version}.md, 如 1.0.0.md
-        release_notes_url: `https://oss-browser-attachment.oss-cn-hangzhou.aliyuncs.com/release-notes/`,
-        // 升级检测链接
-        upgrade_url: `https://oss-browser-attachment.oss-cn-hangzhou.aliyuncs.com/upgrade.json`,
-
-        about_html: custom.about_html,
-      };
-      (function () {
-        if (custom.appName)
-          for (var k in custom.appName) {
-            if (Global.i18n[k])
-              Global.i18n[k].content["app.name"] =
-                custom.appName[k] || "OSS Browser";
-          }
-      })();
 
       $(function () {
         $(document).on("dragover", function (ev) {
@@ -152,6 +143,8 @@
 
       //require('./node/crc64/test')
     </script>
+    <div id="vue-app"></div>
+    <script src="renderer.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

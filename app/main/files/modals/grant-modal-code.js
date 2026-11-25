@@ -25,9 +25,9 @@ angular.module("web").controller("grantModalCtrlCode", [
     }
 
     function copy() {
-      const { clipboard } = require("electron");
-      if (res.length > 1) {
-        clipboard.writeText(res[1]);
+      var sys = window.ossBrowser && window.ossBrowser.system;
+      if (res.length > 1 && sys) {
+        sys.clipboardWriteText(res[1]);
         Toast.success(T("copy.successfully"));
       }
     }

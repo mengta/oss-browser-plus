@@ -23,10 +23,37 @@ angular.module('web').factory('ossDownloadManager', [
       settingsSvs,
       ProgNaming
   ) {
-    var OssStore = require('./node/ossstore');
-    var fs = require('fs');
-    var path = require('path');
-    var os = require('os');
+    var OssStore = null;
+    try { OssStore = require('./node/ossstore'); } catch (e) { OssStore = null; }
+    var fs = null;
+    function bridgeStorage() {
+      if (typeof window === 'undefined' || !window.ossBrowser) { return null; }
+      return window.ossBrowser.storage || null;
+    }
+
+    var pathApi = {
+      dirname: function (target) { return sysCall('pathDirname', [target]); },
+      join: function () { return sysCall('pathJoin', [Array.prototype.slice.call(arguments)]); },
+      basename: function (target) { return sysCall('pathBasename', [target]); },
+      relative: function (from, to) { return sysCall('pathRelative', [from, to]); },
+      sep: (function () {
+        try {
+          var boot = window.ossBrowser.bootstrap.get();
+          return boot && boot.ok && boot.data.platform === 'win32' ? '\\' : '/';
+        } catch (e) { return '/'; }
+      })()
+    };
+
+    function sysCall(method, args) {
+      var api = (typeof window !== 'undefined' && window.ossBrowser) ? window.ossBrowser.system : null;
+      if (!api || typeof api[method] !== 'function') { return ''; }
+      var res = api[method].apply(null, args);
+      return res && res.ok ? res.data : '';
+    }
+
+    function parseJobs(content) {
+      try { return JSON.parse(content || '[]'); } catch (e) { return []; }
+    }
 
     var stopCreatingFlag = false;
 
@@ -49,22 +76,22 @@ angular.module('web').factory('ossDownloadManager', [
       concurrency = 0;
       $scope.lists.downloadJobList = [];
       $scope.retryTimes = 0;
-      var arr = loadProg();
-
-      // console.log('----load saving download jobs:' + arr.length);
+      // console.log('----load saving download jobs');
 
       var authInfo = AuthInfo.get();
 
-      angular.forEach(arr, function(n) {
-        var job = createJob(authInfo, n);
+      loadProg().then(function(arr) {
+        angular.forEach(arr, function(n) {
+          var job = createJob(authInfo, n);
 
-        if (
-          job.status == 'waiting' ||
-          job.status == 'running' ||
-          job.status == 'verifying'
-        ) { job.stop(); }
+          if (
+            job.status == 'waiting' ||
+            job.status == 'running' ||
+            job.status == 'verifying'
+          ) { job.stop(); }
 
-        addEvents(job);
+          addEvents(job);
+        });
       });
     }
 
@@ -147,7 +174,7 @@ angular.module('web').factory('ossDownloadManager', [
       stopCreatingFlag = false;
       // console.log('--------downloadFilesHandler', fromOssInfos, toLocalPath);
       var authInfo = AuthInfo.get();
-      var dirPath = path.dirname(fromOssInfos[0].path);
+      var dirPath = pathApi.dirname(fromOssInfos[0].path);
 
       loop(
           fromOssInfos,
@@ -213,15 +240,15 @@ angular.module('web').factory('ossDownloadManager', [
           return;
         }
 
-        var fileName = path.basename(ossInfo.path);
-        var filePath = path.join(
+        var fileName = pathApi.basename(ossInfo.path);
+        var filePath = pathApi.join(
             toLocalPath,
-            path.relative(dirPath, ossInfo.path)
+            pathApi.relative(dirPath, ossInfo.path)
         );
 
         if (ossInfo.isFolder) {
           // 目录
-          fs.mkdir(filePath, function(err) {
+          if (fs) fs.mkdir(filePath, function(err) {
             if (err && err.code != 'EEXIST') {
               Toast.error('创建目录[' + filePath + ']失败:' + err.message);
 
@@ -259,14 +286,14 @@ angular.module('web').factory('ossDownloadManager', [
           });
         } else {
           // 文件
-          if (process.platform == 'win32') {
+          if (pathApi.sep == '\\') {
             // 修复window下，文件名含非法字符需要转义
             // eslint-disable-next-line no-useless-escape
             if (/[\/\\\:\<\>\?\*\"\|]/.test(fileName)) {
               fileName = encodeURIComponent(fileName);
-              filePath = path.join(
-                  path.dirname(filePath),
-                  encodeURIComponent(path.basename(filePath))
+              filePath = pathApi.join(
+                  pathApi.dirname(filePath),
+                  encodeURIComponent(pathApi.basename(filePath))
               );
             }
           }
@@ -314,6 +341,20 @@ angular.module('web').factory('ossDownloadManager', [
      * @return job  { start(), stop(), status, progress }
      */
     function createJob(auth, opt) {
+      if (!OssStore) {
+        return {
+          region: opt.region,
+          from: opt.from,
+          to: opt.to,
+          status: 'error',
+          prog: { loaded: 0, total: (opt.from && opt.from.size) || 0 },
+          checkPoints: opt.checkPoints,
+          message: '传输能力待 B3 迁移',
+          on: function() {},
+          start: function() {},
+          stop: function() {}
+        };
+      }
       var cname = AuthInfo.get().cname || false;
 
       var endpointname = cname ? auth.eptplcname : auth.eptpl;
@@ -377,7 +418,13 @@ angular.module('web').factory('ossDownloadManager', [
             });
             // console.log('save:', t);
 
-            fs.writeFileSync(getDownProgFilePath(), JSON.stringify(t));
+            var storage = bridgeStorage();
+            if (storage) {
+              storage.writeProgress(getDownProgFilePath(), JSON.stringify(t)).then(
+                function(res) { if (!res || !res.ok) { console.error('[download] saveProg failed'); } },
+                function() { console.error('[download] saveProg failed'); }
+              );
+            }
             $scope.calcTotalProg();
           },
           20
@@ -388,64 +435,34 @@ angular.module('web').factory('ossDownloadManager', [
      * 获取保存的进度
      */
     function loadProg() {
-      try {
-        var newPath = getDownProgFilePath();
-        var legacyPath = getDownProgLegacyFilePath();
-        var hasNew = fs.existsSync(newPath);
-        var hasLegacy = fs.existsSync(legacyPath);
+      var storage = bridgeStorage();
+      if (!storage) { return Promise.resolve([]); }
 
-        if (!hasNew && hasLegacy) {
-          // CS-03：旧名断点续传恢复，先写后删迁移（D-14，任意中断点新旧至少一个完整在位）
-          var legacyData = fs.readFileSync(legacyPath);
-          var jobs = JSON.parse(legacyData ? legacyData.toString() : '[]');
+      var newName = getDownProgFilePath();
+      var legacyName = getDownProgLegacyFilePath();
 
-          try {
-            fs.writeFileSync(newPath, JSON.stringify(jobs));
-            fs.unlinkSync(legacyPath);
-          } catch (migrateErr) {
-            // 写新名失败：保留旧文件本次按旧路径读取（5.5.1-3），下次重试
-          }
-
-          return jobs;
+      return storage.readProgress(newName).then(function(res) {
+        if (res && res.ok && res.data && res.data.exists) {
+          return parseJobs(res.data.content);
         }
-
-        if (hasNew && hasLegacy) {
-          // 新名在位，旧名残留补删（孤儿清理）
-          try { fs.unlinkSync(legacyPath); } catch (cleanErr) {}
-        }
-
-        var data = fs.readFileSync(newPath);
-
-        return JSON.parse(data ? data.toString() : '[]');
-      } catch (e) {}
-
-      return [];
+        return storage.readProgress(legacyName).then(function(lr) {
+          if (!lr || !lr.ok || !lr.data || !lr.data.exists) { return []; }
+          var jobs = parseJobs(lr.data.content);
+          return storage.writeProgress(newName, JSON.stringify(jobs)).then(
+            function() { return jobs; },
+            function() { return jobs; }
+          );
+        });
+      }).catch(function() { return []; });
     }
 
     // 下载进度保存路径（CS-03：sha256 脱敏命名，D-6）
     function getDownProgFilePath() {
-      return path.join(
-          getProgFolder(),
-          ProgNaming.newProgFileName('downprog_', AuthInfo.get().id || '')
-      );
+      return ProgNaming.newProgFileName('downprog_', AuthInfo.get().id || '');
     }
 
-    // 旧命名路径（仅供迁移探测与孤儿补删，禁止用于新写入）
     function getDownProgLegacyFilePath() {
-      return path.join(
-          getProgFolder(),
-          ProgNaming.legacyProgFileName('downprog_', AuthInfo.get().id || '')
-      );
-    }
-
-    function getProgFolder() {
-      var folder = path.join(os.homedir(), '.oss-browser');
-
-      if (!fs.existsSync(folder)) {
-        fs.mkdirSync(folder);
-      }
-
-      return folder;
+      return ProgNaming.legacyProgFileName('downprog_', AuthInfo.get().id || '');
     }
   }
 ]);

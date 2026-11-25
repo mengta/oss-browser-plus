@@ -276,7 +276,7 @@ function loadOssSvs2(t, opts = {}) {
   stubLocalStorage(opts.localStorage || {});
 
   // 5. 加载被测源（加载失败直接抛出使用例失败，R-2）
-  reg.load('app/components/services/oss2.js');
+  reg.load('node/capabilities/services/oss2.js');
 
   t.teardown(() => {
     // teardown 三段式逆序还原（spec 5.2.2-5 / R-4）+ resolve 层补丁恢复

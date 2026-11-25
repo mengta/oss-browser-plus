@@ -28,8 +28,7 @@ angular.module('web').controller('setSymlinkModalCtrl', [
     });
 
     function validator(value) {
-      const emojiRegex = require('emoji-regex');
-      const REG_EMOJI = emojiRegex();
+      const REG_EMOJI = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/;
       const REG_2DOTS = /^\.\.$|\/\.\.\/?$|\/\.\.\//; // 「..」「../」「prefix/..」「prefix/../」「prefix/../suffix」
       const REG_LEADING_SLASH = /^(\/|\\)/;
       const REG_END_SLASH = /(\/|\\)$/;

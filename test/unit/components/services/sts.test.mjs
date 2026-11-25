@@ -67,7 +67,7 @@ function loadSts(options) {
     AUTH_HIS: 'auth-his',
     AUTH_KEEP: 'auth-keep',
   };
-  reg.load('app/components/services/sts.js');
+  reg.load('node/capabilities/services/sts.js');
   const stsSvs = reg.get('stsSvs');
   return { stsSvs, calls, cleanup: unstubAll };
 }

@@ -1,0 +1,112 @@
+{
+  "note": "P0 中间态豁免基线（T-V3-P0-06）。P0-14~P0-19 已清空除传输层外的全部渲染层 Node 直连；剩余 3 处 require 为 upload/download manager 的 ossstore 与 auto-upgrade 的 ossstore util（传输/升级主进程化收口后归零）。",
+  "renderer": {
+    "app/components/directives/toast-list.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/auto-upgrade.js": {
+      "require": 1,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/cipher.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/dialog.s.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/fav.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/mailer.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/oss-download-manager.js": {
+      "require": 1,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/oss-upload-manager.js": {
+      "require": 1,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/oss2.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/prog-naming.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/ram.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/safe-storage-client.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/secure-store.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/sts.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/components/services/upgrade.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/index.html": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/main/_/top.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+
+    "app/main/files/modals/grant-modal-code.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/main/files/modals/set-symlink-modal.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    },
+    "app/main/files/transfer/uploads.js": {
+      "require": 0,
+      "process": 0,
+      "ipcRenderer": 0
+    }
+  },
+  "measured": {
+    "files": 20,
+    "require": 3,
+    "process": 0,
+    "ipcRenderer": 0
+  }
+}

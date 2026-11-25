@@ -8,8 +8,10 @@
 import test from 'ava';
 import nodeCrypto from 'node:crypto';
 import { stubAngular } from '../../../helpers/angular-stub.js';
+import { createBridge } from '../../../helpers/bridge-stub.js';
 
 function loadProgNaming() {
+  createBridge();
   const reg = stubAngular();
   reg.load('app/components/services/prog-naming.js');
   return reg.get('ProgNaming');

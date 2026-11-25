@@ -13,10 +13,10 @@ describe('renderer routes', () => {
     expect(router.currentRoute.value.name).toBe('login');
   });
 
-  it('/ 解析为 home', async () => {
+  it('/ 解析为 files（B3-02：占位换 FilesPage）', async () => {
     const router = makeRouter();
     await router.push('/');
-    expect(router.currentRoute.value.name).toBe('home');
+    expect(router.currentRoute.value.name).toBe('files');
   });
 
   it('未知路径回退到 /', async () => {

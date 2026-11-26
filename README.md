@@ -32,7 +32,7 @@
 
 ## Download
 
-Grab the latest build from [Releases](https://github.com/mengta/oss-browser-plus/releases) (v1.20.x). For the full history, see [all-releases.md](all-releases.md).
+Grab the latest build from [Releases](https://github.com/mengta/oss-browser-plus/releases) (v1.21.x). For the full history, see [all-releases.md](all-releases.md).
 
 ## License
 
@@ -44,3 +44,8 @@ Grab the latest build from [Releases](https://github.com/mengta/oss-browser-plus
 - Renderer has no Node.js or raw IPC access; all OSS/STS/RAM/mail/transfer/upgrade capabilities go through the `contextBridge` allowlist (hosted by main/preload, `sandbox=false`).
 - Build: Vue bundle is `dist/app.js`; CodeMirror 6 replaces CM5; dayjs replaces moment; inline SVG icons replace Font Awesome 4; QR codes use `qrcode-generator` + self-rendered SVG.
 - Known differences: entry page CSP is `script-src 'self'`; QR image in share emails is SVG data URL; legacy Angular routes are no longer served.
+### Login experience
+
+- One-click import: paste JSON / XML / YAML / key:value credentials to fill the form in one step.
+- AK history: long values truncate with a hover tooltip; the Copy action writes `key: value` OSS credentials to clipboard.
+

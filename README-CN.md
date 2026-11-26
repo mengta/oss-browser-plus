@@ -32,7 +32,7 @@
 
 ## 下载
 
-前往 [Releases](https://github.com/mengta/oss-browser-plus/releases) 获取最新构建（v1.20.x），历史版本清单见 [all-releases.md](all-releases.md)。
+前往 [Releases](https://github.com/mengta/oss-browser-plus/releases) 获取最新构建（v1.21.x），历史版本清单见 [all-releases.md](all-releases.md)。
 
 ## 许可
 
@@ -44,3 +44,8 @@
 - 渲染世界无 Node、无原始 IPC；OSS/STS/RAM/邮件/传输/升级等能力统一经 `contextBridge` 白名单由主进程/preload 承载（`sandbox=false`）。
 - 构建：Vue bundle 为 `dist/app.js`；CodeMirror 6 取代 CM5；dayjs 取代 moment；内联 SVG 图标取代 Font Awesome 4；二维码使用 `qrcode-generator` + 自研 SVG。
 - 已知差异：入口页 CSP 为 `script-src 'self'`；分享邮件中的二维码为 SVG data URL；旧 Angular 路由不再提供。
+### 登录体验
+
+- 一键导入：登录页支持粘贴 JSON / XML / YAML / key:value 格式凭证，一步解析并回填表单。
+- AK 历史：长内容省略号截断 + 悬停查看完整内容；「复制」将 AK 等 OSS 信息以 `key: value` 格式写入剪贴板。
+

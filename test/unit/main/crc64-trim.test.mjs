@@ -9,8 +9,21 @@ import { fileURLToPath } from 'node:url';
 import { crc64Filter } from '../../../tools/build-filters.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-// 构建目标平台与 CI job 的运行平台一致（linux-x64 / darwin-x64 / win32-x64）
-const TARGET = `${process.platform}-${process.arch}`;
+// 构建目标平台以 dist 内实际裁剪结果为准（CI 的 macOS runner 架构可能与 matrix arch 不同），
+// 未构建时回退到当前运行平台
+function detectTarget() {
+  const libDir = path.join(ROOT, 'dist', 'node', 'crc64', 'electron-crc64-prebuild', 'lib');
+  try {
+    if (fs.existsSync(libDir)) {
+      const dirs = fs.readdirSync(libDir).filter((n) => n !== 'index.js');
+      if (dirs.length === 1) return dirs[0];
+    }
+  } catch (err) {
+    /* ignore */
+  }
+  return `${process.platform}-${process.arch}`;
+}
+const TARGET = detectTarget();
 const OTHER_TARGETS = ['win32-x64', 'linux-x64', 'darwin-x64'].filter((p) => p !== TARGET);
 
 test('crc64：保留目标平台 Release/*.node 与入口文件', (t) => {

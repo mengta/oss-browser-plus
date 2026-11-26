@@ -58,6 +58,9 @@ jobs:
           node tools/count-console.mjs --fail-on-hit
           node tools/verify-line-count.mjs --check
 
+      - name: Install Playwright Chromium (perf gate)
+        run: npx playwright install --with-deps chromium
+
       - name: List performance gate (virtual scroll)
         run: node tools/measure-list-perf.mjs --rows=1000 --gate
 

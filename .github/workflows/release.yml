@@ -76,7 +76,20 @@ jobs:
           cache: npm
 
       - name: Install dependencies (npm ci)
-        run: npm ci
+        shell: bash
+        run: |
+          set +e
+          node -v
+          npm -v
+          npm config get registry
+          npm ci 2>&1 | tee npm-ci.log
+          EXIT=${PIPESTATUS[0]}
+          if [ "$EXIT" -ne 0 ]; then
+            SUMMARY=$(grep -E "npm ERR|ERESOLVE|EUSAGE|error" npm-ci.log | head -12 | tr '
+' ' ' | cut -c1-900)
+            echo "::error::npm ci failed: ${SUMMARY}"
+            exit 1
+          fi
 
       - name: Build (with dist deps)
         run: npm run build:full

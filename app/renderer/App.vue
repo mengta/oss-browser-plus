@@ -26,6 +26,7 @@ import { useRouter } from 'vue-router';
 import { init } from './bootstrap.js';
 import { portReady } from './services/api.js';
 import { useUiStore } from './stores/ui.js';
+import { useSettingsStore } from './stores/settings.js';
 import TopBar from './components/business/TopBar.vue';
 import ModalHost from './components/base/ModalHost.vue';
 import ToastHost from './components/base/ToastHost.vue';
@@ -104,6 +105,13 @@ onMounted(async () => {
     await portReady();
   } catch (err) {
     /* 端口未就绪：业务请求在需要时重试，不白屏 */
+  }
+
+  // 启动初始化 settings（触发 mailSender 等凭证惰性迁移；自动更新已移除）
+  try {
+    useSettingsStore();
+  } catch (err) {
+    /* 存储不可用不阻塞启动 */
   }
 
   loading.value = false;

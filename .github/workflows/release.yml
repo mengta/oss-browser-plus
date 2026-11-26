@@ -82,6 +82,8 @@ jobs:
           node -v
           npm -v
           npm config get registry
+          # Windows 生成的 lock 可能缺少跨平台 optional（如 @emnapi/*），先在当前平台补齐 lock 再严格 ci
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund 2>&1 | tee npm-lock.log
           npm ci 2>&1 | tee npm-ci.log
           EXIT=${PIPESTATUS[0]}
           if [ "$EXIT" -ne 0 ]; then

@@ -158,6 +158,8 @@
 
 | T-V3-UI-9 | 2026-11-26 | 删除导航栏语言切换选框（设置页已有语言功能）：M `TopBar.vue`（移除未登录 mini 表单中的 `topbar-lang` select、`languages`/`localeValue`/`changeLanguage`、persistLocale 与 toast 依赖、`.topbar-lang` 样式）；M `test/renderer/components/b4-core.test.js`（未登录断言 `topbar-lang` 不存在，删除 string: 兼容用例） | **验证**：Vitest **325**（39 files）、build 退出 0；`selectors.langSettings` 保留（元素不存在 → smoke-06 语言步骤自动跳过，E2E 用例本体零改动）；设置页语言切换（settings-modal 用例）保留。累积待发布：登录 auth 归一化修复、移除自动更新、移除导航语言 |
 
+| T-V3-RELEASE-1.21.7 | 2026-11-26 | **发布完成**：提交 `e6028fc`，tag **v1.21.7**；CI run **45742009561 success**；GitHub Release **v1.21.7**（非 draft/prerelease）资产完整：`oss-browser-win32-x64.zip` 140.0MB、`oss-browser-linux-x64.zip` 117.4MB、`oss-browser-darwin-x64.zip` 118.1MB、`oss-browser.dmg` 121.6MB。**内容**：登录认证字段归一化（修复 `auth.accessKeyId is required`）、移除自动更新（设置项/启动检测/角标/upgradeService）、移除导航栏语言选框（设置页保留）；**发布回归修复**：1.21.5/1.21.6 移除自动更新时误删 App 启动的 `useSettingsStore()`，导致 `mailSender` 惰性迁移不触发（smoke-10 失败、win 产物缺失）；1.21.7 恢复启动初始化（无自动更新）。**CI**：Windows E2E 增加一次自动重试与失败摘要注入（匿名 annotations）；npm ci 已按平台补齐 lock（1.21.4 起）。失败 tag v1.21.5/v1.21.6（Release 缺 win32）保留审计；本地 main@e6028fc + 台账提交；`all-releases.md` 用户既有改动未提交、`.security/` 未跟踪。**已知 flaky**：全量 Vitest 偶发 `transfer.test.js > UploadsPanel 清空/筛选`（单文件复跑 12/12 通过；非本次改动引入） |
+
 ## A.2 sandbox 结论（Q-09 / VR-01-02 / D-02）
 
 | 字段 | 内容 |

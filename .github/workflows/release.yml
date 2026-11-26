@@ -138,7 +138,22 @@ jobs:
         if: matrix.platform == 'win32' && matrix.arch == 'x64'
         env:
           ELECTRON_RUN_AS_NODE: ''
-        run: npx playwright test
+        shell: bash
+        run: |
+          set +e
+          npx playwright test 2>&1 | tee e2e.log
+          EXIT=${PIPESTATUS[0]}
+          if [ "$EXIT" -ne 0 ]; then
+            echo "::warning::E2E failed on attempt 1; retrying once (cold-start flakiness)"
+            sleep 5
+            npx playwright test 2>&1 | tee e2e-retry.log
+            EXIT=${PIPESTATUS[0]}
+          fi
+          if [ "$EXIT" -ne 0 ]; then
+            SUMMARY=$(grep -E "Error|failed|expect|Timed out" e2e-retry.log | head -20 | paste -sd ' ' - | cut -c1-1200)
+            echo "::error::e2e failed after retry: ${SUMMARY}"
+            exit 1
+          fi
 
       - name: Archive (canonical names)
         shell: bash

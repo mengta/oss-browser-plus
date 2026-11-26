@@ -1,6 +1,6 @@
 {
   "name": "oss-browser",
-  "version": "1.21.5",
+  "version": "1.21.6",
   "main": "dist/main.js",
   "scripts": {
     "test": "ava",

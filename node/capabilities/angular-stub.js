@@ -37,7 +37,13 @@ function angularStub() {
     warning: function () {},
   };
   const Const = { PRIVATE: 'private', PRIVATE_LINK: 'private-link' };
-  const settings = { connectTimeout: 30000 };
+  const settings = {
+    connectTimeout: {
+      get: function () {
+        return 30000;
+      },
+    },
+  };
   const authInfo = {
     get: function () {
       return authStore.getStore() || {};

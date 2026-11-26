@@ -240,6 +240,21 @@ async function main() {
       });
       process.stdout.write('light styles: ' + JSON.stringify(lightStyles) + String.fromCharCode(10));
     }
+    const align = await page.evaluate(() => {
+      const cy = (sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return Math.round((r.top + r.bottom) / 2);
+      };
+      return {
+        brand: cy('.navbar-brand'),
+        version: cy('.app-version'),
+        settings: cy('[data-testid="topbar-settings"]'),
+        about: cy('[data-testid="topbar-about"]'),
+      };
+    });
+    process.stdout.write('topbar align: ' + JSON.stringify(align) + String.fromCharCode(10));
     const styles = await page.evaluate(() => {
       const bg = (sel) => {
         const el = document.querySelector(sel);

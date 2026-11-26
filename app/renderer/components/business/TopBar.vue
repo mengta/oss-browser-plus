@@ -162,6 +162,52 @@ async function logout() {
 </script>
 
 <style scoped>
+/* 顶部导航：左右区域统一 35px 高并垂直居中 */
+.my-nav {
+  display: flex;
+  align-items: center;
+}
+.navbar-header {
+  flex: 0 0 auto;
+}
+.navbar-collapse {
+  flex: 1 1 auto;
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 6px 0 0;
+  border-top: none;
+  box-shadow: none;
+  max-height: none;
+}
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  float: none !important;
+  margin: 0;
+}
+.navbar-nav.navbar-right {
+  float: none !important;
+  margin-left: auto;
+}
+.navbar-nav > li {
+  float: none;
+}
+.navbar-nav > li > a {
+  height: var(--vsc-titlebar-h, 35px);
+  padding: 0 10px !important;
+}
+.navbar-form {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  height: var(--vsc-titlebar-h, 35px);
+}
+.tb-temp {
+  height: var(--vsc-titlebar-h, 35px);
+  padding: 0 10px;
+}
+
 /* VS Code 标题栏：35px 紧凑、图标 + 文本 */
 .my-nav {
   min-height: var(--vsc-titlebar-h, 35px);
@@ -199,8 +245,10 @@ async function logout() {
 .app-version {
   display: inline-flex;
   align-items: center;
+  height: var(--vsc-titlebar-h, 35px);
+  padding: 0;
   line-height: 1;
-  margin-left: 6px;
+  margin: 0 0 0 6px;
   font-size: 11px;
   cursor: pointer;
 }

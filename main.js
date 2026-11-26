@@ -97,6 +97,14 @@ function createWindow() {
     opt.icon = custom.logo_png || path.join(__dirname, "icons", "icon.png");
   }
 
+  // VS Code 风格标题栏：Windows/Linux 去掉系统外框，由渲染层自绘窗口控制按钮；
+  // macOS 保留交通灯（hiddenInset），顶栏左侧留出避让空间。
+  if (process.platform == "darwin") {
+    opt.titleBarStyle = "hiddenInset";
+  } else {
+    opt.frame = false;
+  }
+
   // Create the browser window.   http://electron.atom.io/docs/api/browser-window/
   win = new BrowserWindow(opt);
 
@@ -105,6 +113,14 @@ function createWindow() {
   win.loadURL(`file://${__dirname}/${rendererEntry}`);
 
   win.setMenuBarVisibility(false);
+
+  // 自绘标题栏：最大化状态变化时通知渲染层切换图标
+  var notifyMaximized = function () {
+    if (!win || win.isDestroyed()) return;
+    win.webContents.send("window:maximized-changed", win.isMaximized());
+  };
+  win.on("maximize", notifyMaximized);
+  win.on("unmaximize", notifyMaximized);
 
   // Emitted when the window is closed.
   win.on("closed", () => {
@@ -142,6 +158,40 @@ ipcMain.handle("app:open-dev-tools", () => {
 
 ipcMain.handle("app:refresh-page", () => {
   win.reload();
+});
+
+function windowFromEvent(event) {
+  if (event && event.sender) {
+    var fromSender = BrowserWindow.fromWebContents(event.sender);
+    if (fromSender) return fromSender;
+  }
+  return win;
+}
+
+// VS Code 风格无边框标题栏：渲染层自绘最小化/最大化(还原)/关闭按钮
+ipcMain.handle("window:minimize", (event) => {
+  var target = windowFromEvent(event);
+  if (target && !target.isDestroyed()) target.minimize();
+  return true;
+});
+
+ipcMain.handle("window:toggle-maximize", (event) => {
+  var target = windowFromEvent(event);
+  if (!target || target.isDestroyed()) return false;
+  if (target.isMaximized()) target.unmaximize();
+  else target.maximize();
+  return target.isMaximized();
+});
+
+ipcMain.handle("window:close", (event) => {
+  var target = windowFromEvent(event);
+  if (target && !target.isDestroyed()) target.close();
+  return true;
+});
+
+ipcMain.handle("window:is-maximized", (event) => {
+  var target = windowFromEvent(event);
+  return !!(target && !target.isDestroyed() && target.isMaximized());
 });
 
 ipcMain.handle("app:install-restart", (event, version) => {

@@ -1,5 +1,10 @@
 <template>
-  <nav class="navbar navbar-default navbar-fixed-top navbar-inverse my-nav" data-testid="topbar">
+  <nav
+    class="navbar navbar-default navbar-fixed-top navbar-inverse my-nav"
+    :class="{ 'is-mac': isMac }"
+    data-testid="topbar"
+    @dblclick="onTitlebarDblClick"
+  >
     <div class="navbar-header">
       <a class="navbar-brand" href="javascript:void(0)" data-testid="topbar-brand" @click="openModal('about')">
         <img v-if="logo" :src="logo" width="18" class="brand-logo" alt="" />
@@ -67,6 +72,8 @@
         </a>
       </div>
     </form>
+
+    <WindowControls />
   </nav>
 </template>
 
@@ -79,6 +86,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import AppIcon from '../base/AppIcon.vue';
 import HintTooltip from '../base/HintTooltip.vue';
+import WindowControls from '../base/WindowControls.vue';
 import { useAuthStore } from '../../stores/auth.js';
 import { useBootstrapStore } from '../../stores/bootstrap.js';
 import { useFilesStore } from '../../stores/files.js';
@@ -102,6 +110,7 @@ const authInfo = computed(() => authStore.info || {});
 const loggedIn = computed(() => authStore.isLoggedIn);
 const isSts = computed(() => String(authInfo.value.id || '').indexOf('STS.') === 0);
 const isFilesPage = computed(() => route.path === '/');
+const isMac = computed(() => snapshot.value.platform === 'darwin');
 
 const shortDesc = computed(() => {
   const desc = String(authInfo.value.desc || '');
@@ -146,6 +155,22 @@ onBeforeUnmount(() => {
 
 function openModal(name) {
   ui.open(name);
+}
+
+// 无边框标题栏：双击空白区切换最大化（MAC 保留系统交通灯行为）
+async function onTitlebarDblClick(event) {
+  if (isMac.value) return;
+  const target = event && event.target;
+  if (target && typeof target.closest === 'function' && target.closest('a, button, input, select, label, form')) {
+    return;
+  }
+  const system = typeof window !== 'undefined' && window.ossBrowser ? window.ossBrowser.system : null;
+  if (!system || typeof system.toggleMaximizeWindow !== 'function') return;
+  try {
+    await system.toggleMaximizeWindow();
+  } catch (err) {
+    /* 非 Electron 环境忽略 */
+  }
 }
 
 async function logout() {
@@ -277,7 +302,7 @@ async function logout() {
   margin-right: 4px;
 }
 .my-nav {
-  min-height: 50px;
+  min-height: var(--vsc-titlebar-h, 35px);
   margin-bottom: 0;
   border-radius: 0;
 }
@@ -327,5 +352,37 @@ async function logout() {
   font-weight: bold;
   margin-right: 10px;
   text-decoration: none;
+}
+
+/* VS Code 无边框标题栏：整条顶栏可拖动窗口，交互元素排除 */
+.my-nav {
+  -webkit-app-region: drag;
+  app-region: drag;
+  user-select: none;
+}
+.my-nav a,
+.my-nav button,
+.my-nav input,
+.my-nav select,
+.my-nav label,
+.my-nav form,
+.my-nav li,
+.my-nav .window-controls {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.my-nav.is-mac {
+  padding-left: 74px;
+}
+.navbar-form.navbar-right {
+  margin: 0 8px 0 auto;
+  padding: 0 8px;
+  height: var(--vsc-titlebar-h, 35px);
+}
+.navbar-form .form-inline.form-group {
+  margin: 0;
+}
+.navbar-form .mini-link {
+  height: var(--vsc-titlebar-h, 35px);
 }
 </style>

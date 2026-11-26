@@ -1,6 +1,6 @@
 <template>
   <div class="login-page" data-testid="vue-login-page">
-    <h2 class="login-title">{{ t('app.name') }}</h2>
+
     <div class="login-tabs">
       <button
         type="button"
@@ -284,11 +284,7 @@ async function onSubmit() {
   margin: 48px auto;
   padding: 24px;
 }
-.login-title {
-  text-align: center;
-  font-size: 20px;
-  margin-bottom: 20px;
-}
+
 .login-tabs {
   display: flex;
   justify-content: center;

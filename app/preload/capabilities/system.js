@@ -12,6 +12,10 @@ const CHANNELS = {
   showOpenDialog: 'dialog:show-open-dialog',
   clipboardReadText: 'clipboard:read-text',
   clipboardWriteText: 'clipboard:write-text',
+  windowMinimize: 'window:minimize',
+  windowToggleMaximize: 'window:toggle-maximize',
+  windowClose: 'window:close',
+  windowIsMaximized: 'window:is-maximized',
 };
 
 const DEFAULT_TIMEOUT = 8000;
@@ -225,6 +229,50 @@ function getPathForFile(file) {
   }
 }
 
+// 无边框自绘标题栏：窗口控制（主进程承接，渲染层无 BrowserWindow 权限）
+async function minimizeWindow() {
+  await invoke(CHANNELS.windowMinimize, [], DEFAULT_TIMEOUT);
+  return true;
+}
+
+async function toggleMaximizeWindow() {
+  const maximized = await invoke(CHANNELS.windowToggleMaximize, [], DEFAULT_TIMEOUT);
+  return Boolean(maximized);
+}
+
+async function closeWindow() {
+  await invoke(CHANNELS.windowClose, [], DEFAULT_TIMEOUT);
+  return true;
+}
+
+async function isWindowMaximized() {
+  const maximized = await invoke(CHANNELS.windowIsMaximized, [], DEFAULT_TIMEOUT);
+  return Boolean(maximized);
+}
+
+const WINDOW_STATE_CHANNEL = 'window:maximized-changed';
+const windowStateSubscriptions = new Map();
+let windowStateSeq = 0;
+
+function subscribeWindowState(callback) {
+  if (typeof callback !== 'function') throw codedError('INVALID_ARG', 'callback must be a function');
+  const id = 'window-' + ++windowStateSeq;
+  const handler = function (event, maximized) {
+    callback(Boolean(maximized));
+  };
+  ipcRenderer.on(WINDOW_STATE_CHANNEL, handler);
+  windowStateSubscriptions.set(id, handler);
+  return id;
+}
+
+function unsubscribeWindowState(subscriptionId) {
+  const handler = windowStateSubscriptions.get(subscriptionId);
+  if (!handler) return true;
+  ipcRenderer.removeListener(WINDOW_STATE_CHANNEL, handler);
+  windowStateSubscriptions.delete(subscriptionId);
+  return true;
+}
+
 module.exports = {
   getStaticServerPort,
   openDevTools,
@@ -242,4 +290,10 @@ module.exports = {
   pathBasename,
   pathRelative,
   getPathForFile,
+  minimizeWindow,
+  toggleMaximizeWindow,
+  closeWindow,
+  isWindowMaximized,
+  subscribeWindowState,
+  unsubscribeWindowState,
 };

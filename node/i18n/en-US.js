@@ -123,6 +123,10 @@ module.exports = {
 
   files: "Files",
   settings: "Settings",
+  "window.minimize": "Minimize",
+  "window.maximize": "Maximize",
+  "window.restore": "Restore Down",
+  "window.close": "Close",
   about: "About",
   bookmarks: "Bookmarks",
   logout: "Logout",

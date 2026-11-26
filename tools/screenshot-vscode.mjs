@@ -255,6 +255,27 @@ async function main() {
       };
     });
     process.stdout.write('topbar align: ' + JSON.stringify(align) + String.fromCharCode(10));
+    const windowChrome = await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="window-controls"]');
+      const title = document.querySelector('.login-title');
+      if (!el) return { controls: null, loginTitle: !!title };
+      const r = el.getBoundingClientRect();
+      const nav = document.querySelector('.navbar.my-nav');
+      const navStyle = nav ? getComputedStyle(nav) : null;
+      return {
+        controls: {
+          buttons: el.querySelectorAll('button').length,
+          left: Math.round(r.left),
+          right: Math.round(r.right),
+          top: Math.round(r.top),
+          height: Math.round(r.height),
+          viewport: window.innerWidth,
+        },
+        loginTitle: !!title,
+        nav: navStyle ? { position: navStyle.position, top: navStyle.top, marginTop: navStyle.marginTop, rectTop: Math.round(nav.getBoundingClientRect().top) } : null,
+      };
+    });
+    process.stdout.write('window chrome: ' + JSON.stringify(windowChrome) + String.fromCharCode(10));
     const styles = await page.evaluate(() => {
       const bg = (sel) => {
         const el = document.querySelector(sel);

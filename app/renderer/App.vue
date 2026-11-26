@@ -133,7 +133,7 @@ void bootError;
   min-height: 100vh;
 }
 .vue-app-main {
-  padding: 45px 8px 30px;
+  padding: 35px 8px 30px;
 }
 .vue-app-main.with-activity {
   padding-left: 52px;

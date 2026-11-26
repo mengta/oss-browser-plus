@@ -120,6 +120,10 @@ module.exports = {
 
   files: "文件",
   settings: "设置",
+  "window.minimize": "最小化",
+  "window.maximize": "最大化",
+  "window.restore": "向下还原",
+  "window.close": "关闭",
   about: "关于",
   bookmarks: "书签管理",
   logout: "退出",

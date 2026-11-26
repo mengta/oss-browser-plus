@@ -123,6 +123,10 @@ module.exports = {
 
   files: "ファイル",
   settings: "設定",
+  "window.minimize": "最小化",
+  "window.maximize": "最大化",
+  "window.restore": "元のサイズに戻す",
+  "window.close": "閉じる",
   about: "バージョン情報",
   bookmarks: "ブックマーク",
   logout: "ログアウト",

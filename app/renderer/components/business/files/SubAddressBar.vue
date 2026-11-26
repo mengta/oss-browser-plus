@@ -136,7 +136,7 @@ defineExpose({ setAddress: function (addr) { address.value = addr; syncSub(addr)
   align-items: center;
   gap: 4px;
   padding: 6px 8px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--vsc-border-weak);
 }
 .address-form {
   flex: 1;
@@ -152,7 +152,7 @@ defineExpose({ setAddress: function (addr) { address.value = addr; syncSub(addr)
   padding: 4px 6px;
   cursor: pointer;
   line-height: 1;
-  color: #555;
+  color: var(--vsc-fg-muted);
 }
 .btn-icon:disabled {
   cursor: not-allowed;

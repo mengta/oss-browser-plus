@@ -20,25 +20,60 @@
     >
       <AppIcon name="chevron-right" />
     </button>
-    <button
-      type="button"
-      class="btn-icon"
-      data-testid="address-go-up"
-      title="Up"
-      @click="goUp"
-    >
+    <button type="button" class="btn-icon" data-testid="address-go-up" title="Up" @click="goUp">
       <AppIcon name="arrow-up" />
     </button>
+    <button type="button" class="btn-icon" data-testid="address-refresh" title="Refresh" @click="refresh">
+      <AppIcon name="refresh" />
+    </button>
+    <button type="button" class="btn-icon" data-testid="address-home" title="Home" @click="goHome">
+      <AppIcon name="home" />
+    </button>
+
     <form class="address-form" @submit.prevent="go">
+      <!-- B5-UI：VS Code 面包屑（点击层级导航；点击空白/聚焦切换为可编辑路径） -->
+      <div
+        class="crumbs"
+        :class="{ editing: focused }"
+        data-testid="address-crumbs"
+        @click="startEdit"
+      >
+        <span class="crumb crumb-root" data-testid="crumb-root" @click.stop="navigateLevel(-1)">oss://</span>
+        <template v-if="bucket">
+          <span class="sep">/</span>
+          <span class="crumb crumb-bucket" data-testid="crumb-bucket" :title="bucket" @click.stop="navigateLevel(0)">{{ bucket }}</span>
+          <span class="sep">/</span>
+        </template>
+        <template v-for="(seg, idx) in segments" :key="idx">
+          <span class="crumb" :data-testid="'crumb-' + idx" @click.stop="navigateLevel(idx + 1)">{{ seg }}</span>
+          <span class="sep">/</span>
+        </template>
+      </div>
       <input
+        ref="inputEl"
         v-model="address"
         type="text"
-        class="form-control"
+        class="form-control address-input"
+        :class="{ editing: focused }"
         data-testid="address-input"
         placeholder="oss://"
         spellcheck="false"
+        @focus="focused = true"
+        @blur="focused = false"
       />
     </form>
+
+    <button
+      type="button"
+      class="btn-icon"
+      data-testid="address-save-home"
+      :disabled="address === defaultAddress"
+      title="Save as home"
+      @click="saveDefaultAddress"
+    >
+      <AppIcon name="home" />
+    </button>
+
     <button
       type="button"
       class="btn-icon"
@@ -55,9 +90,9 @@
 <script setup>
 // 等价 Angular address-bar（app/main/files/_/address-bar.js）：
 // oss:// 地址输入（getAddress 修正）、自维护历史栈（去重/截断前进/上限 historiesLength）、
-// goUp 多级回退（根时刷新）、收藏星标；地址变更直接驱动 filesStore.navigate
-// （等价 ossAddressChange → filesCtrl.parseOSSPath 事件流）。
-import { ref, computed, watch, onMounted } from 'vue';
+// goUp 多级回退（根时刷新）、收藏星标；地址变更直接驱动 filesStore.navigate。
+// B5-UI：新增 VS Code 面包屑（层级可点导航），保留 address-input 供键盘/E2E 编辑。
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppIcon from '../../base/AppIcon.vue';
 import { useFilesStore } from '../../../stores/files.js';
@@ -76,6 +111,8 @@ const authStore = useAuthStore();
 const address = ref('oss://');
 const canGoBack = ref(false);
 const canGoAhead = ref(false);
+const focused = ref(false);
+const inputEl = ref(null);
 
 // 历史栈（等价 His 闭包：arr + index）
 const hist = { arr: [], index: -1 };
@@ -90,7 +127,6 @@ function histAdd(addr) {
   if (hist.arr[hist.index] === addr) {
     return;
   }
-  // 截断前进分支（等价 js:55）
   hist.arr = hist.arr.slice(0, hist.index + 1);
   hist.arr.push(addr);
   while (hist.arr.length > limit) {
@@ -154,6 +190,69 @@ function goUp() {
   go();
 }
 
+// ---------- B5-UI 面包屑 ----------
+const restPath = computed(() => String(address.value || '').replace(/^oss:\/\//, '').replace(/^\/+/, ''));
+const bucket = computed(() => {
+  const value = restPath.value.replace(/\/$/, '');
+  if (!value) return '';
+  return value.split('/')[0];
+});
+const segments = computed(() => {
+  const value = restPath.value.replace(/\/$/, '');
+  if (!value) return [];
+  const parts = value.split('/');
+  return parts.length > 1 ? parts.slice(1) : [];
+});
+
+function navigateLevel(level) {
+  if (level < 0) {
+    address.value = 'oss://';
+  } else if (level === 0) {
+    address.value = bucket.value ? 'oss://' + bucket.value + '/' : 'oss://';
+  } else {
+    const parts = segments.value.slice(0, level);
+    address.value = bucket.value ? 'oss://' + bucket.value + '/' + parts.join('/') + '/' : 'oss://';
+  }
+  go();
+}
+
+function startEdit() {
+  focused.value = true;
+  nextTick(() => {
+    if (inputEl.value) {
+      inputEl.value.focus();
+      inputEl.value.select();
+    }
+  });
+}
+
+// 默认地址：预设 ossPath 优先，其次已保存首页（auth.address），最后根
+const defaultAddress = computed(() => {
+  const info = authStore.info || {};
+  return info.osspath || info.address || 'oss://';
+});
+
+function refresh() {
+  go();
+}
+
+// 等价原版 goHome：与默认地址不同则跳转，相同则刷新
+function goHome() {
+  const target = defaultAddress.value;
+  if (address.value !== target) {
+    address.value = target;
+    go();
+    return;
+  }
+  go();
+}
+
+// 等价原版 saveDefaultAddress：持久化到 auth-info.address
+function saveDefaultAddress() {
+  authStore.saveToAuthInfo({ address: address.value });
+  toastStore.push(t('saveAsHome.success') || '设置默认地址成功', 'success', 2000);
+}
+
 const isFav = computed(() => favoritesStore.has(address.value));
 
 function toggleFav() {
@@ -190,7 +289,8 @@ watch(
 );
 
 onMounted(() => {
-  const initial = (authStore.info && authStore.info.osspath) || 'oss://';
+  const info = authStore.info || {};
+  const initial = info.osspath || info.address || 'oss://';
   address.value = initial;
 });
 
@@ -203,15 +303,63 @@ defineExpose({ setAddress, go });
   align-items: center;
   gap: 4px;
   padding: 6px 8px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--vsc-border-weak);
 }
 .address-form {
   flex: 1;
   min-width: 0;
+  position: relative;
+  height: 28px;
 }
-.form-control {
+.crumbs {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  background: var(--vsc-bg-input);
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  cursor: text;
+}
+.crumbs.editing {
+  opacity: 0;
+}
+.crumb {
+  padding: 1px 4px;
+  border-radius: 2px;
+  color: var(--vsc-fg-muted);
+  cursor: pointer;
+}
+.crumb:hover {
+  background: var(--vsc-bg-hover);
+  color: var(--vsc-fg);
+}
+.crumb-root {
+  color: var(--vsc-fg-dim);
+}
+.crumb-bucket {
+  color: var(--vsc-fg);
+  font-weight: 600;
+}
+.sep {
+  color: var(--vsc-fg-dim);
+}
+.address-input {
+  position: absolute;
+  inset: 0;
   width: 100%;
   box-sizing: border-box;
+  opacity: 0;
+  pointer-events: none;
+  background: var(--vsc-bg-input);
+}
+.address-input.editing {
+  opacity: 1;
+  pointer-events: auto;
 }
 .btn-icon {
   border: none;
@@ -219,13 +367,13 @@ defineExpose({ setAddress, go });
   padding: 4px 6px;
   cursor: pointer;
   line-height: 1;
-  color: #555;
+  color: var(--vsc-fg-muted);
 }
 .btn-icon:disabled {
   cursor: not-allowed;
   opacity: 0.35;
 }
 .btn-icon.active {
-  color: #f5a623;
+  color: #dcb67a;
 }
 </style>

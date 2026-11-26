@@ -595,6 +595,8 @@ CAPABILITY_CHANNELS.forEach(function (channel) {
           message: (err && err.message) || String(err),
           requestId: err && err.requestId,
           ecCode: err && err.ecCode,
+          // Vue3-B3-09：批量删除逐项失败明细（可序列化数组）
+          failures: err && err.failures,
         };
       }
     );

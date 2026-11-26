@@ -6,6 +6,7 @@
         <span class="akh-id">{{ h.id }}</span>
         <code class="akh-secret">{{ showSecrets[h.id] ? h.secret : maskSecret(h.secret) }}</code>
         <span class="akh-region">{{ regionText(h) }}</span>
+        <span v-if="h.requestpaystatus === 'YES'" class="akh-tag" data-testid="akh-requestpay">{{ t('requestPay') }}</span>
         <button type="button" class="akh-btn" data-testid="akh-toggle" @click="toggleSecret(h)">
           {{ showSecrets[h.id] ? '隐藏' : '显示' }}
         </button>
@@ -115,8 +116,8 @@ function confirmPending() {
 }
 .akh-search {
   padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
 }
 .akh-list {
   list-style: none;
@@ -130,7 +131,7 @@ function confirmPending() {
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--vsc-border-weak);
   font-size: 12px;
 }
 .akh-id {
@@ -139,17 +140,25 @@ function confirmPending() {
 }
 .akh-secret {
   min-width: 140px;
-  color: #888;
+  color: var(--vsc-fg-muted);
 }
 .akh-region {
   min-width: 90px;
-  color: #666;
+  color: var(--vsc-fg-muted);
+}
+.akh-tag {
+  padding: 1px 6px;
+  border: 1px solid var(--vsc-warning);
+  border-radius: 2px;
+  background: var(--vsc-warning-bg);
+  color: var(--vsc-warning);
+  font-size: 11px;
 }
 .akh-btn {
   padding: 2px 6px;
-  border: 1px solid #ddd;
-  background: #fff;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border-weak);
+  background: var(--vsc-bg-elevated);
+  border-radius: 2px;
   cursor: pointer;
   font-size: 12px;
 }

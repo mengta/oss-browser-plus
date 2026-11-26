@@ -27,6 +27,15 @@ function broadcast(payload) {
   } catch (err) {}
 }
 
+// Vue3-B3-09+：渲染层 auth 中的 requestpaystatus 同步到主进程 localStorage（ossstore 构造 client 时读取）
+function applyRequestPay(auth) {
+  const flag = auth && auth.requestpaystatus === 'YES' ? 'YES' : 'NO';
+  if (global.localStorage && typeof global.localStorage.setItem === 'function') {
+    global.localStorage.setItem('show-request-pay', flag);
+  }
+  return flag;
+}
+
 function storeFor(auth) {
   // Vue3-B3 前置：支持渲染层传入的 securityToken（STS）与显式 endpoint（getOssEndpoint 已含内网/自定义域名解析）
   const key = [
@@ -34,6 +43,7 @@ function storeFor(auth) {
     auth.accessKeySecret,
     auth.securityToken || '',
     auth.endpoint || '',
+    applyRequestPay(auth),
   ].join('|');
   if (store && storeKey === key) return store;
   const opts = {
@@ -272,6 +282,7 @@ function ensureDirs(paths) {
 const api = {
   createUpload,
   createDownload,
+  applyRequestPay,
   pause,
   resume,
   cancel,

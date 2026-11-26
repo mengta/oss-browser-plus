@@ -5,13 +5,16 @@ const { ipcRenderer } = require('electron');
 function invokeChannel(channel, payload, timeoutMs) {
   return new Promise(function (resolve, reject) {
     let settled = false;
-    const timer = setTimeout(function () {
-      if (settled) return;
-      settled = true;
-      const err = new Error(channel + ' timed out');
-      err.code = 'TIMEOUT';
-      reject(err);
-    }, timeoutMs);
+    // Vue3-B3-09：timeoutMs 为 0/undefined 表示不做超时（批量删除/复制耗时不定长，原版无超时）
+    const timer = timeoutMs
+      ? setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          const err = new Error(channel + ' timed out');
+          err.code = 'TIMEOUT';
+          reject(err);
+        }, timeoutMs)
+      : null;
     let pending;
     try {
       pending = ipcRenderer.invoke.apply(ipcRenderer, [channel].concat(payload || []));
@@ -31,6 +34,7 @@ function invokeChannel(channel, payload, timeoutMs) {
           err.code = res.code || 'INTERNAL';
           if (res.requestId) err.requestId = res.requestId;
           if (res.ecCode) err.ecCode = res.ecCode;
+          if (res.failures) err.failures = res.failures;
           reject(err);
           return;
         }

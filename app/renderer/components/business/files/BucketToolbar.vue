@@ -120,7 +120,10 @@ function showUpdateBucket() {
 function showGrant() {
   const b = filesStore.bucketSelected;
   if (!b) return;
-  uiStore.open('grant', { paths: [b.name] });
+  uiStore.open('grant', {
+    items: [{ name: b.name, region: b.region, itemType: 'bucket', path: '' }],
+    currentInfo: { region: b.region, bucket: b.name, key: '' },
+  });
 }
 
 async function showDeleteBucket() {
@@ -150,7 +153,7 @@ async function showDeleteBucket() {
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--vsc-border-weak);
   flex-wrap: wrap;
 }
 .btn {
@@ -159,7 +162,7 @@ async function showDeleteBucket() {
 .divider {
   width: 1px;
   height: 18px;
-  background: #e0e0e0;
+  background: var(--vsc-border);
 }
 .spacer {
   flex: 1;
@@ -173,8 +176,8 @@ async function showDeleteBucket() {
   width: 140px;
 }
 .badge {
-  background: #f0f0f0;
-  border-radius: 8px;
+  background: var(--vsc-border-weak);
+  border-radius: 2px;
   padding: 0 6px;
   font-size: 12px;
 }

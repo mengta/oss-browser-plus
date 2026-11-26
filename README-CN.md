@@ -37,3 +37,10 @@
 ## 许可
 
 [Apache License 2.0](LICENSE)（继承上游）
+
+### Vue 3 架构（1.21.0）
+
+- 渲染层整体重写为 **Vue 3 + Pinia + Vue Router**，AngularJS 运行时已移除。
+- 渲染世界无 Node、无原始 IPC；OSS/STS/RAM/邮件/传输/升级等能力统一经 `contextBridge` 白名单由主进程/preload 承载（`sandbox=false`）。
+- 构建：Vue bundle 为 `dist/app.js`；CodeMirror 6 取代 CM5；dayjs 取代 moment；内联 SVG 图标取代 Font Awesome 4；二维码使用 `qrcode-generator` + 自研 SVG。
+- 已知差异：入口页 CSP 为 `script-src 'self'`；分享邮件中的二维码为 SVG data URL；旧 Angular 路由不再提供。

@@ -67,7 +67,7 @@ function openTab(tab) {
 
 <style scoped>
 .transfer-dock {
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid var(--vsc-border-weak);
 }
 .trans-dock-btn {
   display: flex;
@@ -77,7 +77,7 @@ function openTab(tab) {
   font-size: 12px;
 }
 .trans-dock-btn a {
-  color: #1890ff;
+  color: var(--vsc-link);
   text-decoration: none;
 }
 .trans-frame {
@@ -91,21 +91,21 @@ function openTab(tab) {
   list-style: none;
   margin: 0;
   padding: 4px 8px 0;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--vsc-border-weak);
 }
 .trans-nav li {
   padding: 4px 12px;
   cursor: pointer;
   border: 1px solid transparent;
   border-bottom: none;
-  border-radius: 3px 3px 0 0;
+  border-radius: 2px 3px 0 0;
   font-size: 13px;
-  color: #666;
+  color: var(--vsc-fg-muted);
 }
 .trans-nav li.active {
-  border-color: #e5e5e5;
-  background: #fff;
-  color: #1890ff;
+  border-color: var(--vsc-border-weak);
+  background: var(--vsc-bg-elevated);
+  color: var(--vsc-link);
   margin-bottom: -1px;
 }
 .trans-nav li a {
@@ -113,12 +113,12 @@ function openTab(tab) {
   text-decoration: none;
 }
 .badge {
-  background: #f0f0f0;
-  border-radius: 8px;
+  background: var(--vsc-border-weak);
+  border-radius: 2px;
   padding: 0 6px;
   margin-left: 4px;
   font-size: 11px;
-  color: #666;
+  color: var(--vsc-fg-muted);
 }
 .spacer {
   flex: 1;
@@ -128,7 +128,7 @@ function openTab(tab) {
   background: none;
   cursor: pointer;
   font-size: 16px;
-  color: #999;
+  color: var(--vsc-fg-muted);
   padding: 2px 8px;
 }
 </style>

@@ -79,6 +79,19 @@
             @change="setChange('uploadAndDownloadRetryTimes', $event)"
           />
         </div>
+
+        <div class="st-row">
+          <label class="st-label">保存历史记录长度:</label>
+          <input
+            v-model.number="form.historiesLength"
+            type="number"
+            class="st-input"
+            min="1"
+            max="1000"
+            data-testid="settings-historiesLength"
+            @change="setChange('historiesLength', $event)"
+          />
+        </div>
       </fieldset>
 
       <fieldset>
@@ -300,6 +313,7 @@ function validate(key) {
     downloadConcurrecyPartSize: [1, 100],
     uploadAndDownloadRetryTimes: [3, 20],
     listObjectNum: [30, 1000],
+    historiesLength: [1, 1000],
   };
   if (key in bounds) {
     const [min, max] = bounds[key];
@@ -385,14 +399,14 @@ function onCancel() {
   max-width: 640px;
 }
 fieldset {
-  border: 1px solid #eee;
+  border: 1px solid var(--vsc-border-weak);
   margin: 0 0 10px;
   padding: 8px 10px;
 }
 .st-legend {
   margin: 0 0 6px;
   font-size: 13px;
-  color: #337ab7;
+  color: var(--vsc-accent);
   font-weight: bold;
 }
 .st-row {
@@ -406,13 +420,13 @@ fieldset {
   min-width: 170px;
   text-align: right;
   font-size: 12px;
-  color: #555;
+  color: var(--vsc-fg-muted);
 }
 .st-input {
   flex: 1;
   padding: 4px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
   font-size: 12px;
   min-width: 0;
 }
@@ -427,13 +441,13 @@ fieldset {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #555;
+  color: var(--vsc-fg-muted);
 }
 .st-btn {
   padding: 4px 14px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: #fff;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  background: var(--vsc-bg-elevated);
   cursor: pointer;
   font-size: 12px;
 }
@@ -443,7 +457,7 @@ fieldset {
 }
 .st-help {
   cursor: pointer;
-  color: #337ab7;
+  color: var(--vsc-accent);
   text-decoration: none;
   font-weight: bold;
 }

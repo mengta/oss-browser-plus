@@ -413,7 +413,7 @@ module.exports = {
         copyFiles: {
           name: '复制对象（批量）',
           purpose: '批量复制到目标前缀',
-          params: '{ bucket, keys, targetPrefix }',
+          params: '{ region, items, target, progFn, removeAfterCopy, renameKey }（progFn 由 preload 转 progressId，经 oss:progress 推送）',
           result: '成功 { ok:true, data:object }（含成功/失败明细）；失败 OSS_ERROR',
           scope: '仅文件页对象操作',
         },
@@ -427,8 +427,8 @@ module.exports = {
         deleteFiles: {
           name: '删除对象（批量）',
           purpose: '删除选中对象',
-          params: '{ bucket, keys }',
-          result: '成功 { ok:true, data:object }；失败 OSS_ERROR',
+          params: '{ region, bucket, items, progCb }（progCb 由 preload 转 progressId，经 oss:progress 推送；无超时）',
+          result: '成功 { ok:true, data:object }；失败 OSS_ERROR（失败明细为 [{item,error}] 数组）',
           scope: '仅文件页对象操作',
         },
         deleteMultiFiles: {
@@ -896,6 +896,11 @@ module.exports = {
     },
   },
   events: {
+    'oss:progress': {
+      domain: 'oss',
+      payload: '{progressId,progress:{current,total,errorCount}}',
+      note: 'Vue3-B3-09：deleteFiles/copyFiles 专用一次性进度流，由 preload 生成 progressId 并按 id 过滤；调用返回即解绑，禁止长期持有',
+    },
     'transfer:progress': {
       domain: 'transfer',
       subscribe: 'subscribe',

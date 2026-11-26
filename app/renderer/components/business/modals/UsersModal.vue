@@ -167,15 +167,15 @@ refresh();
   padding: 8px 10px;
   font-size: 12px;
   margin-bottom: 10px;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 .alert-success {
-  background: #dff0d8;
-  color: #3c763d;
+  background: var(--vsc-success-bg);
+  color: var(--vsc-success);
 }
 .alert-danger {
-  background: #f2dede;
-  color: #a94442;
+  background: var(--vsc-danger-bg);
+  color: var(--vsc-danger);
 }
 .st-row {
   display: flex;
@@ -185,15 +185,15 @@ refresh();
 .st-input {
   flex: 1;
   padding: 5px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
   font-size: 12px;
 }
 .st-btn {
   padding: 4px 12px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: #fff;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  background: var(--vsc-bg-elevated);
   cursor: pointer;
   font-size: 12px;
 }
@@ -204,7 +204,7 @@ refresh();
 }
 .users-table th,
 .users-table td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--vsc-border-weak);
   padding: 5px 8px;
   text-align: left;
 }
@@ -212,16 +212,16 @@ refresh();
   word-break: break-all;
 }
 .text-primary {
-  color: #337ab7;
+  color: var(--vsc-accent);
 }
 .text-danger {
-  color: #d9534f;
+  color: #a1260d;
 }
 .st-loading,
 .st-empty {
   padding: 20px 0;
   text-align: center;
-  color: #999;
+  color: var(--vsc-fg-muted);
   font-size: 12px;
 }
 </style>

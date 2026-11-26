@@ -197,7 +197,7 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--vsc-border-weak);
 }
 .check-all {
   display: inline-flex;
@@ -217,7 +217,7 @@ onMounted(() => {
 .no-data {
   padding: 24px;
   text-align: center;
-  color: #999;
+  color: var(--vsc-fg-muted);
 }
 .table {
   width: 100%;
@@ -228,14 +228,14 @@ onMounted(() => {
 .table td {
   text-align: left;
   padding: 6px 8px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--vsc-border-weak);
 }
 .col-check {
   width: 30px;
 }
 .col-index {
   width: 40px;
-  color: #999;
+  color: var(--vsc-fg-muted);
 }
 .col-name {
   max-width: 240px;
@@ -248,7 +248,7 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #888;
+  color: var(--vsc-fg-muted);
 }
 .col-actions {
   width: 70px;
@@ -259,15 +259,15 @@ onMounted(() => {
 }
 .st-btn {
   padding: 4px 12px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: #fff;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  background: var(--vsc-bg-elevated);
   cursor: pointer;
   font-size: 12px;
 }
 .st-btn-danger {
-  background: #d9534f;
-  border-color: #d43f3a;
-  color: #fff;
+  background: var(#a1260d);
+  border-color: #a1260d;
+  color: var(--vsc-on-accent);
 }
 </style>

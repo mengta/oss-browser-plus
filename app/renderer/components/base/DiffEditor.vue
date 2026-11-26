@@ -8,6 +8,7 @@ import { MergeView } from '@codemirror/merge';
 import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { json } from '@codemirror/lang-json';
+import { vscodeEditorTheme } from '../../services/editor-theme.js';
 
 // DiffEditor（CM6 MergeView，替代 CM5 CodeMirror.MergeView + diff_match_patch）：
 // 双栏 diff、左栏 original 只读、右栏当前内容（readonly 时整体只读）；
@@ -36,12 +37,13 @@ onMounted(() => {
   mergeView = new MergeView({
     a: {
       doc: props.original,
-      extensions: languageExtensions(props.language).concat(readonlyExt),
+      extensions: languageExtensions(props.language).concat(readonlyExt, [vscodeEditorTheme]),
     },
     b: {
       doc: props.modelValue,
       extensions: languageExtensions(props.language).concat(
-        props.readonly ? readonlyExt : []
+        props.readonly ? readonlyExt : [],
+        [vscodeEditorTheme]
       ),
     },
     parent: host.value,

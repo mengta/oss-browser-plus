@@ -80,8 +80,8 @@ readClipboard();
 .ic-text {
   min-height: 150px;
   padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
   font-family: monospace;
   font-size: 12px;
 }
@@ -97,13 +97,13 @@ readClipboard();
 }
 .ic-label {
   min-width: 140px;
-  color: #666;
+  color: var(--vsc-fg-muted);
 }
 .ic-value {
   word-break: break-all;
 }
 .ic-error {
-  color: #d9534f;
+  color: #a1260d;
   font-size: 12px;
   margin: 0;
 }
@@ -113,10 +113,10 @@ readClipboard();
 }
 .ic-btn {
   padding: 4px 14px;
-  border: 1px solid #337ab7;
-  background: #337ab7;
-  color: #fff;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-accent);
+  background: var(--vsc-accent);
+  color: var(--vsc-on-accent);
+  border-radius: 2px;
   cursor: pointer;
 }
 .ic-btn[disabled] {

@@ -60,15 +60,15 @@ function onSubmit() {
 <style scoped>
 .st-btn {
   padding: 4px 12px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: #fff;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  background: var(--vsc-bg-elevated);
   cursor: pointer;
   font-size: 12px;
 }
 .st-btn-success {
-  background: #5cb85c;
-  border-color: #4cae4c;
-  color: #fff;
+  background: var(#2ea043);
+  border-color: #2ea043;
+  color: var(--vsc-on-accent);
 }
 </style>

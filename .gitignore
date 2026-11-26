@@ -23,3 +23,5 @@ pvl
 test-results/
 playwright-report/
 
+# 临时产物（换肤截图/性能测量/临时 bundle）
+.codeartsdoer/temp/

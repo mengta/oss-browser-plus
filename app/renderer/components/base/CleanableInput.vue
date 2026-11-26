@@ -73,7 +73,7 @@ defineExpose({ focus: () => inputEl.value && inputEl.value.focus() });
   transform: translateY(-50%);
   border: none;
   background: none;
-  color: #999;
+  color: var(--vsc-fg-muted);
   cursor: pointer;
   font-size: 16px;
   line-height: 1;

@@ -1,5 +1,5 @@
 <template>
-  <div class="file-list" data-testid="file-list">
+  <div class="file-list" data-testid="file-list" @contextmenu.prevent="emit('spacer-contextmenu', $event)">
     <EmptyState v-if="!filesStore.isLoading && filesStore.items.length === 0" icon="inbox" :text="t('nodata')" />
 
     <template v-else>
@@ -28,6 +28,7 @@
             :class="{ info: isSelected(index) }"
             data-testid="file-row"
             @click="filesStore.selectChanged(index, $event.shiftKey)"
+            @contextmenu.prevent.stop="onContext($event, item, index)"
           >
             <td class="col-check">
               <input type="checkbox" :checked="isSelected(index)" @change="filesStore.selectChanged(index, false)" />
@@ -103,6 +104,7 @@
           :class="{ active: isSelected(index) }"
           data-testid="file-card"
           @click="filesStore.selectChanged(index, $event.shiftKey)"
+          @contextmenu.prevent.stop="onContext($event, item, index)"
           @dblclick="item.isFolder ? enterFolder(item) : openItem(item)"
         >
           <input
@@ -139,7 +141,11 @@ import { formatDateTime } from '../../../services/formatters.js';
 
 const { t } = useI18n();
 const filesStore = useFilesStore();
-const emit = defineEmits(['preview', 'action']);
+const emit = defineEmits(['preview', 'action', 'contextmenu', 'spacer-contextmenu']);
+
+function onContext(event, item, index) {
+  emit('contextmenu', { event, item, index });
+}
 
 function isSelected(index) {
   return !!filesStore.selectedMap['i_' + index];
@@ -157,15 +163,15 @@ function isUploading(item) {
 // 等价 fileIcon filter（app/components/filters/formater.js:171-186）：
 // storageStatus==2 → hourglass 警示；Archive 未解冻 → 灰；Symlink → 链接图标。
 function iconOf(item) {
-  if (!item) return { name: 'fallback', cls: '', tip: '' };
+  if (!item) return { name: 'file', cls: '', tip: '' };
   if (item.storageStatus === 2) return { name: 'hourglass', cls: 'text-warning', tip: t('restore') };
   if (item.storageClass === 'Archive' && item.storageStatus !== 3) {
-    return { name: 'fallback', cls: 'text-muted', tip: '' };
+    return { name: 'file', cls: 'text-muted', tip: '' };
   }
   if (item.isFolder) return { name: 'folder', cls: 'text-folder', tip: '' };
   if (item.type === 'Symlink') return { name: 'soft-link', cls: 'text-link', tip: item.name };
   getFileType(item);
-  return { name: 'fallback', cls: '', tip: '' };
+  return { name: 'file', cls: '', tip: '' };
 }
 
 function canGetAddress(item) {
@@ -211,27 +217,27 @@ function emitAction(type, item) {
 .table td {
   text-align: left;
   padding: 6px 10px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--vsc-border-weak);
 }
 .table tbody tr {
   cursor: default;
 }
 .table tbody tr:hover {
-  background: #f7f7f7;
+  background: var(--vsc-bg-hover);
 }
 .table tbody tr.info {
-  background: #e6f7ff;
+  background: var(--vsc-bg-active);
 }
 .col-check {
   width: 30px;
 }
 .col-size {
   width: 140px;
-  color: #666;
+  color: var(--vsc-fg-muted);
 }
 .col-time {
   width: 170px;
-  color: #666;
+  color: var(--vsc-fg-muted);
 }
 .col-actions {
   width: 220px;
@@ -240,7 +246,7 @@ function emitAction(type, item) {
 }
 .col-actions a {
   margin-left: 8px;
-  color: #1890ff;
+  color: var(--vsc-link);
   text-decoration: none;
 }
 .name-cell {
@@ -249,26 +255,26 @@ function emitAction(type, item) {
   gap: 6px;
 }
 .name-cell a {
-  color: #333;
+  color: var(--vsc-fg);
   text-decoration: none;
 }
 .name-cell a:hover {
-  color: #1890ff;
+  color: var(--vsc-link);
 }
 .name-cell a.muted {
-  color: #aaa;
+  color: var(--vsc-fg-muted);
 }
 .text-warning {
-  color: #faad14;
+  color: var(--vsc-warning);
 }
 .text-muted {
-  color: #bbb;
+  color: var(--vsc-fg-muted);
 }
 .text-folder {
-  color: #f5a623;
+  color: #dcb67a;
 }
 .text-link {
-  color: #1890ff;
+  color: var(--vsc-link);
 }
 .cards {
   display: flex;
@@ -279,8 +285,8 @@ function emitAction(type, item) {
 .card {
   position: relative;
   width: 200px;
-  border: 1px solid #e5e5e5;
-  border-radius: 4px;
+  border: 1px solid var(--vsc-border-weak);
+  border-radius: 2px;
   padding: 10px;
   cursor: default;
   display: flex;
@@ -288,11 +294,11 @@ function emitAction(type, item) {
   gap: 6px;
 }
 .card:hover {
-  background: #f7f7f7;
+  background: var(--vsc-bg-hover);
 }
 .card.active {
-  border-color: #1890ff;
-  background: #e6f7ff;
+  border-color: var(--vsc-link);
+  background: var(--vsc-bg-active);
 }
 .card-check {
   position: absolute;
@@ -303,7 +309,7 @@ function emitAction(type, item) {
   width: 32px;
   height: 32px;
   object-fit: cover;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 .card-name {
   font-size: 13px;
@@ -313,6 +319,6 @@ function emitAction(type, item) {
 }
 .card-desc {
   font-size: 12px;
-  color: #888;
+  color: var(--vsc-fg-muted);
 }
 </style>

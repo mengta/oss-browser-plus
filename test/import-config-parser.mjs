@@ -1,5 +1,6 @@
 import test from 'ava';
-import parser from '../app/main/auth/import-config-parser.js';
+// B4-09 后 Angular 源删除：改为引用 Vue 渲染层等价纯函数（同一断言保留）
+import * as parser from '../app/renderer/services/import-config-parser.js';
 
 const ID = 'STS.NYjnAQjmQWRhmNXDhiYCpTgMP';
 const SECRET = '61kjGMYXcMzZFKwaMKHVoU11vwPfgB3DL5pUnoMKfnbM';

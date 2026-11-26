@@ -1,13 +1,13 @@
 <template>
   <div class="file-toolbar" data-testid="file-toolbar">
     <button type="button" class="btn btn-default" data-testid="file-upload" :disabled="readOnly" @click="emit('upload', false)">
-      {{ isMac ? t('upload') : t('upload') }}
+      <AppIcon name="cloud-upload" class="tb-icon" /> {{ isMac ? t('upload') : t('upload') }}
     </button>
     <button v-if="!isMac" type="button" class="btn btn-default" data-testid="file-upload-folder" :disabled="readOnly" @click="emit('upload', true)">
-      {{ t('files') }}
+      <AppIcon name="folder" class="tb-icon" /> {{ t('files') }}
     </button>
     <button type="button" class="btn btn-default" data-testid="file-mkdir" :disabled="readOnly" @click="emit('mkdir')">
-      {{ t('folder.create') }}
+      <AppIcon name="plus" class="tb-icon" /> {{ t('folder.create') }}
     </button>
     <span class="divider" />
     <label class="check-all">
@@ -15,10 +15,10 @@
       {{ t('select.all') }}
     </label>
     <button type="button" class="btn btn-default" data-testid="file-download" :disabled="!selHas" @click="emit('download', filesStore.selectedList)">
-      {{ t('download') }}
+      <AppIcon name="download" class="tb-icon" /> {{ t('download') }}
     </button>
     <button type="button" class="btn btn-default" data-testid="file-copy" :disabled="!selHas || readOnly" @click="emit('copy', filesStore.selectedList)">
-      {{ t('copy') }}
+      <AppIcon name="copy" class="tb-icon" /> {{ t('copy') }}
     </button>
 
     <!-- 更多下拉（等价 file-toolbar.html:106-242） -->
@@ -28,7 +28,7 @@
       </button>
       <div v-if="showMore" class="dropdown">
         <button type="button" class="dropdown-item" data-testid="more-move" :disabled="!selHas || readOnly" @click="fire('move')">
-          {{ t('move') }}
+          <AppIcon name="cut" class="tb-icon" /> {{ t('move') }}
         </button>
         <button
           type="button"
@@ -37,39 +37,49 @@
           :disabled="!canRename"
           @click="fire('rename')"
         >
-          {{ t('rename') }}
+          <AppIcon name="edit" class="tb-icon" /> {{ t('rename') }}
         </button>
         <button type="button" class="dropdown-item" data-testid="more-acl" :disabled="!canAcl" @click="showAcl">
-          {{ t('acl') }}
+          <AppIcon name="shield" class="tb-icon" /> {{ t('acl') }}
         </button>
         <button type="button" class="dropdown-item" data-testid="more-grant" :disabled="!selHas || isSts" @click="fire('grant')">
-          {{ t('simplePolicy') }}
+          <AppIcon name="shield" class="tb-icon" /> {{ t('simplePolicy') }}
         </button>
         <button type="button" class="dropdown-item" data-testid="more-grant-token" :disabled="!canGrantToken" @click="fire('grant-token')">
-          {{ t('genAuthToken') }}
+          <AppIcon name="shield" class="tb-icon" /> {{ t('genAuthToken') }}
         </button>
         <button type="button" class="dropdown-item" data-testid="more-address" :disabled="!canAddress" @click="fire('address')">
-          {{ t('getAddress') }}
+          <AppIcon name="download" class="tb-icon" /> {{ t('getAddress') }}
         </button>
         <button type="button" class="dropdown-item" data-testid="more-http-headers" :disabled="!canHeaders" @click="showHeaders">
-          {{ t('http.headers') }}
+          <AppIcon name="cog" class="tb-icon" /> {{ t('http.headers') }}
         </button>
         <button type="button" class="dropdown-item" data-testid="more-restore" :disabled="!selHas || !canRestoreAny" @click="fire('restore')">
-          {{ t('restore') }}
+          <AppIcon name="hourglass" class="tb-icon" /> {{ t('restore') }}
         </button>
         <button type="button" class="dropdown-item" data-testid="more-symlink" :disabled="!canSymlink" @click="fire('symlink')">
-          {{ t('file.op.set_symlink') }}
+          <AppIcon name="soft-link" class="tb-icon" /> {{ t('file.op.set_symlink') }}
         </button>
         <button type="button" class="dropdown-item" data-testid="more-delete" :disabled="!selHas || readOnly" @click="fire('delete')">
-          {{ t('delete') }}
+          <AppIcon name="trash" class="tb-icon" /> {{ t('delete') }}
         </button>
       </div>
     </div>
 
     <!-- 粘贴组（等价 file-toolbar.html:244-271，keepMoveOptions 存在时显示） -->
     <template v-if="pastePending">
-      <button type="button" class="btn btn-default" data-testid="file-paste" @click="emit('paste')">{{ t('paste') }}</button>
-      <button type="button" class="btn btn-default" data-testid="file-paste-cancel" @click="emit('cancel-paste')">{{ t('copy.cancel') }}</button>
+      <button type="button" class="btn btn-default" data-testid="file-paste" @click="emit('paste')">
+        <AppIcon name="paste" class="tb-icon" /> {{ t('paste') }}{{ pasteCount ? '(' + pasteCount + ')' : '' }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-default"
+        data-testid="file-paste-cancel"
+        :title="pasteIsCopy ? t('copy.cancel') : t('move.cancel')"
+        @click="emit('cancel-paste')"
+      >
+        {{ t('copy.cancel') }}
+      </button>
     </template>
 
     <div class="spacer" />
@@ -101,6 +111,7 @@
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ListViewOptions from './ListViewOptions.vue';
+import AppIcon from '../../base/AppIcon.vue';
 import { useFilesStore } from '../../../stores/files.js';
 import { useAuthStore } from '../../../stores/auth.js';
 import { useBootstrapStore } from '../../../stores/bootstrap.js';
@@ -108,6 +119,8 @@ import { useUiStore } from '../../../stores/ui.js';
 
 const props = defineProps({
   pastePending: { type: Boolean, default: false },
+  pasteCount: { type: Number, default: 0 },
+  pasteIsCopy: { type: Boolean, default: false },
 });
 
 const emit = defineEmits([
@@ -198,12 +211,18 @@ function showHeaders() {
 </script>
 
 <style scoped>
+.tb-icon {
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
 .file-toolbar {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--vsc-border-weak);
   flex-wrap: wrap;
 }
 .btn {
@@ -212,14 +231,14 @@ function showHeaders() {
 .divider {
   width: 1px;
   height: 18px;
-  background: #e0e0e0;
+  background: var(--vsc-border);
 }
 .check-all {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #555;
+  color: var(--vsc-fg-muted);
 }
 .more {
   position: relative;
@@ -229,9 +248,9 @@ function showHeaders() {
   top: 100%;
   left: 0;
   min-width: 140px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 3px;
+  background: var(--vsc-bg-elevated);
+  border: 1px solid var(--vsc-border-weak);
+  border-radius: 2px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   z-index: 20;
   padding: 4px 0;
@@ -245,13 +264,13 @@ function showHeaders() {
   background: none;
   cursor: pointer;
   font-size: 13px;
-  color: #333;
+  color: var(--vsc-fg);
 }
 .dropdown-item:hover:not(:disabled) {
-  background: #f0f6ff;
+  background: var(--vsc-info-bg);
 }
 .dropdown-item:disabled {
-  color: #bbb;
+  color: var(--vsc-fg-muted);
   cursor: not-allowed;
 }
 .spacer {
@@ -266,13 +285,13 @@ function showHeaders() {
   width: 150px;
 }
 .badge {
-  background: #f0f0f0;
-  border-radius: 8px;
+  background: var(--vsc-border-weak);
+  border-radius: 2px;
   padding: 0 6px;
   font-size: 12px;
 }
 .region {
   font-size: 12px;
-  color: #888;
+  color: var(--vsc-fg-muted);
 }
 </style>

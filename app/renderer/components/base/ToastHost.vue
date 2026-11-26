@@ -1,70 +1,60 @@
 <template>
-  <div class="toast-host" role="log" aria-live="polite">
+  <div class="toast-host" data-testid="toast-host">
     <div
       v-for="item in toast.items"
       :key="item.id"
-      class="toast-host-item"
+      class="toast-item"
+      data-testid="toast-item"
       :class="'toast-' + item.type"
-      :data-testid="'toast-item'"
     >
-      <span class="toast-msg">{{ item.message }}</span>
-      <button class="toast-copy" type="button" @click="copy(item)">复制</button>
-      <button class="toast-close" type="button" @click="toast.remove(item.id)">×</button>
+      <span class="toast-kind" :data-testid="'toast-' + item.type" />
+      {{ item.message }}
     </div>
   </div>
 </template>
 
 <script setup>
+// 等价 Angular toast-list 指令：右上角列表、按 type 着色、store 内 ttl 到期自动移除。
 import { useToastStore } from '../../stores/toast.js';
 
 const toast = useToastStore();
-
-async function copy(item) {
-  await toast.copy(item);
-}
 </script>
 
 <style scoped>
 .toast-host {
   position: fixed;
-  bottom: 0;
-  left: 10px;
-  right: 70%;
-  z-index: 10000;
-}
-.toast-host-item {
+  top: 60px;
+  right: 16px;
+  z-index: 1300;
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 6px;
-  padding: 8px 10px;
-  border-radius: 4px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  font-size: 12px;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
 }
-.toast-msg {
-  flex: 1;
+.toast-kind {
+  display: none;
+}
+.toast-item {
+  max-width: 360px;
+  padding: 8px 12px;
+  border-radius: 2px;
+  font-size: 13px;
+  color: var(--vsc-on-accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   word-break: break-all;
 }
-.toast-danger {
-  border-left: 3px solid #d9534f;
-}
 .toast-success {
-  border-left: 3px solid #5cb85c;
-}
-.toast-warning {
-  border-left: 3px solid #f0ad4e;
+  background: var(#2ea043);
 }
 .toast-info {
-  border-left: 3px solid #5bc0de;
+  background: var(--vsc-accent);
 }
-.toast-copy,
-.toast-close {
-  background: none;
-  border: none;
-  padding: 0 2px;
-  cursor: pointer;
-  color: #666;
+.toast-warning,
+.toast-warn {
+  background: var(#8a6d00);
+}
+.toast-danger,
+.toast-error {
+  background: var(#a1260d);
 }
 </style>

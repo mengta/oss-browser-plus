@@ -84,3 +84,29 @@ export function subscribe(domain, callback) {
 
 export const subscribeTransfer = (callback) => subscribe('transfer', callback);
 export const subscribeUpgrade = (callback) => subscribe('upgrade', callback);
+
+// B4-03：静态服务端口就绪门（1.5s 未就绪即视为失败；业务请求前可 await）
+let portReadyPromise = null;
+export function portReady() {
+  if (!portReadyPromise) {
+    portReadyPromise = invoke(
+      () => {
+        const live = bridge();
+        if (!live || !live.system || typeof live.system.getStaticServerPort !== 'function') {
+          return { ok: false, code: 'UNAVAILABLE', message: 'static server port unavailable' };
+        }
+        return live.system.getStaticServerPort();
+      },
+      'system.getStaticServerPort',
+      1500
+    ).then((res) => {
+      if (res && res.ok && Number.isFinite(res.data)) {
+        return res.data;
+      }
+      const err = new Error('static server port is not ready');
+      err.code = 'PORT_NOT_READY';
+      throw err;
+    });
+  }
+  return portReadyPromise;
+}

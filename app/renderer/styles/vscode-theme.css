@@ -1,0 +1,495 @@
+/* VS Code Dark+ 主题（B5-UI）
+ * 变量为单一来源；组件 scoped 样式通过 var(--vsc-*) 引用。
+ * 覆盖 bootstrap 3 组件（navbar/btn/form/table/modal/dropdown/alert/progress/badge/tabs/pagination）。
+ */
+:root {
+  --vsc-bg: #1e1e1e;
+  --vsc-bg-elevated: #252526;
+  --vsc-bg-input: #3c3c3c;
+  --vsc-bg-hover: #2a2d2e;
+  --vsc-bg-active: #094771;
+  --vsc-border: #3c3c3c;
+  --vsc-border-weak: #2d2d2d;
+--vsc-border-strong: #454545;
+  --vsc-activity-bg: #333333;
+  --vsc-activity-border: #2b2b2b;
+  --vsc-activity-fg: #9d9d9d;
+  --vsc-activity-fg-active: #ffffff;
+  --vsc-mask: rgba(0, 0, 0, 0.45);
+  --vsc-fg: #cccccc;
+  --vsc-fg-muted: #9d9d9d;
+  --vsc-fg-dim: #6e7681;
+  --vsc-on-accent: #ffffff;
+  --vsc-accent: #007acc;
+  --vsc-accent-hover: #0e639c;
+  --vsc-link: #3794ff;
+  --vsc-success: #89d185;
+  --vsc-warning: #cca700;
+  --vsc-danger: #f14c4c;
+  --vsc-success-bg: #1e3a1e;
+  --vsc-warning-bg: #352a05;
+  --vsc-danger-bg: #5a1d1d;
+  --vsc-info-bg: #0e2a3a;
+  --vsc-code-bg: #1e1e1e;
+  --vsc-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  --vsc-font: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  --vsc-mono: "Cascadia Code", "Consolas", "Courier New", monospace;
+  --vsc-titlebar-h: 35px;
+  --vsc-statusbar-h: 22px;
+}
+
+html,
+body {
+  background: var(--vsc-bg);
+  color: var(--vsc-fg);
+  font-family: var(--vsc-font);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+::selection {
+  background: var(--vsc-bg-active);
+}
+
+a {
+  color: var(--vsc-link);
+}
+a:hover {
+  color: #4daafc;
+}
+
+/* 细滚动条（VS Code 观感） */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #424242;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4f4f4f;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ---------- 标题栏（TopBar） ---------- */
+.navbar.my-nav {
+  min-height: var(--vsc-titlebar-h);
+  background: #3c3c3c;
+  border: none;
+  border-bottom: 1px solid #2b2b2b;
+  box-shadow: none;
+}
+.navbar.my-nav .navbar-brand,
+.navbar.my-nav .navbar-nav > li > a,
+.navbar.my-nav .mini-link {
+  color: var(--vsc-fg);
+  font-size: 12px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.navbar.my-nav .navbar-nav > li.active > a {
+  background: #2b2b2b;
+  color: var(--vsc-on-accent);
+}
+.navbar.my-nav .navbar-nav > li > a:hover,
+.navbar.my-nav .mini-link:hover {
+  background: #2b2b2b;
+}
+
+/* ---------- 按钮 ---------- */
+.btn,
+.st-btn {
+  border-radius: 2px !important;
+  font-size: 12px;
+  padding: 3px 10px;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+.btn-default,
+.st-btn {
+  background: #3a3d41 !important;
+  border: 1px solid var(--vsc-border) !important;
+  color: var(--vsc-fg) !important;
+}
+.btn-default:hover,
+.st-btn:hover {
+  background: #45494e !important;
+}
+.btn-primary,
+.st-btn-primary {
+  background: var(--vsc-accent-hover) !important;
+  border: 1px solid var(--vsc-accent-hover) !important;
+  color: var(--vsc-on-accent) !important;
+}
+.btn-primary:hover,
+.st-btn-primary:hover {
+  background: var(--vsc-accent) !important;
+}
+.btn-success,
+.st-btn-success {
+  background: #2ea043 !important;
+  border-color: #2ea043 !important;
+  color: var(--vsc-on-accent) !important;
+}
+.btn-danger,
+.st-btn-danger {
+  background: #a1260d !important;
+  border-color: #a1260d !important;
+  color: var(--vsc-on-accent) !important;
+}
+.btn-warning,
+.st-btn-warning {
+  background: #8a6d00 !important;
+  border-color: #8a6d00 !important;
+  color: var(--vsc-on-accent) !important;
+}
+.btn[disabled],
+.st-btn:disabled {
+  opacity: 0.5;
+}
+
+/* ---------- 表单 ---------- */
+.form-control,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+  background: var(--vsc-bg-input);
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  color: var(--vsc-fg);
+  box-shadow: none;
+  font-size: 12px;
+}
+.form-control:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  background: var(--vsc-bg-input);
+  border-color: var(--vsc-accent);
+  color: var(--vsc-fg);
+  outline: 1px solid var(--vsc-accent);
+  box-shadow: none;
+}
+.form-control::placeholder {
+  color: var(--vsc-fg-dim);
+}
+
+/* ---------- 表格 ---------- */
+.table {
+  background: transparent;
+  color: var(--vsc-fg);
+}
+.table > thead > tr > th {
+  background: var(--vsc-bg-elevated);
+  border-bottom: 1px solid var(--vsc-border);
+  color: var(--vsc-fg-muted);
+  font-weight: 600;
+  padding: 4px 10px;
+}
+.table > tbody > tr > td {
+  border-bottom: 1px solid var(--vsc-border-weak);
+  padding: 4px 10px;
+}
+.table > tbody > tr:hover {
+  background: var(--vsc-bg-hover);
+}
+.table > tbody > tr.info,
+.table > tbody > tr.active {
+  background: var(--vsc-bg-active);
+  color: var(--vsc-on-accent);
+}
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background: transparent;
+}
+
+/* ---------- 弹窗 ---------- */
+.modal-content,
+.base-modal {
+  background: var(--vsc-bg-elevated) !important;
+  color: var(--vsc-fg);
+  border: 1px solid #454545;
+  border-radius: 2px !important;
+  box-shadow: var(--vsc-shadow) !important;
+}
+.modal-header,
+.modal-footer,
+.base-modal-header,
+.base-modal-footer {
+  border-color: var(--vsc-border);
+}
+.modal-backdrop.in {
+  opacity: 0.55;
+}
+.base-modal-mask {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* ---------- 下拉/右键菜单 ---------- */
+.dropdown-menu,
+.context-menu {
+  background: var(--vsc-bg-elevated) !important;
+  border: 1px solid #454545 !important;
+  border-radius: 2px !important;
+  box-shadow: var(--vsc-shadow) !important;
+}
+.dropdown-menu > li > a,
+.cm-item {
+  color: var(--vsc-fg);
+  font-size: 12px;
+}
+.dropdown-menu > li > a:hover,
+.dropdown-menu > li > a:focus,
+.cm-item:hover {
+  background: var(--vsc-bg-active);
+  color: var(--vsc-on-accent);
+}
+.dropdown-menu .divider,
+.cm-divider {
+  background: var(--vsc-border);
+}
+
+/* ---------- 提示/徽标/进度 ---------- */
+.alert {
+  border-radius: 2px;
+  border-width: 1px;
+}
+.alert-success {
+  background: var(--vsc-success-bg);
+  border-color: #2ea043;
+  color: var(--vsc-success);
+}
+.alert-warning {
+  background: var(--vsc-warning-bg);
+  border-color: #8a6d00;
+  color: var(--vsc-warning);
+}
+.alert-danger,
+.alert-error {
+  background: var(--vsc-danger-bg);
+  border-color: #a1260d;
+  color: var(--vsc-danger);
+}
+.alert-info {
+  background: var(--vsc-info-bg);
+  border-color: var(--vsc-accent);
+  color: var(--vsc-link);
+}
+.badge {
+  background: #4d4d4d;
+  border-radius: 2px;
+  font-weight: 500;
+}
+.progress {
+  background: #333333;
+  border-radius: 0;
+  box-shadow: none;
+  height: 8px;
+}
+.progress-bar {
+  box-shadow: none;
+  background-color: var(--vsc-accent);
+}
+.progress-bar-success {
+  background-color: #2ea043;
+}
+.progress-bar-danger {
+  background-color: #a1260d;
+}
+
+/* ---------- 页签/分页 ---------- */
+.nav-tabs {
+  border-bottom-color: var(--vsc-border);
+}
+.nav-tabs > li > a {
+  color: var(--vsc-fg-muted);
+  border-radius: 0;
+}
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+  background: var(--vsc-bg);
+  border-color: var(--vsc-border);
+  border-bottom-color: var(--vsc-bg);
+  color: var(--vsc-fg);
+}
+.pagination > li > a,
+.pagination > li > span {
+  background: var(--vsc-bg-input);
+  border-color: var(--vsc-border);
+  color: var(--vsc-fg);
+}
+.pagination > .active > a,
+.pagination > .active > span {
+  background: var(--vsc-accent);
+  border-color: var(--vsc-accent);
+  color: var(--vsc-on-accent);
+}
+
+/* ---------- 其它 ---------- */
+.well,
+.panel,
+.panel-heading,
+.panel-body,
+.list-group-item,
+.input-group-addon {
+  background: var(--vsc-bg-elevated);
+  border-color: var(--vsc-border);
+  color: var(--vsc-fg);
+  border-radius: 2px;
+  box-shadow: none;
+}
+.text-muted {
+  color: var(--vsc-fg-muted) !important;
+}
+.text-info {
+  color: var(--vsc-link) !important;
+}
+.text-success {
+  color: var(--vsc-success) !important;
+}
+.text-warning {
+  color: var(--vsc-warning) !important;
+}
+.text-danger {
+  color: var(--vsc-danger) !important;
+}
+.text-primary {
+  color: var(--vsc-accent) !important;
+}
+.text-folder {
+  color: #dcb67a !important;
+}
+code,
+pre,
+.code,
+.cm-editor {
+  font-family: var(--vsc-mono);
+}
+
+/* ---------- VS Code Light+ ---------- */
+html[data-theme="light"] {
+  --vsc-bg: #ffffff;
+  --vsc-bg-elevated: #f3f3f3;
+  --vsc-bg-input: #ffffff;
+  --vsc-bg-hover: #e8e8e8;
+  --vsc-bg-active: #0060c0;
+  --vsc-border: #cecece;
+  --vsc-border-weak: #ececec;
+  --vsc-border-strong: #c8c8c8;
+  --vsc-fg: #333333;
+  --vsc-fg-muted: #616161;
+  --vsc-fg-dim: #8c8c8c;
+  --vsc-on-accent: #ffffff;
+  --vsc-accent: #007acc;
+  --vsc-accent-hover: #0062a3;
+  --vsc-link: #006ab1;
+  --vsc-success: #16825d;
+  --vsc-warning: #b58900;
+  --vsc-danger: #cd3131;
+  --vsc-success-bg: #e6f4ea;
+  --vsc-warning-bg: #fff8e1;
+  --vsc-danger-bg: #fdecea;
+  --vsc-info-bg: #e8f2fb;
+  --vsc-code-bg: #ffffff;
+  --vsc-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  --vsc-activity-bg: #f3f3f3;
+  --vsc-activity-border: #e5e5e5;
+  --vsc-activity-fg: #616161;
+  --vsc-activity-fg-active: #333333;
+  --vsc-mask: rgba(0, 0, 0, 0.25);
+}
+html[data-theme="light"] ::selection {
+  background: #add6ff;
+}
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+}
+html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+html[data-theme="light"] .navbar.my-nav {
+  background: #f3f3f3;
+  border-bottom-color: #d4d4d4;
+}
+html[data-theme="light"] .navbar.my-nav .navbar-brand,
+html[data-theme="light"] .navbar.my-nav .navbar-nav > li > a,
+html[data-theme="light"] .navbar.my-nav .mini-link {
+  color: #333333;
+}
+html[data-theme="light"] .navbar.my-nav .navbar-nav > li.active > a,
+html[data-theme="light"] .navbar.my-nav .navbar-nav > li > a:hover,
+html[data-theme="light"] .navbar.my-nav .mini-link:hover {
+  background: #e8e8e8;
+  color: #333333;
+}
+html[data-theme="light"] .btn-default,
+html[data-theme="light"] .st-btn {
+  background: #f3f3f3 !important;
+  border-color: #c8c8c8 !important;
+  color: #333333 !important;
+}
+html[data-theme="light"] .btn-default:hover,
+html[data-theme="light"] .st-btn:hover {
+  background: #e5e5e5 !important;
+}
+html[data-theme="light"] .btn-primary,
+html[data-theme="light"] .st-btn-primary {
+  background: #007acc !important;
+  border-color: #007acc !important;
+}
+html[data-theme="light"] .table > thead > tr > th {
+  background: #f3f3f3;
+  color: #616161;
+  border-bottom-color: #d4d4d4;
+}
+html[data-theme="light"] .table > tbody > tr > td {
+  border-bottom-color: #ececec;
+}
+html[data-theme="light"] .table > tbody > tr:hover {
+  background: #f5f5f5;
+}
+html[data-theme="light"] .table > tbody > tr.info,
+html[data-theme="light"] .table > tbody > tr.active {
+  background: #cfe4ff;
+  color: #000000;
+}
+html[data-theme="light"] .modal-content,
+html[data-theme="light"] .base-modal {
+  background: #f3f3f3 !important;
+  border-color: #c8c8c8;
+  color: #333333;
+}
+html[data-theme="light"] .dropdown-menu,
+html[data-theme="light"] .context-menu {
+  background: #f3f3f3 !important;
+  border-color: #c8c8c8 !important;
+}
+html[data-theme="light"] .dropdown-menu > li > a,
+html[data-theme="light"] .cm-item {
+  color: #333333;
+}
+html[data-theme="light"] .dropdown-menu > li > a:hover,
+html[data-theme="light"] .dropdown-menu > li > a:focus,
+html[data-theme="light"] .cm-item:hover {
+  background: #0060c0;
+  color: #ffffff;
+}
+html[data-theme="light"] .progress {
+  background: #e1e1e1;
+}
+html[data-theme="light"] .badge {
+  background: #e1e1e1;
+  color: #333333;
+}
+html[data-theme="light"] .base-modal-mask {
+  background: rgba(0, 0, 0, 0.25);
+}

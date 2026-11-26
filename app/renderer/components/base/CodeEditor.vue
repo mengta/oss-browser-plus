@@ -4,10 +4,11 @@
 
 <script setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { EditorView, keymap } from '@codemirror/view';
+import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { json } from '@codemirror/lang-json';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
+import { vscodeEditorTheme } from '../../services/editor-theme.js';
 
 // CodeMirror 6 封装（等价 ui-codemirror + onLoad）：
 // 统一 API 为 v-model / readonly / language / onReady（D-15 / R-V3-04）。
@@ -33,6 +34,10 @@ function buildExtensions() {
   const exts = [
     keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
     history(),
+    lineNumbers(),
+    highlightActiveLine(),
+    highlightActiveLineGutter(),
+    vscodeEditorTheme,
     EditorView.updateListener.of((update) => {
       if (update.docChanged) {
         emit('update:modelValue', update.state.doc.toString());
@@ -100,8 +105,10 @@ defineExpose({
 
 <style scoped>
 .code-editor {
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
   text-align: left;
 }
 .code-editor :deep(.cm-editor) {

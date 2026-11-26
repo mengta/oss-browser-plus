@@ -64,7 +64,7 @@ function onCancel() {
 .fav-empty {
   padding: 24px 0;
   text-align: center;
-  color: #999;
+  color: var(--vsc-fg-muted);
   font-size: 12px;
 }
 .fav-table {
@@ -74,7 +74,7 @@ function onCancel() {
 }
 .fav-table th,
 .fav-table td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--vsc-border-weak);
   padding: 5px 8px;
   text-align: left;
 }
@@ -82,13 +82,13 @@ function onCancel() {
   word-break: break-all;
 }
 .fav-remove {
-  color: #d9534f;
+  color: #a1260d;
 }
 .fav-btn {
   padding: 4px 14px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: #fff;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  background: var(--vsc-bg-elevated);
   cursor: pointer;
   font-size: 12px;
 }

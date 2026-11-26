@@ -159,13 +159,13 @@ function onCancel() {
   min-width: 110px;
   text-align: right;
   font-size: 12px;
-  color: #555;
+  color: var(--vsc-fg-muted);
 }
 .st-input {
   flex: 1;
   padding: 5px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
   font-size: 12px;
   min-width: 0;
 }
@@ -173,29 +173,29 @@ function onCancel() {
   flex: 0 0 160px;
 }
 .st-invalid {
-  border-color: #d9534f;
+  border-color: #a1260d;
 }
 .st-error {
-  color: #d9534f;
+  color: #a1260d;
   font-size: 11px;
   width: 100%;
   text-align: right;
 }
 .st-btn {
   padding: 4px 14px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: #fff;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  background: var(--vsc-bg-elevated);
   cursor: pointer;
   font-size: 12px;
 }
 .st-btn-primary {
-  border-color: #337ab7;
-  background: #337ab7;
-  color: #fff;
+  border-color: var(--vsc-accent);
+  background: var(--vsc-accent);
+  color: var(--vsc-on-accent);
 }
 .red {
-  color: #d9534f;
+  color: #a1260d;
 }
 .st-actions {
   justify-content: flex-end;

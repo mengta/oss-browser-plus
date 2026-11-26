@@ -8,7 +8,7 @@
       :title="t('common.listView') || 'List view'"
       @click="filesStore.setView('list')"
     >
-      <AppIcon name="inbox" />
+      <AppIcon name="square" />
     </button>
     <button
       type="button"
@@ -18,7 +18,7 @@
       :title="t('common.blockView') || 'Block view'"
       @click="filesStore.setView('blocks')"
     >
-      <AppIcon name="fallback" />
+      <AppIcon name="file" />
     </button>
   </div>
 </template>
@@ -45,9 +45,9 @@ const filesStore = useFilesStore();
   padding: 4px 6px;
   cursor: pointer;
   line-height: 1;
-  color: #555;
+  color: var(--vsc-fg-muted);
 }
 .btn-icon.active {
-  color: #1890ff;
+  color: var(--vsc-link);
 }
 </style>

@@ -23,7 +23,7 @@ defineProps({
   justify-content: center;
   gap: 8px;
   padding: 32px 16px;
-  color: #999;
+  color: var(--vsc-fg-muted);
   text-align: center;
 }
 .empty-state-icon {

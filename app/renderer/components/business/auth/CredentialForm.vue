@@ -3,7 +3,7 @@
     <div class="cf-row">
       <label class="cf-label" :class="{ 'cf-error-text': touched && errors.endpoint }">
         <span class="red">*</span> Endpoint:
-        <span class="cf-pop" :title="t('auth.eptpl.popup.msg1') + ' ' + t('auth.eptpl.popup.msg2')">?</span>
+        <HintTooltip class="cf-pop" data-testid="login-eptpl-help" :text="t('auth.eptpl.popup.msg1') + ' ' + t('auth.eptpl.popup.msg2')" />
       </label>
       <div class="cf-endpoint">
         <select :value="eptplType" class="cf-plain" data-testid="login-endpoint-type" @change="onEndpointTypeChange($event.target.value)">
@@ -89,7 +89,7 @@
     <div class="cf-row">
       <label class="cf-label" :class="{ 'cf-error-text': touched && errors.osspath }">
         {{ t('auth.presetOssPath') }}:
-        <span class="cf-pop" :title="t('auth.presetOssPath.popup.msg1') + ' ' + t('auth.presetOssPath.popup.msg2')">?</span>
+        <HintTooltip class="cf-pop" data-testid="login-osspath-help" :text="t('auth.presetOssPath.popup.msg1') + ' ' + t('auth.presetOssPath.popup.msg2')" />
       </label>
       <input
         v-model="local.osspath"
@@ -99,20 +99,6 @@
         :placeholder="t('auth.presetOssPath.placeholder')"
         data-testid="login-osspath"
       />
-    </div>
-
-    <div v-if="local.osspath" class="cf-row">
-      <label class="cf-label">
-        <label class="cf-inline" data-testid="login-requestpay">
-          <input
-            type="checkbox"
-            :checked="requestpay === 'YES'"
-            @change="onRequestPayChange($event.target.checked ? 'YES' : 'NO')"
-          />
-          {{ t('requestPay') }}
-          <span class="cf-pop" :title="t('requestpay.popup.msg')">?</span>
-        </label>
-      </label>
     </div>
 
     <div v-if="showRegion" class="cf-row">
@@ -147,7 +133,21 @@
           @change="$emit('update:remember', $event.target.checked)"
         />
         {{ t('auth.remember') }}
-        <span class="cf-pop" :title="t('auth.remember.popup.msg1')">?</span>
+        <HintTooltip class="cf-pop" data-testid="login-remember-help" :text="t('auth.remember.popup.msg1')" />
+      </label>
+      <label class="cf-inline" data-testid="login-requestpay">
+        <input
+          type="checkbox"
+          :checked="requestpay === 'YES'"
+          @change="onRequestPayChange($event.target.checked ? 'YES' : 'NO')"
+        />
+        {{ t('requestPay') }}
+        <HintTooltip
+          class="cf-pop"
+          data-testid="login-requestpay-help"
+          :text="t('requestpay.popup.msg')"
+          link-url="https://help.aliyun.com/document_detail/91337.html"
+        />
       </label>
     </div>
 
@@ -159,6 +159,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { regions } from '../../../services/constants.js';
+import HintTooltip from '../../base/HintTooltip.vue';
 
 const props = defineProps({
   modelValue: { type: Object, default: () => ({}) },
@@ -320,20 +321,20 @@ defineExpose({ validate, applyExternal });
   width: 118px;
   text-align: right;
   font-size: 12px;
-  color: #666;
+  color: var(--vsc-fg-muted);
 }
 .cf-plain {
   flex: 1;
   padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
 }
 .cf-invalid {
-  border-color: #d9534f;
-  background: #fff7f7;
+  border-color: #a1260d;
+  background: var(--vsc-danger-bg);
 }
 .cf-error-text {
-  color: #d9534f;
+  color: #a1260d;
 }
 .cf-endpoint {
   display: flex;
@@ -353,7 +354,7 @@ defineExpose({ validate, applyExternal });
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #666;
+  color: var(--vsc-fg-muted);
   white-space: nowrap;
 }
 .cf-pop {
@@ -362,19 +363,22 @@ defineExpose({ validate, applyExternal });
   height: 14px;
   line-height: 14px;
   border-radius: 50%;
-  background: #bbb;
-  color: #fff;
+  background: var(--vsc-bg-input);
+  color: var(--vsc-fg);
+  border: 1px solid var(--vsc-border);
+  box-sizing: border-box;
   font-size: 11px;
   text-align: center;
   cursor: help;
 }
 .cf-flags {
   display: flex;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
   justify-content: center;
   font-size: 12px;
 }
 .red {
-  color: #d9534f;
+  color: #a1260d;
 }
 </style>

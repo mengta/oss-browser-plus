@@ -44,15 +44,15 @@ function onOk() {
 <style scoped>
 .st-btn {
   padding: 4px 12px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: #fff;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  background: var(--vsc-bg-elevated);
   cursor: pointer;
   font-size: 12px;
 }
 .st-btn-primary {
-  background: #337ab7;
-  border-color: #2e6da4;
-  color: #fff;
+  background: var(--vsc-accent);
+  border-color: var(--vsc-accent-hover);
+  color: var(--vsc-on-accent);
 }
 </style>

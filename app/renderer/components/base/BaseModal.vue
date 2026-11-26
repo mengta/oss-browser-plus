@@ -71,8 +71,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
   z-index: 1050;
 }
 .base-modal {
-  background: #fff;
-  border-radius: 6px;
+  background: var(--vsc-bg-elevated);
+  border-radius: 2px;
   min-width: 360px;
   max-width: 90vw;
   max-height: 85vh;
@@ -85,7 +85,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--vsc-border-weak);
 }
 .base-modal-title {
   margin: 0;
@@ -96,7 +96,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
   border: none;
   font-size: 18px;
   cursor: pointer;
-  color: #666;
+  color: var(--vsc-fg-muted);
 }
 .base-modal-body {
   padding: 14px;
@@ -104,7 +104,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
 }
 .base-modal-footer {
   padding: 10px 14px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--vsc-border-weak);
   display: flex;
   justify-content: flex-end;
   gap: 8px;

@@ -58,12 +58,12 @@ watch(acl, (next) => {
 .form-control {
   flex: 1;
   padding: 5px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
   font-size: 12px;
 }
 .f9 li {
-  color: #999;
+  color: var(--vsc-fg-muted);
   font-size: 12px;
 }
 </style>

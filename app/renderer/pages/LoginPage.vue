@@ -190,7 +190,9 @@ async function onTokenSubmit() {
   localStorage.removeItem(PRIVATE_LINK);
   toast.push(t('logining'), 'info', 1000);
   try {
-    await auth.login(Object.assign({}, authTokenInfo.value));
+    const tokenPayload = Object.assign({}, authTokenInfo.value);
+    tokenPayload.requestpaystatus = localStorage.getItem(SHOW_REQUEST_PAY) || 'NO';
+    await auth.login(tokenPayload);
     toast.push(t('login.successfully'), 'success', 1000);
     await router.replace('/');
     goToFilesPage();
@@ -295,14 +297,14 @@ async function onSubmit() {
 }
 .login-tab {
   padding: 4px 14px;
-  border: 1px solid #ddd;
-  background: #fff;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border-weak);
+  background: var(--vsc-bg-elevated);
+  border-radius: 2px;
   cursor: pointer;
 }
 .login-tab.active {
-  border-color: #337ab7;
-  color: #337ab7;
+  border-color: var(--vsc-accent);
+  color: var(--vsc-accent);
 }
 .login-actions {
   display: flex;
@@ -311,10 +313,10 @@ async function onSubmit() {
 }
 .login-submit {
   padding: 6px 24px;
-  border: 1px solid #337ab7;
-  background: #337ab7;
-  color: #fff;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-accent);
+  background: var(--vsc-accent);
+  color: var(--vsc-on-accent);
+  border-radius: 2px;
   cursor: pointer;
 }
 .login-submit[disabled] {
@@ -324,23 +326,23 @@ async function onSubmit() {
 .login-btn {
   margin-left: 8px;
   padding: 6px 12px;
-  border: 1px solid #ccc;
-  background: #fff;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border);
+  background: var(--vsc-bg-elevated);
+  border-radius: 2px;
   cursor: pointer;
 }
 .login-btn-import {
-  border-color: #5cb85c;
-  color: #5cb85c;
+  border-color: #2ea043;
+  color: #2ea043;
 }
 .login-badge {
   display: inline-block;
   min-width: 16px;
   padding: 1px 5px;
   margin-left: 4px;
-  border-radius: 8px;
+  border-radius: 2px;
   background: #777;
-  color: #fff;
+  color: var(--vsc-on-accent);
   font-size: 11px;
   text-align: center;
 }

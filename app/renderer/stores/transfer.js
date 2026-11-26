@@ -33,6 +33,7 @@ function buildAuthPayload(auth, region, eptpl) {
     accessKeyId: auth.id,
     accessKeySecret: auth.secret,
     endpoint,
+    requestpaystatus: auth.requestpaystatus || 'NO',
   };
   if (auth.stoken && String(auth.id).indexOf('STS.') === 0) {
     p.securityToken = auth.stoken;
@@ -496,6 +497,44 @@ export const useTransferStore = defineStore('transfer', {
       return newProgFileName(SAVE_PROG_PREFIX, auth.id || '');
     },
 
+    // B3-15：旧命名（明文）→ 脱敏命名（16hex sha256）迁移。
+    // 目标名已存在则不迁移；旧文件存在时优先原子 rename（先写后删等价），
+    // rename 不可用则写回新名；迁移失败保留旧文件并继续以旧名读取（不丢进度）。
+    // 不同账号目标/旧名均含各自 id，互不覆盖。16hex 旧命名即当前脱敏命名，无需二次迁移。
+    async migrateProgress(prefix) {
+      const api = storageApi();
+      const auth = useAuthStore().info || {};
+      const target = newProgFileName(prefix, auth.id || '');
+      const legacy = legacyProgFileName(prefix, auth.id || '');
+      if (!api || typeof api.readProgress !== 'function') {
+        return { name: target, migrated: false, failed: false };
+      }
+      try {
+        const targetData = unwrap(await api.readProgress(target));
+        if (targetData && targetData.exists) {
+          return { name: target, migrated: false, failed: false };
+        }
+        const legacyData = unwrap(await api.readProgress(legacy));
+        if (!legacyData || !legacyData.exists) {
+          return { name: target, migrated: false, failed: false };
+        }
+        if (typeof api.renameProgress === 'function') {
+          const renamed = await api.renameProgress(legacy, target);
+          if (renamed && renamed.ok === false) {
+            throw new Error(renamed.message || 'rename progress failed');
+          }
+          return { name: target, migrated: true, failed: false };
+        }
+        const written = await api.writeProgress(target, legacyData.content);
+        if (written && written.ok === false) {
+          throw new Error(written.message || 'write progress failed');
+        }
+        return { name: target, migrated: true, failed: false };
+      } catch (err) {
+        return { name: legacy, migrated: false, failed: true };
+      }
+    },
+
     saveProgress() {
       if (this._saveTimer) clearTimeout(this._saveTimer);
       this._saveTimer = setTimeout(() => {
@@ -528,20 +567,13 @@ export const useTransferStore = defineStore('transfer', {
       const transfer = transferApi();
       if (!api || !transfer) return [];
       const auth = useAuthStore().info || {};
+      const resolved = await this.migrateProgress(SAVE_PROG_PREFIX);
       let content = '';
       try {
-        const res = await api.readProgress(this.progFileName());
+        const res = await api.readProgress(resolved.name);
         const data = unwrap(res);
         if (data && data.exists && data.content) {
           content = data.content;
-        } else {
-          // legacy 明文命名兼容读（读后回写新名）
-          const legacy = await api.readProgress(legacyProgFileName(SAVE_PROG_PREFIX, auth.id || ''));
-          const legacyData = unwrap(legacy);
-          if (legacyData && legacyData.exists && legacyData.content) {
-            content = legacyData.content;
-            api.writeProgress(this.progFileName(), content).catch(() => {});
-          }
         }
       } catch (err) {
         content = '';
@@ -621,19 +653,13 @@ export const useTransferStore = defineStore('transfer', {
       const transfer = transferApi();
       if (!api || !transfer) return [];
       const auth = useAuthStore().info || {};
+      const resolved = await this.migrateProgress(SAVE_DOWN_PREFIX);
       let content = '';
       try {
-        const res = await api.readProgress(this.downProgFileName());
+        const res = await api.readProgress(resolved.name);
         const data = unwrap(res);
         if (data && data.exists && data.content) {
           content = data.content;
-        } else {
-          const legacy = await api.readProgress(legacyProgFileName(SAVE_DOWN_PREFIX, auth.id || ''));
-          const legacyData = unwrap(legacy);
-          if (legacyData && legacyData.exists && legacyData.content) {
-            content = legacyData.content;
-            api.writeProgress(this.downProgFileName(), content).catch(() => {});
-          }
         }
       } catch (err) {
         content = '';

@@ -1,5 +1,5 @@
 <template>
-  <div class="bucket-list" data-testid="bucket-list" @click.self="clearSelect">
+  <div class="bucket-list" data-testid="bucket-list" @click.self="clearSelect" @contextmenu.prevent="emit('spacer-contextmenu', $event)">
     <EmptyState v-if="filesStore.filteredBuckets.length === 0" icon="inbox" :text="t('nodata')" />
 
     <!-- 列表视图（等价 bucket-list.html table 分支） -->
@@ -20,11 +20,12 @@
           :class="{ info: isSelected(item) }"
           @click="filesStore.selectBucket(item)"
           @dblclick="enterBucket(item)"
+          @contextmenu.prevent.stop="onContext($event, item)"
         >
           <td class="col-index">{{ index + 1 }}</td>
           <td>
             <span class="bucket-name" :class="{ 'text-warning': item.storageClass !== 'Archive' }">
-              <AppIcon name="inbox" />
+              <AppIcon name="database" />
               <a href="javascript:void(0)" @click="enterBucket(item)">{{ item.name }}</a>
             </span>
           </td>
@@ -48,6 +49,7 @@
         :class="{ active: isSelected(item) }"
         @click="filesStore.selectBucket(item)"
         @dblclick="enterBucket(item)"
+        @contextmenu.prevent.stop="onContext($event, item)"
       >
         <AppIcon name="inbox" :class="{ 'text-warning': item.storageClass !== 'Archive' }" />
         <div class="card-name" :title="item.name">{{ item.name }}</div>
@@ -71,9 +73,14 @@ import { formatDateTime } from '../../../services/formatters.js';
 import { ossClient } from '../../../services/oss-client.js';
 
 const { t } = useI18n();
+const emit = defineEmits(['contextmenu', 'spacer-contextmenu']);
 const filesStore = useFilesStore();
 const toastStore = useToastStore();
 const uiStore = useUiStore();
+
+function onContext(event, item) {
+  emit('contextmenu', { event, item });
+}
 
 function isSelected(item) {
   return !!filesStore.bucketSelected && filesStore.bucketSelected.name === item.name;
@@ -126,20 +133,20 @@ async function removeBucket(item) {
 .table td {
   text-align: left;
   padding: 6px 10px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--vsc-border-weak);
 }
 .table tbody tr {
   cursor: default;
 }
 .table tbody tr:hover {
-  background: #f7f7f7;
+  background: var(--vsc-bg-hover);
 }
 .table tbody tr.info {
-  background: #e6f7ff;
+  background: var(--vsc-bg-active);
 }
 .col-index {
   width: 40px;
-  color: #999;
+  color: var(--vsc-fg-muted);
 }
 .col-actions {
   width: 80px;
@@ -150,11 +157,11 @@ async function removeBucket(item) {
   gap: 6px;
 }
 .bucket-name a {
-  color: #1890ff;
+  color: var(--vsc-link);
   text-decoration: none;
 }
 .text-warning {
-  color: #faad14;
+  color: var(--vsc-warning);
 }
 .cards {
   display: flex;
@@ -164,8 +171,8 @@ async function removeBucket(item) {
 }
 .card {
   width: 160px;
-  border: 1px solid #e5e5e5;
-  border-radius: 4px;
+  border: 1px solid var(--vsc-border-weak);
+  border-radius: 2px;
   padding: 10px;
   cursor: default;
   display: flex;
@@ -173,11 +180,11 @@ async function removeBucket(item) {
   gap: 6px;
 }
 .card:hover {
-  background: #f7f7f7;
+  background: var(--vsc-bg-hover);
 }
 .card.active {
-  border-color: #1890ff;
-  background: #e6f7ff;
+  border-color: var(--vsc-link);
+  background: var(--vsc-bg-active);
 }
 .card-name {
   font-size: 13px;
@@ -187,6 +194,6 @@ async function removeBucket(item) {
 }
 .card-region {
   font-size: 12px;
-  color: #888;
+  color: var(--vsc-fg-muted);
 }
 </style>

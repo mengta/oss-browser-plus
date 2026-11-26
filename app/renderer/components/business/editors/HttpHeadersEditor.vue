@@ -181,12 +181,12 @@ defineExpose({
 .form-control {
   flex: 1;
   padding: 5px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
   font-size: 12px;
 }
 fieldset {
-  border: 1px solid #ddd;
+  border: 1px solid var(--vsc-border-weak);
   margin-top: 10px;
 }
 legend h5 {
@@ -194,12 +194,12 @@ legend h5 {
   font-size: 13px;
 }
 .btn-success {
-  background: #5cb85c;
-  border-color: #4cae4c;
-  color: #fff;
+  background: var(#2ea043);
+  border-color: #2ea043;
+  color: var(--vsc-on-accent);
   text-decoration: none;
   padding: 2px 8px;
-  border-radius: 3px;
+  border-radius: 2px;
   font-size: 12px;
 }
 .table {
@@ -209,7 +209,7 @@ legend h5 {
 }
 .table th,
 .table td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--vsc-border-weak);
   padding: 4px 6px;
   text-align: left;
 }
@@ -218,10 +218,10 @@ legend h5 {
 }
 .input-group-addon {
   padding: 5px 6px;
-  background: #eee;
-  border: 1px solid #ccc;
+  background: var(--vsc-border-weak);
+  border: 1px solid var(--vsc-border);
   border-right: none;
-  border-radius: 3px 0 0 3px;
+  border-radius: 2px 0 0 3px;
   font-size: 12px;
   white-space: nowrap;
 }
@@ -229,6 +229,6 @@ legend h5 {
   border-radius: 0 3px 3px 0;
 }
 .text-danger {
-  color: #d9534f;
+  color: #a1260d;
 }
 </style>

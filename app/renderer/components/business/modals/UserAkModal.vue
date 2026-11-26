@@ -176,21 +176,21 @@ refresh();
 .st-input {
   flex: 1;
   padding: 5px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
   font-size: 12px;
 }
 .st-btn {
   padding: 4px 12px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: #fff;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  background: var(--vsc-bg-elevated);
   cursor: pointer;
   font-size: 12px;
 }
 .st-btn-add {
-  border-color: #5cb85c;
-  color: #5cb85c;
+  border-color: #2ea043;
+  color: #2ea043;
 }
 .ak-table {
   width: 100%;
@@ -199,7 +199,7 @@ refresh();
 }
 .ak-table th,
 .ak-table td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--vsc-border-weak);
   padding: 5px 8px;
   text-align: left;
 }
@@ -207,16 +207,16 @@ refresh();
   word-break: break-all;
 }
 .text-primary {
-  color: #337ab7;
+  color: var(--vsc-accent);
 }
 .text-danger {
-  color: #d9534f;
+  color: #a1260d;
 }
 .st-loading,
 .st-empty {
   padding: 20px 0;
   text-align: center;
-  color: #999;
+  color: var(--vsc-fg-muted);
   font-size: 12px;
 }
 </style>

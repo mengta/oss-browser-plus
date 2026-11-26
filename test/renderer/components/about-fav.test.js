@@ -82,55 +82,30 @@ describe('AboutModal（B2-05 关于页）', () => {
     expect(wrapper.find('[data-testid="about-opensource-link"]').exists()).toBe(false);
   });
 
-  it('版本检测：发现新版本展示下载链接并加载 release notes', async () => {
+  it('版本升级区已移除：不再展示 new/uptodate，仅保留开源地址', async () => {
     installUpgradeBridge({
       check: () => Promise.resolve({ ok: true, data: { version: '1.21.0', package_url: 'https://pkg.example.com/' } }),
     });
-    window.fetch = () =>
-      Promise.resolve({ text: () => Promise.resolve('# v1.21.0\n- fix bug') });
-
     const wrapper = mountAll(AboutModal);
     await nextTick();
-    for (let i = 0; i < 20; i++) {
-      await Promise.resolve();
-    }
     await nextTick();
 
-    expect(wrapper.find('[data-testid="about-new-version"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="about-download"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="about-release-note"]').exists()).toBe(true);
-  });
-
-  it('已是最新版本不展示升级区', async () => {
-    installUpgradeBridge({
-      check: () => Promise.resolve({ ok: true, data: { version: '1.20.6', package_url: 'https://pkg.example.com/' } }),
-    });
-    const wrapper = mountAll(AboutModal);
-    await nextTick();
-    for (let i = 0; i < 20; i++) {
-      await Promise.resolve();
-    }
-    await nextTick();
-
-    expect(wrapper.find('[data-testid="about-no-new"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="about-new-version"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="about-download"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="about-no-new"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="about-opensource-link"]').text()).toContain('mengta/oss-browser-plus');
   });
 
-  it('开源地址与下载链接经 openExternal', async () => {
+  it('开源地址指向 mengta/oss-browser-plus 并经 openExternal', async () => {
     const opened = [];
     window.ossBrowser.system = { openExternal: (url) => opened.push(url) };
-    installUpgradeBridge({
-      check: () => Promise.resolve({ ok: true, data: { version: '1.21.0', package_url: 'https://pkg.example.com' } }),
-    });
     const wrapper = mountAll(AboutModal);
     await nextTick();
-    for (let i = 0; i < 20; i++) {
-      await Promise.resolve();
-    }
     await nextTick();
 
-    await wrapper.find('[data-testid="about-download"]').trigger('click');
-    await flushMicro();
+    expect(wrapper.find('[data-testid="about-opensource-link"]').text()).toBe('https://github.com/mengta/oss-browser-plus');
+    await wrapper.find('[data-testid="about-opensource-link"]').trigger('click');
+    expect(opened).toContain('https://github.com/mengta/oss-browser-plus');
   });
 
   it('关闭按钮 emit close', async () => {

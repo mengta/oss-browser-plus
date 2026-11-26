@@ -222,7 +222,7 @@ async function onClearAll() {
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--vsc-border-weak);
 }
 .form-control.search {
   width: 160px;
@@ -233,7 +233,7 @@ async function onClearAll() {
 .no-data {
   padding: 16px;
   text-align: center;
-  color: #999;
+  color: var(--vsc-fg-muted);
 }
 .task-list {
   padding: 2px 0;
@@ -244,7 +244,7 @@ async function onClearAll() {
   gap: 8px;
   padding: 4px 10px;
   font-size: 12px;
-  border-bottom: 1px solid #f7f7f7;
+  border-bottom: 1px solid var(--vsc-border-weak);
 }
 .col-name {
   flex: 1;
@@ -254,7 +254,7 @@ async function onClearAll() {
   gap: 6px;
 }
 .col-name .idx {
-  color: #999;
+  color: var(--vsc-fg-muted);
 }
 .col-name .name {
   max-width: 40%;
@@ -265,7 +265,7 @@ async function onClearAll() {
 .progress {
   flex: 1;
   height: 4px;
-  background: #f0f0f0;
+  background: var(--vsc-border-weak);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -273,25 +273,25 @@ async function onClearAll() {
   height: 100%;
 }
 .bar-primary {
-  background: #1890ff;
+  background: var(--vsc-link);
 }
 .bar-success {
-  background: #52c41a;
+  background: #89d185;
 }
 .bar-danger {
-  background: #f5222d;
+  background: #a1260d;
 }
 .col-status {
   width: 110px;
-  color: #666;
+  color: var(--vsc-fg-muted);
 }
 .col-size {
   width: 170px;
-  color: #666;
+  color: var(--vsc-fg-muted);
 }
 .col-size .pct {
   margin-left: 6px;
-  color: #999;
+  color: var(--vsc-fg-muted);
 }
 .col-actions {
   width: 110px;
@@ -301,39 +301,39 @@ async function onClearAll() {
 }
 .st-btn {
   padding: 3px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: #fff;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  background: var(--vsc-bg-elevated);
   cursor: pointer;
   font-size: 12px;
 }
 .st-btn-danger {
-  background: #d9534f;
-  border-color: #d43f3a;
-  color: #fff;
+  background: var(#a1260d);
+  border-color: #a1260d;
+  color: var(--vsc-on-accent);
 }
 .st-btn-mini {
   padding: 0 5px;
   line-height: 18px;
 }
 .st-btn-primary {
-  background: #1890ff;
-  border-color: #1890ff;
-  color: #fff;
+  background: var(--vsc-link);
+  border-color: var(--vsc-link);
+  color: var(--vsc-on-accent);
 }
 .text-danger {
-  color: #f5222d;
+  color: #a1260d;
 }
 .msg {
   margin-left: 4px;
-  color: #1890ff;
+  color: var(--vsc-link);
   font-style: normal;
   cursor: pointer;
 }
 .bottom-tip {
   text-align: center;
   padding: 4px;
-  color: #999;
+  color: var(--vsc-fg-muted);
   font-size: 12px;
 }
 </style>

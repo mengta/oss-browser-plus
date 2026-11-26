@@ -65,41 +65,14 @@ function concatWrite(files, dest, { transform } = {}) {
 
 // ---------- 任务：js（app.js） ----------
 async function taskAppJS() {
-  console.log('--rebuilding app.js...');
-  const files = walk(path.join(ROOT, 'app'), (p) => {
-    const rel = toPosix(path.relative(ROOT, p));
-    return (
-      p.endsWith('.js') &&
-      !p.endsWith('_test.js') &&
-      !rel.startsWith('app/preload/') &&
-      !rel.startsWith('app/renderer/')
-    );
-  });
-  concatWrite(files, path.join(DIST, 'app.js'), {
-    // 目标 Chromium（Electron 45）原生支持 ES2020+：不转译，仅经 esbuild 做语法标准化
-    transform: (code) => {
-      const r = esbuild.transformSync(code, { loader: 'js', target: 'esnext' });
-      return r.code;
-    },
-  });
+  // B4-07：Angular 侧不再打包（Vue bundle 输出 dist/app.js）
 }
 
 // ---------- 任务：templates（templates.js，$templateCache standalone） ----------
 function taskTemplates() {
-  console.log('--rebuilding templates.js...');
-  const files = walk(path.join(ROOT, 'app'), (p) => p.endsWith('.html') && toPosix(p) !== 'app/index.html'.replace(/^\//, '') && !p.endsWith(path.join('app', 'index.html')));
-  const entries = files
-    .map((f) => {
-      const key = toPosix(path.relative(path.join(ROOT, 'app'), f));
-      const content = fs.readFileSync(f, 'utf8');
-      return `  $templateCache.put(${JSON.stringify(key)}, ${JSON.stringify(content)});`;
-    })
-    .join('\n');
-  const code =
-    `angular.module("templates", []).run(["$templateCache", function($templateCache) {\n` +
-    entries +
-    `\n}]);\n`;
-  fs.writeFileSync(path.join(DIST, 'templates.js'), code);
+  // B4-07: Angular templates removed (placeholder for R-12)
+  console.log('--rebuilding templates.js (placeholder)...');
+  fs.writeFileSync(path.join(DIST, 'templates.js'), '// templates removed\n');
   console.log('--done dist/templates.js');
 }
 
@@ -114,24 +87,7 @@ function taskAppCSS() {
 function taskLibJS() {
   const vendorList = [
     './node_modules/jquery/dist/jquery.js',
-    './node_modules/jquery.qrcode/jquery.qrcode.min.js',
-    './node_modules/moment/min/moment-with-locales.js',
-    './node_modules/dayjs/dayjs.min.js',
     './node_modules/bootstrap/dist/js/bootstrap.js',
-    './node_modules/angular/angular.js',
-    './node_modules/angular-sanitize/angular-sanitize.js',
-    './node_modules/angular-ui-router/release/angular-ui-router.js',
-    './node_modules/angular-ui-bootstrap/dist/ui-bootstrap-tpls.js',
-    './node_modules/showdown/dist/showdown.js',
-    './node_modules/clipboard/dist/clipboard.min.js',
-    './vendor/diff_match_patch.js',
-    './vendor/angular-translate.min.js',
-    './node_modules/angular-ui-codemirror/src/ui-codemirror.js',
-    './node_modules/codemirror/lib/codemirror.js',
-    './node_modules/codemirror/addon/mode/simple.js',
-    './node_modules/codemirror/addon/mode/merge/merge.js',
-    './node_modules/codemirror/mode/meta.js',
-    './node_modules/angular-bootstrap-contextmenu/contextMenu.js',
   ];
   const files = [];
   const missing = [];
@@ -139,17 +95,6 @@ function taskLibJS() {
     const abs = path.join(ROOT, rel);
     if (fs.existsSync(abs)) files.push(abs);
     else missing.push(rel);
-  }
-  // codemirror modes 动态扫描（等价复刻 fs.readdirSync("./node_modules/codemirror/mode/")）
-  const modePath = path.join(ROOT, 'node_modules', 'codemirror', 'mode');
-  if (fs.existsSync(modePath)) {
-    for (const name of fs.readdirSync(modePath).sort()) {
-      const modeDir = path.join(modePath, name);
-      if (!fs.statSync(modeDir).isDirectory()) continue;
-      for (const js of fs.readdirSync(modeDir).sort()) {
-        if (js.endsWith('.js')) files.push(path.join(modeDir, js));
-      }
-    }
   }
   if (missing.length) {
     console.warn('[libJS] missing vendor files:', missing.join(', '));
@@ -161,9 +106,6 @@ function taskLibJS() {
 function taskLibCSS() {
   const list = [
     './node_modules/bootstrap/dist/css/bootstrap.css',
-
-    './node_modules/codemirror/lib/codemirror.css',
-    './node_modules/codemirror/addon/mode/merge/merge.css',
   ];
   const files = list.map((r) => path.join(ROOT, r)).filter((f) => fs.existsSync(f));
   concatWrite(files, path.join(DIST, 'css', 'lib.css'));
@@ -213,7 +155,6 @@ function taskCopyStatic() {
 function taskCopyIndex() {
   const list = [
     './app/index.html',
-    './app/vue.html',
     './main.js',
     './server.js',
     './vendor/*.js',
@@ -311,14 +252,14 @@ async function taskPreload() {
 
 // ---------- 任务：renderer（app/renderer/main.js → dist/renderer.js，Vue 3 SFC） ----------
 async function taskRenderer() {
-  console.log('--rebuilding renderer.js...');
+  console.log('--rebuilding app.js (Vue bundle)...');
   await esbuild.build({
     entryPoints: [path.join(ROOT, 'app', 'renderer', 'main.js')],
     bundle: true,
     platform: 'browser',
     format: 'iife',
     target: 'chrome120',
-    outfile: path.join(DIST, 'renderer.js'),
+    outfile: path.join(DIST, 'app.js'),
     plugins: [vuePlugin()],
     loader: { '.svg': 'text', '.css': 'css' },
     define: {
@@ -326,7 +267,7 @@ async function taskRenderer() {
     },
     logLevel: 'silent',
   });
-  console.log('--done dist/renderer.js');
+  console.log('--done dist/app.js');
 }
 
 // ---------- 任务：watch ----------
@@ -387,7 +328,6 @@ function taskWatch() {
 async function runBuild() {
   fs.rmSync(DIST, { recursive: true, force: true });
   fs.mkdirSync(DIST, { recursive: true });
-  await taskAppJS();
   taskTemplates();
   taskAppCSS();
   taskCopyIndex();

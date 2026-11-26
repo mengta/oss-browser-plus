@@ -124,12 +124,23 @@ describe('transfer store：目录递归入队', () => {
     expect(uploads[0][2].from.name).toBe('a.txt');
     expect(uploads[0][1].accessKeyId).toBe(AUTH.id);
     expect(uploads[0][1].endpoint).toBe('https://oss-cn-hangzhou.aliyuncs.com');
+    expect(uploads[0][1].requestpaystatus).toBe('NO');
 
     console.log('UPLOADS-DIAG:', store.uploads.map((t) => [t.taskId, t.from && t.from.name, t.status]));
     expect(store.uploads.length).toBe(2);
     // 并发调度：waiting → resume
     const resumes = transferCalls.filter((c) => c[0] === 'resume');
     expect(resumes.length).toBe(2);
+  });
+
+  it('请求者付费：auth.requestpaystatus=YES 透传到 createUpload/request pay 开关', async () => {
+    const store = await seedStore();
+    const { useAuthStore } = await import('@renderer/stores/auth.js');
+    useAuthStore().info = Object.assign({}, AUTH, { requestpaystatus: 'YES' });
+    await store.createUploadJobs(['C:/local/dir'], { region: 'oss-cn-hangzhou', bucket: 'demo-b', key: 'root/' });
+    const uploads = transferCalls.filter((c) => c[0] === 'createUpload');
+    expect(uploads.length).toBeGreaterThan(0);
+    expect(uploads[0][1].requestpaystatus).toBe('YES');
   });
 
   it('STS 账号 endpoint 注入 securityToken', async () => {

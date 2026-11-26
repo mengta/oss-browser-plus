@@ -72,7 +72,7 @@ defineExpose({ check });
 .bottom-loader {
   text-align: center;
   padding: 6px;
-  color: #999;
+  color: var(--vsc-fg-muted);
   font-size: 12px;
 }
 </style>

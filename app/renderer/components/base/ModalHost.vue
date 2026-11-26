@@ -6,6 +6,8 @@
       :title="entry.payload.title"
       :message="entry.payload.message"
       :cls="entry.payload.cls"
+      :ok-text="entry.payload.okText"
+      :cancel-text="entry.payload.cancelText"
       @ok="onDialogClose(entry, true)"
       @cancel="onDialogClose(entry, false)"
     />
@@ -22,6 +24,8 @@
 <script setup>
 import { watch } from 'vue';
 import { useUiStore } from '../../stores/ui.js';
+import { useFilesStore } from '../../stores/files.js';
+import { useRouter } from 'vue-router';
 import ConfirmDialog from './ConfirmDialog.vue';
 import SettingsModal from '../business/modals/SettingsModal.vue';
 import UsersModal from '../business/modals/UsersModal.vue';
@@ -35,6 +39,23 @@ import DiffModal from '../business/modals/DiffModal.vue';
 import AddBucketModal from '../business/modals/AddBucketModal.vue';
 import UpdateBucketModal from '../business/modals/UpdateBucketModal.vue';
 import BucketMultipartModal from '../business/modals/BucketMultipartModal.vue';
+import DeleteFilesModal from '../business/modals/DeleteFilesModal.vue';
+import AddFolderModal from '../business/modals/AddFolderModal.vue';
+import RenameModal from '../business/modals/RenameModal.vue';
+import MoveModal from '../business/modals/MoveModal.vue';
+import RestoreModal from '../business/modals/RestoreModal.vue';
+import BatchRestoreModal from '../business/modals/BatchRestoreModal.vue';
+import SetSymlinkModal from '../business/modals/SetSymlinkModal.vue';
+import CrcModal from '../business/modals/CrcModal.vue';
+import GetAddressModal from '../business/modals/GetAddressModal.vue';
+import GrantTokenModal from '../business/modals/GrantTokenModal.vue';
+import GrantModalCode from '../business/modals/GrantModalCode.vue';
+import GrantModal from '../business/modals/GrantModal.vue';
+import PictureModal from '../business/preview/PictureModal.vue';
+import MediaModal from '../business/preview/MediaModal.vue';
+import DocModal from '../business/preview/DocModal.vue';
+import OthersModal from '../business/preview/OthersModal.vue';
+import CodeModal from '../business/preview/CodeModal.vue';
 
 // 弹窗宿主：渲染 ui.stack。
 // dialog-* 项由 ConfirmDialog 承载；业务弹窗按 registry 注册表渲染。
@@ -53,9 +74,31 @@ const registry = {
   'add-bucket': AddBucketModal,
   'update-bucket': UpdateBucketModal,
   'bucket-multipart': BucketMultipartModal,
+  // B3-09：文件操作弹窗（删除/新建目录/重命名/复制移动）
+  'delete-files': DeleteFilesModal,
+  'add-folder': AddFolderModal,
+  rename: RenameModal,
+  move: MoveModal,
+  // B3-10：恢复（单个/批量）、软链接、CRC
+  restore: RestoreModal,
+  'batch-restore': BatchRestoreModal,
+  symlink: SetSymlinkModal,
+  crc: CrcModal,
+  'get-address': GetAddressModal,
+  'grant-token': GrantTokenModal,
+  'grant-code': GrantModalCode,
+  grant: GrantModal,
+  // B3-11：四类预览 + 文本预览（B3-12 增强）
+  'preview-picture': PictureModal,
+  'preview-media': MediaModal,
+  'preview-doc': DocModal,
+  'preview-others': OthersModal,
+  'preview-code': CodeModal,
 };
 
 const ui = useUiStore();
+const filesStore = useFilesStore();
+const router = useRouter();
 
 watch(
   () => ui.stack.length,
@@ -74,11 +117,9 @@ function onModalClose(entry, result) {
   ui.close(entry.name, result === undefined ? null : result);
 }
 
-// 收藏跳转：转发给 Angular 广播（goToOssAddress），无宿主时忽略
+// 收藏跳转（R-06：去除 Angular 广播，直接在 Vue 内导航）
 function onGoTo(url) {
-  const angularHost = typeof window !== 'undefined' ? window.vueModalAngularHost : null;
-  if (angularHost && typeof angularHost.broadcast === 'function') {
-    angularHost.broadcast('goToOssAddress', url);
-  }
+  filesStore.navigate(url).catch(() => {});
+  router.push('/').catch(() => {});
 }
 </script>

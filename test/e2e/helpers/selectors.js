@@ -11,34 +11,33 @@ module.exports = {
   navbarBrand: '.navbar-brand',
   navbarBrandText: 'OSS浏览器',
 
-  // 登录表单（B1-18 起由 Vue 承载：app/renderer/pages/LoginPage.vue + CredentialForm.vue）
-  // loginId/loginSecret/loginSubmit 改为 data-testid；logout/langSettings 仍由 Angular 顶部栏承载（B4 迁移）
+  // 登录/顶栏（B1/B4-01 起由 Vue 承载）
   loginId: '[data-testid="login-id"]',
   loginSecret: '[data-testid="login-secret"]',
   loginSubmit: '[data-testid="login-submit"]',
-  logoutBtn: '[ng-click="logout()"]',
-  logoutConfirm: 'button[ng-click="ok()"]',
-  langSettings: '[ng-model="langSettings.lang"]',
+  logoutBtn: '[data-testid="topbar-logout"]',
+  logoutConfirm: '[data-testid="dialog-ok"]',
+  langSettings: '[data-testid="topbar-lang"]',
 
-  // 视图切换
-  setListView: '[ng-click="setListView(true)"]',
-  setBlockView: '[ng-click="setListView(false)"]',
+  // 视图切换（B3-20：Vue ListViewOptions）
+  setListView: '[data-testid="view-list"]',
+  setBlockView: '[data-testid="view-blocks"]',
 
-  // Bucket 搜索与导航
-  bucketSearch: '[placeholder="Bucket名称"]',
-  goUp: '[uib-tooltip="上一级"]',
-  addressUrl: '.address-url',
+  // Bucket 搜索与导航（B3-20：Vue 地址栏/桶工具栏）
+  bucketSearch: '[data-testid="bucket-search"]',
+  goUp: '[data-testid="address-go-up"]',
+  addressUrl: '[data-testid="address-input"]',
 
-  // 对象操作（右键菜单/模态框）
-  createFolderBtn: 'button:has-text("创建目录")',
-  folderNameInput: 'form[name=form1] #name1',
-  modalOk: 'button:has-text("确定")',
-  modalClose: 'button:has-text("关闭")',
-  deleteMenuItem: 'a.dropdown-item:has-text("删除")',
-  dangerConfirm: '.btn-danger:has-text("确定")',
-  alertSuccess: '.alert:has-text("创建目录成功")',
+  // 对象操作（B3-20：Vue 工具栏/弹窗/右键菜单）
+  createFolderBtn: '[data-testid="file-mkdir"]',
+  folderNameInput: '[data-testid="add-folder-name"]',
+  modalOk: '[data-testid="add-folder-submit"]',
+  modalClose: '[data-testid="delete-files-close"]',
+  deleteMenuItem: '[data-testid="ctx-delete"]',
+  dangerConfirm: '[data-testid="delete-files-confirm"]',
+  alertSuccess: '[data-testid="toast-success"]',
 
-  // 上传（input[type=file] 注入）
+  // 上传（等价原版 mock.uploads 调试入口，Vue FilesPage 提供同名 ng-model 属性）
   uploadInput: '[ng-model="mock.uploads"]',
 
   // B2 迁移弹窗（Vue 承载，data-testid 见各 SFC；入口按钮属 top 栏 Angular，B4 迁移时改写）
@@ -55,7 +54,7 @@ module.exports = {
   diffModal: '[data-testid="diff-editor"]',
 
   // 文本语义定位辅助（替代 spectron span=/div.item-block= 文本选择器）
-  bucketByName: (name) => `span:text-is("${name}")`,
-  blockItemByName: (name) => `div.item-block-name:text-is("${name}")`,
-  blockItem: (name) => `div.item-block:has-text("${name}")`,
+  bucketByName: (name) => `[data-testid="bucket-table"] a:text-is("${name}")`,
+  blockItemByName: (name) => `[data-testid="file-card"] .card-name:text-is("${name}")`,
+  blockItem: (name) => `[data-testid="file-card"]:has-text("${name}")`,
 };

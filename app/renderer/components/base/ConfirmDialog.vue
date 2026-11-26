@@ -5,7 +5,7 @@
     @close="onCancel"
   >
     <div class="confirm-dialog-body" :class="'text-' + cls">
-      <h5 class="cd-message break">{{ message }}</h5>
+      <h5 class="cd-message break">{{ displayMessage }}</h5>
     </div>
     <template #footer>
       <button
@@ -16,7 +16,7 @@
         data-testid="dialog-ok"
         @click="onOk"
       >
-        {{ t('ok') }}
+        {{ okText || t('ok') }}
       </button>
       <button
         v-if="kind !== 'alert'"
@@ -25,25 +25,31 @@
         data-testid="dialog-cancel"
         @click="onCancel"
       >
-        {{ t('cancel') }}
+        {{ cancelText || t('cancel') }}
       </button>
     </template>
   </BaseModal>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from './BaseModal.vue';
 
 // 等价 dialog.html + alertDialogCtrl/confirmDialogCtrl：
 // alert 仅确定钮；确定 resolve(true)；取消/Esc/×/遮罩 resolve(false)
-defineProps({
+const props = defineProps({
   kind: { type: String, default: 'confirm' },
   title: { type: String, default: '' },
   message: { type: String, default: '' },
   cls: { type: String, default: 'primary' },
+  okText: { type: String, default: '' },
+  cancelText: { type: String, default: '' },
 });
+
+// 原版 Dialog 以 ng-bind-html 渲染文案（含 <code>/<span class="text-info"> 高亮）；
+// Vue 版按纯文本展示，去掉标签保留文字内容（与 B2 确认框渲染口径一致）。
+const displayMessage = computed(() => String(props.message || '').replace(/<[^>]+>/g, ''));
 
 const emit = defineEmits(['ok', 'cancel']);
 const { t } = useI18n();
@@ -80,30 +86,30 @@ onMounted(() => {
 }
 .cd-btn {
   padding: 4px 14px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: #fff;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
+  background: var(--vsc-bg-elevated);
   cursor: pointer;
   font-size: 12px;
 }
 .cd-btn-primary {
-  border-color: #337ab7;
-  background: #337ab7;
-  color: #fff;
+  border-color: var(--vsc-accent);
+  background: var(--vsc-accent);
+  color: var(--vsc-on-accent);
 }
 .cd-btn-danger {
-  border-color: #d9534f;
-  background: #d9534f;
-  color: #fff;
+  border-color: #a1260d;
+  background: var(#a1260d);
+  color: var(--vsc-on-accent);
 }
 .cd-btn-warning {
-  border-color: #f0ad4e;
-  background: #f0ad4e;
-  color: #fff;
+  border-color: #8a6d00;
+  background: var(#8a6d00);
+  color: var(--vsc-on-accent);
 }
 .cd-btn-success {
-  border-color: #5cb85c;
-  background: #5cb85c;
-  color: #fff;
+  border-color: #2ea043;
+  background: var(#2ea043);
+  color: var(--vsc-on-accent);
 }
 </style>

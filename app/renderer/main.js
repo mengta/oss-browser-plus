@@ -5,7 +5,6 @@ import { createRendererStore } from './stores/index.js';
 import { createRendererI18n, readStoredLocale } from './i18n/index.js';
 import { snapshot } from './bootstrap.js';
 import { useAuthStore } from './stores/auth.js';
-import { installModalBridge } from './bridge/modal-bridge.js';
 
 const locale = readStoredLocale();
 
@@ -39,16 +38,12 @@ if (mountEl) {
     document.title = snapshot.appTitle;
   }
 
-  // B1-18：登录页由 Vue 承接。未登录（无 auth-info）时初始化到 /login；
-  // 已登录时保持 /，由 Angular 文件页承载（#vue-app 默认隐藏）。
+  // 未登录时初始化到 /login；已登录保持 /（Vue 文件页）。
   const auth = useAuthStore(store);
   auth.load();
   if (!auth.isLoggedIn) {
     router.replace('/login').catch(() => {});
   }
-
-  // BRIDGE-B2：Angular 宿主（top.js/files.js）经 window.vueModalHost 打开已迁移弹窗
-  installModalBridge(store);
 
   router.isReady().then(() => {
     app.mount(mountEl);

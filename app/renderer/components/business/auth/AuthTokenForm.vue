@@ -61,17 +61,17 @@ function onInput(event) {
 .atf-input {
   width: 100%;
   padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-border);
+  border-radius: 2px;
   font-family: monospace;
   font-size: 12px;
   resize: vertical;
 }
 .atf-error {
-  color: #d9534f;
+  color: #a1260d;
 }
 .atf-ok {
-  color: #5cb85c;
+  color: #2ea043;
 }
 .atf-actions {
   display: flex;
@@ -80,10 +80,10 @@ function onInput(event) {
 }
 .atf-submit {
   padding: 6px 24px;
-  border: 1px solid #337ab7;
-  background: #337ab7;
-  color: #fff;
-  border-radius: 3px;
+  border: 1px solid var(--vsc-accent);
+  background: var(--vsc-accent);
+  color: var(--vsc-on-accent);
+  border-radius: 2px;
   cursor: pointer;
 }
 .atf-submit[disabled] {

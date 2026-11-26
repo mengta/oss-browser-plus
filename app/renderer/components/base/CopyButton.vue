@@ -37,11 +37,11 @@ async function copy() {
   border: none;
   padding: 0 4px;
   cursor: pointer;
-  color: #337ab7;
+  color: var(--vsc-accent);
   font-size: 12px;
 }
 .copy-button[disabled] {
-  color: #bbb;
+  color: var(--vsc-fg-muted);
   cursor: not-allowed;
 }
 </style>

@@ -150,6 +150,8 @@
 
 | T-V3-UI-7 | 2026-11-26 | UI 微调（用户 4 项）：① 请求者付费移到「记住密钥」同排最后（M `CredentialForm.vue`：移除 osspath 前置条件、并入 `.cf-flags`，gap 12 + wrap，浮窗/文档链接保留）；② 关于页开源地址改为 `https://github.com/mengta/oss-browser-plus`（M `AboutModal.vue`：显示文本 + openExternal）；③ 顶栏品牌与版本垂直居中（M `TopBar.vue`：`.navbar-header` flex/35px、brand `line-height:1` + `padding:0 10px`、version inline-flex + margin 6）；④ 关于页仅保留 logo/名称/版本/开源地址，移除版本检测/升级区（new/下载/安装/release notes/uptodate，M `AboutModal.vue` 模板 + 脚本清理）；D `test/renderer/dbg.test.js`（调试残留）；M `about-fav.test.js`（断言改为无 new/uptodate + mengta 地址） | **验证**：Vitest **330**（39 files）全绿；build 退出 0；截图 `vscode-login-requestpay-tooltip.png`（同排布局）与 `vscode-about-v2.png`（仅开源地址、无 uptodate）。**说明**：升级检测服务仍保留（App 启动角标），About 按用户要求不再展示安装入口 |
 
+| T-V3-RELEASE-1.21.4 | 2026-11-26 | **发布完成**：提交 `a80addd`（Vue 3 重写 + VS Code UI + 依赖瘦身 + 请求者付费/浮窗/地址栏修复），tag **v1.21.4**，推送 main+tag；合并远端 1.20.8/1.20.9 历史（`git merge -s ours`，Angular UI 改动由 Vue 版替代）并 cherry-pick 远端 CI 修复（macos-15、`--publish never`）与 crc64 修复（722df98）；CI 失败排查：v1.21.1 `npm ci` EUSAGE（Windows 生成 lock 缺 `@emnapi/core|runtime@2.0.0-beta.2` 跨平台 optional）、v1.21.2 workflow YAML 换行转义错误、v1.21.3 诊断注入成功定位；修复：workflow 在 `npm ci` 前按平台 `npm install --package-lock-only --ignore-scripts` 补齐 lock，并在失败时输出 `::error::npm ci failed` 摘要（匿名 annotation 可读） | CI run **45736114435**（v1.21.4）**success**；GitHub Release **v1.21.4**（非 draft/prerelease）：`oss-browser-win32-x64.zip` 140.0MB、`oss-browser-linux-x64.zip` 117.4MB、`oss-browser-darwin-x64.zip` 118.1MB、`oss-browser.dmg` 121.6MB。失败 tag v1.21.1/v1.21.2/v1.21.3 保留审计；本地版本 1.21.4（main@a80addd）；`all-releases.md` 用户既有改动未提交、`.security/` 未跟踪（按约定排除） |
+
 ## A.2 sandbox 结论（Q-09 / VR-01-02 / D-02）
 
 | 字段 | 内容 |

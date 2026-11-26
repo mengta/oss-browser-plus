@@ -103,15 +103,30 @@ function serviceOf(domain) {
   return services[domain];
 }
 
+// 渲染层凭证为 Angular auth-info 格式 {id,secret,stoken}；主进程能力域使用 {accessKeyId,accessKeySecret,securityToken}。
+// 入口统一归一化（保留原字段，oss2 仍读取 id/secret/requestpaystatus 等）。
+function normalizeAuth(auth) {
+  const raw = auth && typeof auth === 'object' ? auth : {};
+  const accessKeyId = raw.accessKeyId || raw.id || '';
+  const accessKeySecret = raw.accessKeySecret || raw.secret || '';
+  const securityToken = raw.securityToken || raw.stoken || '';
+  return Object.assign({}, raw, {
+    accessKeyId: accessKeyId,
+    accessKeySecret: accessKeySecret,
+    securityToken: securityToken,
+  });
+}
+
 function dispatch(domain, method, auth, args) {
-  return stub.authStore.run(auth || {}, async function () {
+  const normalized = normalizeAuth(auth);
+  return stub.authStore.run(normalized, async function () {
     const callArgs = Array.isArray(args) ? args : [];
     if (domain === 'transfer') {
       const api = transferModule.api;
       if (!api || typeof api[method] !== 'function') {
         throw codedError('UNAVAILABLE', domain + '.' + method + ' is unavailable');
       }
-      return await api[method].apply(null, [auth].concat(callArgs));
+      return await api[method].apply(null, [normalized].concat(callArgs));
     }
     if (domain === 'upgrade') {
       // Vue3-B3 前置：升级主进程化，无需 OSS 凭据
@@ -121,10 +136,10 @@ function dispatch(domain, method, auth, args) {
       }
       return await api[method].apply(null, callArgs);
     }
-    if (!auth || typeof auth.accessKeyId !== 'string' || !auth.accessKeyId) {
+    if (!normalized.accessKeyId || typeof normalized.accessKeyId !== 'string') {
       throw codedError('InvalidAccessKeyId', 'auth.accessKeyId is required');
     }
-    if (typeof auth.accessKeySecret !== 'string' || !auth.accessKeySecret) {
+    if (typeof normalized.accessKeySecret !== 'string' || !normalized.accessKeySecret) {
       throw codedError('InvalidAccessKeyId', 'auth.accessKeySecret is required');
     }
     const service = serviceOf(domain);
@@ -149,6 +164,7 @@ function dispatch(domain, method, auth, args) {
 
 module.exports = {
   dispatch: dispatch,
+  normalizeAuth: normalizeAuth,
   serviceOf: serviceOf,
   setSender: function (webContents) {
     progressSender = webContents;

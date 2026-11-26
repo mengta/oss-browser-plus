@@ -44,7 +44,6 @@ export const useUiStore = defineStore('ui', {
   state: () => ({
     stack: [],
     // B4-05：升级链路状态（顶栏角标/关于页共享）
-    upgrade: { hasNew: false, state: 'idle', version: '', progress: 0, message: '' },
     theme: 'dark',
     themeMode: 'dark',
   }),
@@ -98,9 +97,6 @@ export const useUiStore = defineStore('ui', {
       };
       if (systemThemeMq.addEventListener) systemThemeMq.addEventListener('change', handler);
       else if (systemThemeMq.addListener) systemThemeMq.addListener(handler);
-    },
-    setUpgrade(patch) {
-      this.upgrade = Object.assign({}, this.upgrade, patch || {});
     },
     closeAll(result) {
       while (this.stack.length > 0) {

@@ -34,7 +34,6 @@
         <li>
           <a href="javascript:void(0)" data-testid="topbar-about" @click="openModal('about')">
             <AppIcon name="info-circle" class="tb-icon" /> {{ t('about') }}
-            <small v-if="upgradeNew" class="new-animate" data-testid="topbar-upgrade-new">new</small>
           </a>
         </li>
         <li>
@@ -65,18 +64,7 @@
         </a>
         <a href="javascript:void(0)" class="mini-link" data-testid="topbar-about" @click="openModal('about')">
           <AppIcon name="info-circle" class="tb-icon" /> {{ t('about') }}
-          <small v-if="upgradeNew" class="new-animate">new</small>
         </a>
-        <select
-          v-if="languages.length"
-          v-model="localeValue"
-          class="form-control topbar-lang"
-          data-testid="topbar-lang"
-          ng-model="langSettings.lang"
-          @change="changeLanguage"
-        >
-          <option v-for="l in languages" :key="l.lang" :value="'string:' + l.lang">{{ l.label }}</option>
-        </select>
       </div>
     </form>
   </nav>
@@ -85,8 +73,7 @@
 <script setup>
 // 等价 Angular 顶栏（app/main/_/top.html + top.js 的展示/入口语义，B4-01 提前落地）：
 // 品牌/版本/文件入口/用户·收藏（非 STS）/设置/关于（升级角标位）/账号或临时凭证/退出；
-// 未登录仅保留 设置/关于/语言；不丢当前页状态（modal 打开不导航）。
-// 升级角标数据由 B4-05 upgrade 服务接入（当前 false）。
+// 未登录仅保留 设置/关于（语言切换在设置页）；不丢当前页状态（modal 打开不导航）。
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
@@ -95,22 +82,17 @@ import HintTooltip from '../base/HintTooltip.vue';
 import { useAuthStore } from '../../stores/auth.js';
 import { useBootstrapStore } from '../../stores/bootstrap.js';
 import { useFilesStore } from '../../stores/files.js';
-import { useToastStore } from '../../stores/toast.js';
 import { useUiStore } from '../../stores/ui.js';
-import { persistLocale } from '../../i18n/index.js';
 import { formatDateTime } from '../../services/formatters.js';
 
-const { t, locale: i18nLocale } = useI18n();
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const bootstrapStore = useBootstrapStore();
 const filesStore = useFilesStore();
-const toast = useToastStore();
 const ui = useUiStore();
 
-// 兼容原版 Angular ng-options 的 'string:' 前缀 value（E2E smoke-06 语言切换语义）
-const localeValue = ref('string:' + i18nLocale.value);
 
 const snapshot = computed(() => bootstrapStore.snapshot || {});
 const appName = computed(() => t('app.name'));
@@ -120,15 +102,6 @@ const authInfo = computed(() => authStore.info || {});
 const loggedIn = computed(() => authStore.isLoggedIn);
 const isSts = computed(() => String(authInfo.value.id || '').indexOf('STS.') === 0);
 const isFilesPage = computed(() => route.path === '/');
-const upgradeNew = computed(() => !!(ui.upgrade && ui.upgrade.hasNew));
-
-const languages = computed(() => {
-  const locales = bootstrapStore.locales || {};
-  return Object.keys(locales).map((key) => ({
-    lang: key,
-    label: (locales[key] && locales[key].label) || key,
-  }));
-});
 
 const shortDesc = computed(() => {
   const desc = String(authInfo.value.desc || '');
@@ -173,15 +146,6 @@ onBeforeUnmount(() => {
 
 function openModal(name) {
   ui.open(name);
-}
-
-function changeLanguage() {
-  const next = String(localeValue.value || '').replace(/^string:/, '');
-  localeValue.value = 'string:' + next;
-  i18nLocale.value = next;
-  persistLocale(next);
-  document.documentElement.lang = next;
-  toast.push(t('setup.success'), 'success', 2000);
 }
 
 async function logout() {
@@ -261,10 +225,6 @@ async function logout() {
   gap: 4px;
   font-size: 12px;
 }
-.topbar-lang {
-  height: 24px;
-  padding: 1px 4px;
-}
 .topbar-right {
   margin-right: 4px;
 }
@@ -319,18 +279,5 @@ async function logout() {
   font-weight: bold;
   margin-right: 10px;
   text-decoration: none;
-}
-.topbar-lang {
-  display: inline-block;
-  width: auto;
-  height: 28px;
-  padding: 2px 6px;
-}
-.new-animate {
-  background: var(#a1260d);
-  color: var(--vsc-on-accent);
-  padding: 1px 4px;
-  border-radius: 2px;
-  font-size: 10px;
 }
 </style>

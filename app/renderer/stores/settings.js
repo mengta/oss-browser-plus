@@ -5,7 +5,6 @@ import * as SecureStore from '../services/secure-store.js';
 // localStorage 直读键与原版一致；mailSender 走 SecureStore（CS-02 I-6 惰性迁移）。
 
 const INT_KEYS = {
-  autoUpgrade: 1,
   isCame: 0,
   maxUploadJobCount: 3,
   maxDownloadJobCount: 1,

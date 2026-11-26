@@ -98,14 +98,6 @@
         <legend><h5 class="st-legend">{{ t('settings.subtitle.sys') }}</h5></legend>
 
         <div class="st-row">
-          <label class="st-label">{{ t('settings.autoUpgrade') }}:</label>
-          <label class="st-inline" data-testid="settings-autoUpgrade">
-            <input v-model="form.autoUpgrade" type="checkbox" :true-value="1" :false-value="0" @change="setChange('autoUpgrade', $event)" />
-            ({{ t('settings.autoUpgrade.msg') }})
-          </label>
-        </div>
-
-        <div class="st-row">
           <label class="st-label">{{ t('settings.WhetherShowThumbnail') }}:</label>
           <label class="st-inline" data-testid="settings-showImageSnapshot">
             <input v-model="form.showImageSnapshot" type="checkbox" :true-value="1" :false-value="0" @change="setChange('showImageSnapshot', $event)" />
@@ -275,7 +267,6 @@ const ui = useUiStore();
 const toast = useToastStore();
 
 const form = reactive({
-  autoUpgrade: settings.autoUpgrade,
   maxUploadJobCount: settings.maxUploadJobCount,
   maxDownloadJobCount: settings.maxDownloadJobCount,
   showImageSnapshot: settings.showImageSnapshot,

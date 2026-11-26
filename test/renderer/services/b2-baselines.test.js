@@ -120,7 +120,7 @@ describe('settings store（等价 settingsSvs 键名/默认值/类型）', () =>
 
   it('默认值与 settingsSvs 一致', () => {
     const s = useSettingsStore();
-    expect(s.autoUpgrade).toBe(1);
+    expect(s.autoUpgrade).toBeUndefined();
     expect(s.isCame).toBe(0);
     expect(s.maxUploadJobCount).toBe(3);
     expect(s.maxDownloadJobCount).toBe(1);

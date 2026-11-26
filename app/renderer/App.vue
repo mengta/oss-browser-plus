@@ -25,8 +25,6 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { init } from './bootstrap.js';
 import { portReady } from './services/api.js';
-import { upgradeService } from './services/upgrade.js';
-import { useSettingsStore } from './stores/settings.js';
 import { useUiStore } from './stores/ui.js';
 import TopBar from './components/business/TopBar.vue';
 import ModalHost from './components/base/ModalHost.vue';
@@ -117,14 +115,6 @@ onMounted(async () => {
     document.body.appendChild(marker);
   }
 
-  try {
-    const settings = useSettingsStore();
-    if (Number(settings.autoUpgrade) === 1) {
-      upgradeService.checkAndUpdate(ui).catch(() => {});
-    }
-  } catch (err) {
-    /* 静默：升级清单不可达不阻塞启动 */
-  }
 });
 
 void bootError;

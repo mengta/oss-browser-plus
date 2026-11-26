@@ -9,7 +9,9 @@ import { fileURLToPath } from 'node:url';
 import { crc64Filter } from '../../../tools/build-filters.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-const TARGET = 'win32-x64';
+// 构建目标平台与 CI job 的运行平台一致（linux-x64 / darwin-x64 / win32-x64）
+const TARGET = `${process.platform}-${process.arch}`;
+const OTHER_TARGETS = ['win32-x64', 'linux-x64', 'darwin-x64'].filter((p) => p !== TARGET);
 
 test('crc64：保留目标平台 Release/*.node 与入口文件', (t) => {
   const keep = [
@@ -21,7 +23,7 @@ test('crc64：保留目标平台 Release/*.node 与入口文件', (t) => {
     'crc64/electron-crc64-prebuild/package.json',
     'crc64/electron-crc64-prebuild/Readme.md',
     'crc64/electron-crc64-prebuild/lib/index.js',
-    'crc64/electron-crc64-prebuild/lib/win32-x64/Release/crc64_ecma182.node',
+    `crc64/electron-crc64-prebuild/lib/${TARGET}/Release/crc64_ecma182.node`,
   ];
   for (const rel of keep) {
     t.true(crc64Filter(rel, TARGET), rel);
@@ -32,8 +34,9 @@ test('crc64：排除其他平台目录与中间产物', (t) => {
   const drop = [
     'crc64/cpp-addon/index.js',
     'crc64/cpp-addon/lib/win32-x64/Release/crc64.node',
-    'crc64/electron-crc64-prebuild/lib/linux-x64/Release/crc64_ecma182.node',
-    'crc64/electron-crc64-prebuild/lib/darwin-x64/Release/crc64_ecma182.node',
+    ...OTHER_TARGETS.map(
+      (p) => `crc64/electron-crc64-prebuild/lib/${p}/Release/crc64_ecma182.node`
+    ),
     'crc64/electron-crc64-prebuild/lib/win32-x64/Release/crc64_ecma182.pdb',
     'crc64/electron-crc64-prebuild/lib/win32-x64/Release/crc64_ecma182.map',
     'crc64/electron-crc64-prebuild/lib/win32-x64/Release/crc64_ecma182.lib',

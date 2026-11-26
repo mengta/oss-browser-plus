@@ -34,9 +34,9 @@
     },
     {
       "file": "app/renderer/stores/transfer.js",
-      "lines": 729,
+      "lines": 770,
       "batch": "6e-未纳入",
-      "reason": "Q-2 默认不纳入（transfer store 拆分为后续项），长期豁免"
+      "reason": "Q-2 默认不纳入（transfer store 拆分为后续项），长期豁免；本批次新增订阅异步信封退订与登出清理"
     },
     {
       "file": "app/renderer/pages/FilesPage.vue",
@@ -46,33 +46,33 @@
     },
     {
       "file": "main.js",
-      "lines": 783,
+      "lines": 794,
       "batch": "长期",
-      "reason": "主进程 IPC 聚合入口；本批次新增日志/端口/安全拦截/探测与错误上报链路"
+      "reason": "主进程 IPC 聚合入口；本批次新增日志/端口/安全拦截/探测与错误上报链路，及 probe-url IPC 信封"
     },
     {
       "file": "node/i18n/ja-JP.js",
-      "lines": 584,
+      "lines": 605,
       "batch": "不计入",
-      "reason": "语言资源表（本批次新增 releaseNotes / preview.serviceUnavailable 两个 key）"
+      "reason": "语言资源表（本批次新增登录页 17 组 login.* 与 CRC/错误边界等 key）"
     },
     {
       "file": "node/i18n/en-US.js",
-      "lines": 581,
+      "lines": 602,
       "batch": "不计入",
-      "reason": "语言资源表（本批次新增 2 个 key）"
+      "reason": "语言资源表（本批次新增登录页 17 组 login.* 与 CRC/错误边界等 key）"
     },
     {
       "file": "node/i18n/zh-CN.js",
-      "lines": 561,
+      "lines": 582,
       "batch": "不计入",
-      "reason": "语言资源表（本批次新增 2 个 key）"
+      "reason": "语言资源表（本批次新增登录页 17 组 login.* 与 CRC/错误边界等 key）"
     },
     {
       "file": "app/renderer/styles/vscode-theme.css",
-      "lines": 525,
+      "lines": 591,
       "batch": "长期",
-      "reason": "主题变量与组件覆盖集中定义，色值单一来源"
+      "reason": "主题变量与组件覆盖集中定义，色值单一来源；本批次新增 surface/btn/placeholder 变量与 checkbox 自绘"
     }
   ]
 }

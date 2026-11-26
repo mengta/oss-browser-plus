@@ -1,3 +1,4 @@
+var log = require('../../lib/logger').logger('ossstore.util');
 var path = require("path");
 var fs = require("fs");
 var crypto = require("crypto");
@@ -8,7 +9,6 @@ var CRC64 = require("../../crc64/index.js");
 var isLog = localStorage.getItem("logFile") || 0;
 var isLogInfo = localStorage.getItem("logFileInfo") || 0;
 //本地日志收集模块
-var log = require("electron-log");
 
 module.exports = {
   parseLocalPath: parseLocalPath,
@@ -34,7 +34,7 @@ function printPartTimeLine(opt) {
     min = Math.min(opt[k].start, min);
     max = Math.max(opt[k].end, max);
   }
-  //console.log(min, max)
+  //log.debug(min, max)
 
   var total = max - min;
   var width = 600;
@@ -47,21 +47,21 @@ function printPartTimeLine(opt) {
     });
   }
 
-  //console.log(JSON.stringify(t, ' ',2));
+  //log.debug(JSON.stringify(t, ' ',2));
 
   //var t2=[];
   for (var n of t) {
-    console.log(
+    log.debug(
       "%c",
       `background:green;margin-left:${n.left}px;padding-left:${n.width}px;`
     );
     //t2.push(`<div style="height:6px;background:green;width:${n.width}px;margin-left:${n.left}px;clear:both;margin-top:1px;"></div>`)
   }
-  console.log(t.length + " parts");
+  log.debug(t.length + " parts");
 }
 
 function checkFileHash(filePath, hashCrc64ecma, fileMd5, fn) {
-  //console.log(filePath, ',,,,,,,,,,,,,,,,,')
+  //log.debug(filePath, ',,,,,,,,,,,,,,,,,')
   if (hashCrc64ecma) {
     var startTime = new Date();
     console.time(`check crc64 ${filePath}`);
@@ -70,7 +70,6 @@ function checkFileHash(filePath, hashCrc64ecma, fileMd5, fn) {
       console.timeEnd(`check crc64 ${filePath}`);
 
       if (isLog == 1 && isLogInfo == 1) {
-        log.transports.file.level = "info";
         log.info(`check crc64 ${filePath}: ${endTime - startTime}ms`);
       }
 
@@ -104,11 +103,10 @@ function checkFileHash(filePath, hashCrc64ecma, fileMd5, fn) {
         );
       } else {
         if (isLog == 1 && isLogInfo == 1) {
-          log.transports.file.level = "info";
           log.info(`check crc success: file[${filePath}], ${crc64Str}`);
         }
 
-        console.info("check crc success: file[" + filePath + "]," + crc64Str);
+        log.info("check crc success: file[" + filePath + "]," + crc64Str);
         fn(null);
       }
     });
@@ -127,13 +125,13 @@ function checkFileHash(filePath, hashCrc64ecma, fileMd5, fn) {
           )
         );
       } else {
-        console.info("check md5 success: file[" + filePath + "]," + md5str);
+        log.info("check md5 success: file[" + filePath + "]," + md5str);
         fn(null);
       }
     });
   } else {
     //没有MD5，不校验
-    console.log(filePath, ",not found content md5, just pass");
+    log.debug(filePath, ",not found content md5, just pass");
     fn(null);
     return;
   }
@@ -162,10 +160,9 @@ function getFileCrc64(p, fn) {
   CRC64.crc64FileProcess(p, function (err, data) {
     var endTime = new Date();
     console.timeEnd("get crc64 hash for [" + p + "]");
-    console.log(data);
+    log.debug(data);
 
     if (isLog == 1 && isLogInfo == 1) {
-      log.transports.file.level = "info";
       log.info(`get crc64 hash for [ ${p} ]: ${endTime - startTime} ms`);
       log.info(data);
     }
@@ -225,10 +222,9 @@ function getStreamCrc64(p, fn) {
   CRC64.crc64StreamProcess(p, function (err, data) {
     var endTime = new Date();
     console.timeEnd("get crc64 hash for [" + p + "]");
-    console.log(data);
+    log.debug(data);
 
     if (isLog == 1 && isLogInfo == 1) {
-      log.transports.file.level = "info";
       log.info(`get crc64 hash for [ ${p} ]: ${endTime - startTime} ms`);
       log.info(data);
     }
@@ -269,7 +265,7 @@ function getBufferCrc64(buffer, fn) {
 function closeFD(fd) {
   fs.close(fd, (err) => {
     if (err) {
-      console.error("Close file error");
+      log.error("Close file error");
     }
   });
 }
@@ -283,7 +279,7 @@ function crcFinal(arr) {
   var length = arr.length;
   for (var i = 0; i < length - 1; i++) {
     combileCrc64(temp, arr[i + 1].crc, arr[i + 1].len, function (err, data) {
-      if (err) console.log(err);
+      if (err) log.debug(err);
       temp = data;
     });
   }

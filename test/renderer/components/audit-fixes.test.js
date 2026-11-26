@@ -33,29 +33,17 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('地址栏：刷新 / 主页 / 保存为首页', () => {
-  it('三按钮存在；保存首页写入 auth-info.address 并记住当前地址', async () => {
+describe('地址栏：刷新 / 主页', () => {
+  it('刷新与主页按钮存在，保存为首页入口已移除', async () => {
     const pinia = getActivePinia();
     const auth = useAuthStore(pinia);
     auth.info = { id: 'LTAI-test', secret: 'sk' };
-    const files = useFilesStore(pinia);
-    vi.spyOn(files, 'navigate').mockResolvedValue();
 
     const wrapper = mountWith(AddressBar);
     await flushPromises();
     expect(wrapper.find('[data-testid="address-refresh"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="address-home"]').exists()).toBe(true);
-
-    const saveBtn = wrapper.find('[data-testid="address-save-home"]');
-    expect(saveBtn.exists()).toBe(true);
-
-    await wrapper.find('[data-testid="address-input"]').setValue('oss://demo/pre/');
-    await wrapper.find('form').trigger('submit');
-    await flushPromises();
-
-    const saveSpy = vi.spyOn(auth, 'saveToAuthInfo').mockResolvedValue({});
-    await saveBtn.trigger('click');
-    expect(saveSpy).toHaveBeenCalledWith({ address: 'oss://demo/pre/' });
+    expect(wrapper.find('[data-testid="address-save-home"]').exists()).toBe(false);
   });
 });
 

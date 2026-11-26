@@ -66,23 +66,13 @@
     <button
       type="button"
       class="btn-icon"
-      data-testid="address-save-home"
-      :disabled="address === defaultAddress"
-      title="Save as home"
-      @click="saveDefaultAddress"
-    >
-      <AppIcon name="home" />
-    </button>
 
-    <button
-      type="button"
-      class="btn-icon"
       data-testid="address-fav"
       :class="{ active: isFav }"
       :title="isFav ? 'Remove favorite' : 'Add favorite'"
       @click="toggleFav"
     >
-      <AppIcon name="star" />
+      <AppIcon :name="isFav ? 'star-filled' : 'star'" />
     </button>
   </div>
 </template>
@@ -226,7 +216,7 @@ function startEdit() {
   });
 }
 
-// 默认地址：预设 ossPath 优先，其次已保存首页（auth.address），最后根
+// 默认地址：预设 ossPath 优先，其次已保存地址，最后根
 const defaultAddress = computed(() => {
   const info = authStore.info || {};
   return info.osspath || info.address || 'oss://';
@@ -247,11 +237,6 @@ function goHome() {
   go();
 }
 
-// 等价原版 saveDefaultAddress：持久化到 auth-info.address
-function saveDefaultAddress() {
-  authStore.saveToAuthInfo({ address: address.value });
-  toastStore.push(t('saveAsHome.success') || '设置默认地址成功', 'success', 2000);
-}
 
 const isFav = computed(() => favoritesStore.has(address.value));
 
@@ -259,13 +244,13 @@ function toggleFav() {
   const addr = address.value;
   if (favoritesStore.has(addr)) {
     favoritesStore.remove(addr);
-    toastStore.push(t('fav.removed') || addr, 'warning', 2000);
+    toastStore.push(t('bookmarks.delete.success'), 'warning', 2000);
     return;
   }
   if (favoritesStore.add(addr)) {
-    toastStore.push(t('fav.added') || addr, 'success', 2000);
+    toastStore.push(t('bookmarks.add.success'), 'success', 2000);
   } else {
-    toastStore.push(t('fav.full') || 'favorites full', 'warning', 2000);
+    toastStore.push(t('bookmarks.full'), 'warning', 2000);
   }
 }
 
@@ -289,6 +274,7 @@ watch(
 );
 
 onMounted(() => {
+  favoritesStore.warm();
   const info = authStore.info || {};
   const initial = info.osspath || info.address || 'oss://';
   address.value = initial;
@@ -302,14 +288,15 @@ defineExpose({ setAddress, go });
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--vsc-border-weak);
+  padding: 3px 8px;
+  background: var(--vsc-surface-2);
+  border-bottom: 1px solid var(--vsc-border);
 }
 .address-form {
   flex: 1;
   min-width: 0;
   position: relative;
-  height: 28px;
+  height: 26px;
 }
 .crumbs {
   position: absolute;
@@ -362,18 +349,31 @@ defineExpose({ setAddress, go });
   pointer-events: auto;
 }
 .btn-icon {
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 2px;
   background: none;
-  padding: 4px 6px;
+  padding: 0;
   cursor: pointer;
   line-height: 1;
   color: var(--vsc-fg-muted);
+}
+.btn-icon:hover:not(:disabled) {
+  background: var(--vsc-bg-hover);
+  color: var(--vsc-fg);
 }
 .btn-icon:disabled {
   cursor: not-allowed;
   opacity: 0.35;
 }
 .btn-icon.active {
-  color: #dcb67a;
+  color: var(--vsc-highlight);
+}
+.btn-icon.active :deep(svg) {
+  transform: scale(1.1);
 }
 </style>

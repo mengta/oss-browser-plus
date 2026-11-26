@@ -190,7 +190,7 @@ function onSubmit() {
   padding: 6px 0;
 }
 .text-folder {
-  color: #dcb67a;
+  color: var(--vsc-highlight);
 }
 .st-btn {
   padding: 4px 12px;
@@ -205,8 +205,8 @@ function onSubmit() {
   cursor: not-allowed;
 }
 .st-btn-success {
-  background: var(#2ea043);
-  border-color: #2ea043;
+  background: var(--vsc-success-solid);
+  border-color: var(--vsc-success);
   color: var(--vsc-on-accent);
 }
 </style>

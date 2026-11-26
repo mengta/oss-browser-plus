@@ -115,7 +115,42 @@ describe('AboutModal（B2-05 关于页）', () => {
     await wrapper.find('[data-testid="about-close"]').trigger('click');
     expect(wrapper.emitted('close')).toBeTruthy();
   });
-});
+
+  // P2（R-P2-01/R-P2-02 · V-02）：发行说明必须渲染为 HTML 而非纯文本
+  it('发行说明：readReleaseNotes 的 Markdown 渲染为 HTML 标签', async () => {
+    window.ossBrowser.system.readReleaseNotes = () =>
+      Promise.resolve({ ok: true, data: { found: true, markdown: '# 版本 1.20.6\n\n- 修复列表分页' } });
+
+    const wrapper = mountAll(AboutModal);
+    await nextTick();
+    await flushMicro();
+    await nextTick();
+
+    const body = wrapper.find('[data-testid="about-release-body"]');
+    expect(body.exists()).toBe(true);
+    expect(body.html()).toContain('<h1');
+    expect(body.html()).toContain('<li>');
+    const error = wrapper.find('[data-testid="about-release-error"]');
+    expect(error.exists()).toBe(false);
+  });
+
+  it('发行说明读取失败：展示可关闭的提示条（不静默降级）', async () => {
+    window.ossBrowser.system.readReleaseNotes = () =>
+      Promise.resolve({ ok: false, code: 'IO', message: 'read failed' });
+
+    const wrapper = mountAll(AboutModal);
+    await nextTick();
+    await flushMicro();
+    await nextTick();
+
+    const error = wrapper.find('[data-testid="about-release-error"]');
+    expect(error.exists()).toBe(true);
+    expect(wrapper.find('[data-testid="about-release-body"]').exists()).toBe(false);
+
+    await wrapper.find('[data-testid="about-release-error-dismiss"]').trigger('click');
+    expect(wrapper.find('[data-testid="about-release-error"]').exists()).toBe(false);
+  });
+  });
 
 describe('favorites store + FavListModal（B2-06 收藏）', () => {
   it('store：add/has/remove/list 与持久化写入（sha256 命名由桥承担）', async () => {

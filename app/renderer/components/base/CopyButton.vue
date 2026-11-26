@@ -2,21 +2,24 @@
   <button
     class="copy-button"
     type="button"
-    :title="title"
+    :title="title || t('copy')"
     :disabled="disabled || !text"
     data-testid="copy-button"
     @click="copy"
   >
-    <slot>复制</slot>
+    <slot>{{ t('copy') }}</slot>
   </button>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { useToastStore } from '../../stores/toast.js';
+
+const { t } = useI18n();
 
 const props = defineProps({
   text: { type: String, default: '' },
-  title: { type: String, default: '复制' },
+  title: { type: String, default: '' },
   successKey: { type: String, default: 'copy.successfully' },
   disabled: { type: Boolean, default: false },
 });

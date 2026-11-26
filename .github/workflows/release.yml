@@ -92,7 +92,17 @@ jobs:
             exit 1
           fi
 
+      - name: Lint (read-only, no --fix)
+        run: npm run lint:ci
+
+      - name: Verify IPC allowlist
+        run: node tools/verify-allowlist.mjs --require-all
+
       - name: Build (with dist deps)
+        env:
+          # P1：构建目标透传（crc64 仅保留目标平台二进制，renderer minify）
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
         run: npm run build:full
 
       - name: Test (ava gate)
@@ -112,6 +122,9 @@ jobs:
             fi
             exit 1
           fi
+
+      - name: Vitest (renderer unit tests)
+        run: npm run test:renderer
 
       - name: Package (electron-builder)
         shell: bash
@@ -187,6 +200,26 @@ jobs:
             cp "$DMG_SRC" "releases/$VERSION/oss-browser.dmg"
             echo "archived: releases/$VERSION/oss-browser.dmg"
           fi
+
+      - name: List performance gate (virtual scroll, win64 only)
+        if: matrix.platform == 'win32' && matrix.arch == 'x64'
+        run: node tools/measure-list-perf.mjs --rows=1000 --gate
+
+      - name: Size gate (dist / zip / asar)
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          ZIP_PATH="releases/$VERSION/oss-browser-${PLATFORM}-${ARCH}.zip"
+          ASAR_PATH=$(find build -name app.asar -path '*resources*' | head -1 || true)
+          PREV_PATH=$(ls -d releases/*/oss-browser-${PLATFORM}-${ARCH}.zip 2>/dev/null | grep -v "/$VERSION/" | tail -1 || true)
+          ARGS="--dist=dist --zip=${ZIP_PATH}"
+          if [ -n "$ASAR_PATH" ]; then ARGS="$ARGS --asar=${ASAR_PATH}"; fi
+          if [ -n "$PREV_PATH" ]; then ARGS="$ARGS --prev=${PREV_PATH}"; fi
+          echo "gate-size: $ARGS"
+          node tools/gate-size.mjs $ARGS
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

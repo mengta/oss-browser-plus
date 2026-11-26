@@ -1,4 +1,5 @@
 "use strict";
+var log = require('../../lib/logger').logger('ossstore.upload-job-util');
 
 var fs = require("fs");
 var path = require("path");
@@ -76,7 +77,7 @@ function completeMultipartUpload(self, doneParams, fn) {
   var retryTimes = 0;
   setTimeout(_dig, 10);
   function _dig() {
-    console.log("self.oss", self);
+    log.debug("self.oss", self);
     self.oss.completeMultipartUpload(doneParams, function (err, data) {
       if (err) {
         if (err.message.indexOf("The specified upload does not exist") != -1) {
@@ -86,7 +87,7 @@ function completeMultipartUpload(self, doneParams, fn) {
               Key: self.to.key,
             },
             function (err2, data2) {
-              //console.log('headobject: ', err2, err2.message, data);
+              //log.debug('headobject: ', err2, err2.message, data);
               if (err2) {
                 fn(err2, data2);
               } else {
@@ -102,7 +103,7 @@ function completeMultipartUpload(self, doneParams, fn) {
         } else {
           retryTimes++;
           self._changeStatus("retrying", retryTimes);
-          console.error(
+          log.error(
             "completeMultipartUpload error",
             err,
             ", ----- retrying...",
@@ -129,7 +130,7 @@ function getUploadId(checkPoints, self, params, fn) {
   _dig();
   function _dig() {
     self.oss.createMultipartUpload(params, function (err, res) {
-      //console.log(err, res, '<========')
+      //log.debug(err, res, '<========')
       if (err) {
         if (
           err.message.indexOf("You have no right to access") != -1 ||
@@ -139,7 +140,7 @@ function getUploadId(checkPoints, self, params, fn) {
         } else {
           retryTimes++;
           self._changeStatus("retrying", retryTimes);
-          console.warn(
+          log.warn(
             "createMultipartUpload error",
             err,
             ", ----- retrying...",
@@ -195,7 +196,7 @@ function prepareChunks(filePath, checkPoints, fn) {
 
   fs.stat(filePath, function (err, state) {
     if (err) {
-      console.error(err);
+      log.error(err);
       return;
     }
 
@@ -203,7 +204,7 @@ function prepareChunks(filePath, checkPoints, fn) {
     var chunkNum =
       state.size > chunkSize ? Math.ceil(state.size / chunkSize) : 1;
 
-    //console.log('chunkSize: ', chunkSize, "chunkNum: ", chunkNum);
+    //log.debug('chunkSize: ', chunkSize, "chunkNum: ", chunkNum);
 
     var chunks = [];
 
@@ -233,7 +234,7 @@ function prepareChunks(filePath, checkPoints, fn) {
  * @param total size
  */
 function getSensibleChunkSize(size) {
-  console.warn(
+  log.warn(
     `localStorage uploadPartSize: " ${
       localStorage.getItem("uploadPartSize") || 10
     }M`

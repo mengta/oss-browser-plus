@@ -1,6 +1,13 @@
 <template>
   <div class="import-config-panel" data-testid="import-config-panel">
-    <textarea v-model="text" class="ic-text" data-testid="ic-text" @input="doParse"></textarea>
+    <textarea
+      v-model="text"
+      class="ic-text"
+      data-testid="ic-text"
+      :placeholder="t('auth.importConfig.placeholder')"
+      @input="doParse"
+    ></textarea>
+
     <div class="ic-preview">
       <div v-for="(value, key) in parsed" :key="key" class="ic-row" :data-testid="'ic-row-' + key">
         <span class="ic-label">{{ fieldLabel(key) }}</span>
@@ -10,7 +17,7 @@
     <p v-if="parseError" class="ic-error" data-testid="ic-error">{{ parseError }}</p>
     <div class="ic-actions">
       <button type="button" class="ic-btn" :disabled="!parsed" data-testid="ic-import" @click="doImport">
-        导入
+        {{ t('auth.importConfig.import') }}
       </button>
     </div>
   </div>
@@ -59,7 +66,7 @@ function readClipboard() {
   sys.clipboardReadText().then(
     (res) => {
       const clip = res && res.ok ? res.data : '';
-      if (clip && clip.trim()) {
+      if (clip && clip.trim() && parse(clip).data) {
         text.value = clip;
         doParse();
       }
@@ -82,8 +89,13 @@ readClipboard();
   padding: 8px;
   border: 1px solid var(--vsc-border);
   border-radius: 2px;
+  background: var(--vsc-bg-input);
+  color: var(--vsc-fg);
   font-family: monospace;
   font-size: 12px;
+}
+.ic-text::placeholder {
+  color: var(--vsc-fg-dim);
 }
 .ic-preview {
   display: flex;
@@ -102,8 +114,9 @@ readClipboard();
 .ic-value {
   word-break: break-all;
 }
+
 .ic-error {
-  color: #a1260d;
+  color: var(--vsc-danger);
   font-size: 12px;
   margin: 0;
 }

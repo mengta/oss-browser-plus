@@ -19,35 +19,32 @@ var os = require("os");
 var path = require("path");
 var nativeImage = require("electron").nativeImage;
 
-// electron-log收集和引入（P4-03：1.3.0 → 5.4.4，level=false 写法适配为 'silent'）
-var log = require("electron-log");
-log.transports.file.level = "silent";
-log.transports.console.level = "silent";
+// P4（R-P4-02/03/06）：统一日志模块（info+ 落盘、5MB×5、7 天、脱敏），禁止 silent
+var loggerModule = require("./node/lib/logger");
+var log = loggerModule.logger("main");
+loggerModule.init({
+  fileLevel: "info",
+  consoleLevel: process.env.NODE_ENV === "production" ? "warn" : "info",
+});
 
 if (ALLOW_INSECURE_TLS) {
-  // 审计日志（D7）：开关开启时输出（electron-log 5.x）
-  log.transports.console.level = "info";
-  log.info(
-    "[audit][tls] OSS_BROWSER_ALLOW_INSECURE_TLS=1 enabled at " +
-      new Date().toISOString()
-  );
-  log.transports.console.level = "silent";
+  // 审计日志（D7）：开关开启时输出
+  log.info("app.tls_insecure", "OSS_BROWSER_ALLOW_INSECURE_TLS=1 enabled", {
+    at: new Date().toISOString(),
+  });
 }
 
 ///*****************************************
-//静态服务
+// 静态服务（P4/R-P4-01）：Promise 化逐端口尝试；失败不阻塞建窗，端口查询返回 UNAVAILABLE
 var PORTS = [7123, 7124, 7125, 7126];
-
-for (var port of PORTS) {
-  try {
-    //var subp = require('child_process').fork('./server.js',[port]);
-    require("./server.js").listen(port);
-    console.log("listening on port " + port);
-    break;
-  } catch (e) {
-    console.log(e);
-  }
-}
+var staticServer = require("./node/capabilities/static-server");
+var staticServerReady = staticServer.start(PORTS).catch(function (err) {
+  log.error("port.unavailable", "static server unavailable", {
+    code: err && err.code,
+    portErrors: err && err.portErrors,
+  });
+  return 0;
+});
 
 if (ALLOW_INSECURE_TLS) {
   // 自签证书支持（仅开关开启时）
@@ -60,7 +57,7 @@ var custom = {};
 try {
   custom = require(path.join(__dirname, "../custom"));
 } catch (e) {
-  console.log("没有自定义模块");
+  log.debug("custom.missing", "no custom module");
 }
 //let logo = nativeImage.createFromPath('icons/logo.ico');
 
@@ -84,7 +81,8 @@ function createWindow() {
     icon: custom.logo_ico || path.join(__dirname, "icons", "icon.ico"),
 
     webPreferences: {
-      plugins: true,
+      // P3（R-P3-05）：禁用插件；渲染层能力统一经 preload 白名单
+      plugins: false,
       // Vue3-P0-01/03 阶段 0：渲染层 Node 能力改由 preload 白名单承载；sandbox 定稿 false（P0-02 实验见 ledger §A.2）
       nodeIntegration: false,
       contextIsolation: true,
@@ -109,8 +107,38 @@ function createWindow() {
   win = new BrowserWindow(opt);
 
   win.setTitle(custom.title || "OSS Browser");
-  var rendererEntry = process.env.OSS_BROWSER_VUE_ENTRY === "1" ? "vue.html" : "index.html";
-  win.loadURL(`file://${__dirname}/${rendererEntry}`);
+
+  // P3（R-P3-05）：导航 / 新窗口 / webview / 权限请求收紧
+  var appRoot = path.resolve(__dirname);
+  win.webContents.on("will-navigate", function (event, url) {
+    var localPath = "";
+    try {
+      localPath = require("url").fileURLToPath(String(url || ""));
+    } catch (err) {
+      localPath = "";
+    }
+    var isLocal = !!localPath && path.resolve(localPath).indexOf(appRoot) === 0;
+    if (!isLocal) {
+      event.preventDefault();
+      log.warn("security.navigation_blocked", "blocked navigation", { url: String(url || "") });
+    }
+  });
+  win.webContents.setWindowOpenHandler(function (details) {
+    var target = String((details && details.url) || "");
+    if (/^https?:/i.test(target)) {
+      electron.shell.openExternal(target);
+    }
+    return { action: "deny" };
+  });
+  win.webContents.on("will-attach-webview", function (event) {
+    event.preventDefault();
+  });
+  win.webContents.session.setPermissionRequestHandler(function (webContents, permission, callback) {
+    log.warn("security.permission_denied", "permission request denied", { permission: permission });
+    callback(false);
+  });
+
+  win.loadURL(`file://${__dirname}/index.html`);
 
   win.setMenuBarVisibility(false);
 
@@ -132,7 +160,7 @@ function createWindow() {
 
   // drawin 就是 MacOS
   if (process.env.NODE_ENV == "development") {
-    console.log("开发模式");
+    log.debug("app.dev_mode", "development mode");
 
     // Open the DevTools.
     win.webContents.openDevTools();
@@ -148,7 +176,13 @@ function createWindow() {
 
 //监听web page里发出的message（每消息一通道 invoke/handle，D8 改造）
 ipcMain.handle("app:get-static-server-port", () => {
-  return port;
+  var activePort = staticServer.current();
+  if (!activePort) {
+    var err = new Error("static server unavailable");
+    err.code = "UNAVAILABLE";
+    throw err;
+  }
+  return activePort;
 });
 
 ipcMain.handle("app:open-dev-tools", () => {
@@ -195,10 +229,22 @@ ipcMain.handle("window:is-maximized", (event) => {
 });
 
 ipcMain.handle("app:install-restart", (event, version) => {
-  //Copy
-  //var from = path.join(os.homedir(), '.oss-browser', version+'-app.asar');
-  var from = path.join(path.dirname(__dirname), version + "-app.asar");
-  var to = path.join(path.dirname(__dirname), "app.asar");
+  // P3（R-P3-08）：主进程二次校验版本号与路径，sourcePath 只允许由资源目录推导
+  if (typeof version !== "string" || !/^\d+\.\d+\.\d+$/.test(version)) {
+    log.error("upgrade.verify_failed", "invalid version for install", { version: String(version) });
+    return { ok: false, code: "BAD_VERSION", message: "invalid version" };
+  }
+  var resourcesDir = path.resolve(path.dirname(__dirname));
+  var from = path.resolve(resourcesDir, version + "-app.asar");
+  var to = path.resolve(resourcesDir, "app.asar");
+  var prefix = resourcesDir + path.sep;
+  if (from.indexOf(prefix) !== 0 || to.indexOf(prefix) !== 0) {
+    log.error("upgrade.verify_failed", "install path escapes resources dir", { version: version });
+    return { ok: false, code: "BAD_PATH", message: "path escapes resources dir" };
+  }
+  if (!fs.existsSync(from)) {
+    return { ok: false, code: "PACKAGE_MISSING", message: "package not found" };
+  }
 
   process.noAsar = true;
 
@@ -211,14 +257,82 @@ ipcMain.handle("app:install-restart", (event, version) => {
     app.relaunch();
     app.exit(0);
   });
+  return { ok: true };
 });
 
 // remote.dialog 替代（D8：remote 模块于 Electron 14 起移除）
-// 渲染进程经 ipcRenderer.invoke('dialog:show-open-dialog', options) 调用，
-// 返回 { canceled, filePaths }（与 dialog.showOpenDialog 结构一致）
+// P3（R-P3-08）：主进程白名单过滤（与 preload 侧形成双层），拒绝未知 properties / 路径穿越
+var ALLOWED_DIALOG_PROPS = ["openFile", "openDirectory", "multiSelections"];
+
+function sanitizeDialogOptions(options) {
+  var src = options && typeof options === "object" ? options : {};
+  var out = {};
+  if (Array.isArray(src.properties)) {
+    out.properties = src.properties.filter(function (p) {
+      return ALLOWED_DIALOG_PROPS.indexOf(p) >= 0;
+    });
+  }
+  if (typeof src.title === "string") out.title = src.title;
+  if (typeof src.defaultPath === "string" && src.defaultPath.indexOf("..") < 0) {
+    out.defaultPath = src.defaultPath;
+  }
+  if (Array.isArray(src.filters)) {
+    out.filters = src.filters
+      .filter(function (f) {
+        return f && typeof f.name === "string" && Array.isArray(f.extensions);
+      })
+      .map(function (f) {
+        return {
+          name: f.name,
+          extensions: f.extensions.filter(function (x) {
+            return typeof x === "string" && !/[\\/]/.test(x);
+          }),
+        };
+      });
+  }
+  return out;
+}
+
 ipcMain.handle("dialog:show-open-dialog", async (event, options) => {
   var callerWin = BrowserWindow.fromWebContents(event.sender);
-  return dialog.showOpenDialog(callerWin, options);
+  return dialog.showOpenDialog(callerWin, sanitizeDialogOptions(options));
+});
+
+// P3（R-P3-04）：外网地址探测（渲染层 CSP 收紧后由主进程代发，3s 超时）
+// 必须使用 IPC 信封 { ok, data }：探测结果自身的 ok 表示 HTTP 可达性，
+// 直接作为信封会让 403/非 2xx 被 preload 误判为通道失败（app:probe-url failed）。
+var probeUrl = require("./node/capabilities/probe-url").probeUrl;
+ipcMain.handle("app:probe-url", async (event, target, opts) => {
+  try {
+    var data = await probeUrl(target, opts);
+    return { ok: true, data: data };
+  } catch (err) {
+    return {
+      ok: false,
+      code: (err && err.code) || "PROBE_FAILED",
+      message: (err && err.message) || "probe failed",
+    };
+  }
+});
+
+// P4（R-P4-05）：渲染层错误上报（滑动窗口限流 + 5s 去重 + 脱敏落盘），不阻塞渲染层
+var createRateLimiter = require("./node/lib/rate-limit").createRateLimiter;
+var rendererErrorLimiter = createRateLimiter({ windowMs: 60000, maxPerWindow: 20, dedupeMs: 5000 });
+
+ipcMain.on("app:renderer-error", (event, payload) => {
+  try {
+    var body = payload && typeof payload === "object" ? payload : { message: String(payload || "") };
+    var fingerprint = (body.kind || "") + "|" + (body.message || "") + "|" + String(body.stack || "").slice(0, 200);
+    var decision = rendererErrorLimiter.allow(fingerprint);
+    if (!decision.allowed) return;
+    log.error("renderer.error", String(body.message || "renderer error"), {
+      kind: body.kind || "unknown",
+      url: body.url,
+      stack: body.stack,
+    });
+  } catch (err) {
+    // 上报链路自身失败不影响业务
+  }
 });
 
 // Vue3-P0-07 / Q-10 例外（design O-07）：Electron 45 preload 不再导出 clipboard，
@@ -237,6 +351,15 @@ ipcMain.handle("clipboard:write-text", (event, text) => {
 // Vue3-P0-09 / Q-10 例外（design O-09）：safeStorage 仅主进程可用（Electron 45 preload 导出集不含），
 // 三条通道承接原渲染层 SafeStorageClient 的 OS/keychain 原语，异常内部消化保持 null/false 语义
 ipcMain.handle("credentials:is-available", () => {
+  try {
+    var ss = electron.safeStorage;
+    return !!(ss && typeof ss.isEncryptionAvailable === "function" && ss.isEncryptionAvailable() === true);
+  } catch (err) {
+    return false;
+  }
+});
+
+ipcMain.handle("credentials:is-available-async", async () => {
   try {
     var ss = electron.safeStorage;
     return !!(ss && typeof ss.isEncryptionAvailable === "function" && ss.isEncryptionAvailable() === true);
@@ -351,7 +474,17 @@ if (!gotTheLock) {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+// P4（R-P4-01）：等待静态服务端口选择完成（失败不阻塞建窗，端口查询返回 UNAVAILABLE）
+app.on("ready", function () {
+  staticServerReady.then(function (activePort) {
+    log.info("app.start", "application ready", {
+      port: activePort || 0,
+      platform: process.platform,
+      version: app.getVersion(),
+    });
+    createWindow();
+  });
+});
 
 // Quit when all windows are closed.
 app.on("window-all-closed", () => {
@@ -639,9 +772,15 @@ CAPABILITY_CHANNELS.forEach(function (channel) {
         return { ok: true, data: data };
       },
       function (err) {
+        var code = (err && err.code) || "INTERNAL";
+        log.error("ipc.error", "capability dispatch failed", {
+          channel: channel,
+          code: code,
+          requestId: err && err.requestId,
+        });
         return {
           ok: false,
-          code: (err && err.code) || "INTERNAL",
+          code: code,
           message: (err && err.message) || String(err),
           requestId: err && err.requestId,
           ecCode: err && err.ecCode,

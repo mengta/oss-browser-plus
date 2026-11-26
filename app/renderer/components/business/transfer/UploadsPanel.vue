@@ -288,10 +288,10 @@ async function onClearAll() {
   background: var(--vsc-link);
 }
 .bar-success {
-  background: #89d185;
+  background: var(--vsc-success-solid);
 }
 .bar-danger {
-  background: #a1260d;
+  background: var(--vsc-danger-solid);
 }
 .col-status {
   width: 110px;
@@ -320,8 +320,8 @@ async function onClearAll() {
   font-size: 12px;
 }
 .st-btn-danger {
-  background: var(#a1260d);
-  border-color: #a1260d;
+  background: var(--vsc-danger-solid);
+  border-color: var(--vsc-danger);
   color: var(--vsc-on-accent);
 }
 .st-btn-mini {
@@ -334,7 +334,7 @@ async function onClearAll() {
   color: var(--vsc-on-accent);
 }
 .text-danger {
-  color: #a1260d;
+  color: var(--vsc-danger);
 }
 .msg {
   margin-left: 4px;

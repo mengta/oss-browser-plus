@@ -1,6 +1,9 @@
-// B2-14（Q-07/D-14）：Markdown 渲染保留 showdown（与迁移前同源，lib.js 全局）；
-// sanitize 白名单补齐迁移前 ngSanitize 的清洗语义——release notes 与 about_html
+// P2（R-P2-01/R-P2-02）：Markdown 渲染改为显式 import showdown（devDependency，随 app.js 打包）。
+// 迁移前依赖 lib.js 全局 window.showdown，lib.js 下线后该全局不存在，发行说明静默退化为纯文本。
+// sanitize 白名单保持原样（等价 ngSanitize 清洗语义）——release notes 与 about_html
 // 为远程/定制方内容，v-html 直插前须过滤脚本向量。
+
+import showdown from 'showdown';
 
 const ALLOWED_TAGS = new Set([
   'p', 'a', 'br', 'hr', 'strong', 'b', 'em', 'i', 'u', 's',
@@ -11,6 +14,9 @@ const ALLOWED_TAGS = new Set([
 ]);
 
 const ALLOWED_ATTRS = new Set(['href', 'src', 'alt', 'title', 'target']);
+
+let converter = null;
+let renderErrorHandler = null;
 
 function isSafeUrl(value) {
   const v = String(value || '').trim();
@@ -78,10 +84,47 @@ export function sanitizeHtml(html) {
   return doc.body.innerHTML;
 }
 
+export function setRenderErrorHandler(handler) {
+  renderErrorHandler = typeof handler === 'function' ? handler : null;
+}
+
+// 测试支持：重置惰性 Converter 单例（用于注入渲染失败）
+export function resetMarkdownConverter() {
+  converter = null;
+}
+
+function escapeHtml(text) {
+  return String(text || '').replace(/[&<>"]/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+  }[c]));
+}
+
+function getConverter() {
+  if (!converter) {
+    const ConverterCtor = showdown && showdown.Converter;
+    if (typeof ConverterCtor !== 'function') {
+      throw new Error('showdown.Converter unavailable');
+    }
+    converter = new ConverterCtor({ tables: true, simplifiedAutoLink: true, strikethrough: true });
+  }
+  return converter;
+}
+
 export function renderMarkdown(text) {
-  const Converter = typeof window !== 'undefined' && window.showdown && window.showdown.Converter;
-  const raw = Converter
-    ? new Converter().makeHtml(String(text || ''))
-    : String(text || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-  return sanitizeHtml(raw);
+  try {
+    const raw = getConverter().makeHtml(String(text || ''));
+    return sanitizeHtml(raw);
+  } catch (err) {
+    // 降级必须可见：返回安全转义文本并回调，由调用方展示提示（不静默）
+    if (renderErrorHandler) {
+      renderErrorHandler({
+        code: 'MARKDOWN_RENDER_FAILED',
+        message: err && err.message ? String(err.message) : 'markdown render failed',
+      });
+    }
+    return '<pre>' + escapeHtml(text) + '</pre>';
+  }
 }

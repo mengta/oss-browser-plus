@@ -31,6 +31,21 @@ export function persistLocale(locale) {
   return next;
 }
 
+let activeI18n = null;
+
+export function bindI18n(instance) {
+  activeI18n = instance;
+}
+
+// 语言切换立即生效（无需重启），并持久化到 localStorage
+export function setLocale(locale) {
+  const next = persistLocale(locale);
+  if (activeI18n && activeI18n.global && activeI18n.global.locale) {
+    activeI18n.global.locale.value = next;
+  }
+  return next;
+}
+
 export function createRendererI18n(locale) {
   return createI18n({
     legacy: false,

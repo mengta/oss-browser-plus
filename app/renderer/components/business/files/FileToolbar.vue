@@ -220,17 +220,18 @@ function showHeaders() {
 .file-toolbar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--vsc-surface-1);
   border-bottom: 1px solid var(--vsc-border-weak);
   flex-wrap: wrap;
 }
 .btn {
-  padding: 3px 10px;
+  padding: 2px 8px;
 }
 .divider {
   width: 1px;
-  height: 18px;
+  height: 16px;
   background: var(--vsc-border);
 }
 .check-all {

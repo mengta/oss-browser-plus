@@ -1,4 +1,5 @@
-// var fs = require('fs');
+var log = require('../../lib/logger').logger('ossstore.download-job-util');
+var fs = require('fs');
 // var crypto = require('crypto');
 var util = require("./util");
 var os = require("os");
@@ -35,7 +36,7 @@ module.exports = {
           }
         });
       } catch (e) {
-        console.error("crc64 function error");
+        log.error("crc64 function error");
         var error = new Error();
         error.message = "CRC64模块加载失败";
         reject(error);
@@ -53,7 +54,7 @@ module.exports = {
           }
         });
       } catch (e) {
-        console.error("crc64 function error");
+        log.error("crc64 function error");
         const error = new Error();
         error.message = "CRC64模块加载失败";
         reject(error);
@@ -61,7 +62,7 @@ module.exports = {
     });
   },
   combineCrc64: async (list) => {
-    console.log("begin combine crc64", list);
+    log.debug("begin combine crc64", list);
     let str = "";
     for (let i = 0; i < list.length; i++) {
       const item = list[i];
@@ -204,7 +205,7 @@ function headObject(self, objOpt) {
           } else {
             retryTimes++;
             self._changeStatus("retrying", retryTimes);
-            console.warn(
+            log.warn(
               "headObject error",
               err,
               ", ----- retrying...",
@@ -220,7 +221,7 @@ function headObject(self, objOpt) {
 }
 
 function getSensibleChunkSize(size) {
-  console.warn(
+  log.warn(
     `localStorage uploadPartSize: " ${
       localStorage.getItem("uploadPartSize") || 10
     }M`

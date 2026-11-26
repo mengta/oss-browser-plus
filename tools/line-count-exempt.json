@@ -1,0 +1,78 @@
+{
+  "_comment": "500 行硬阈值的豁免清单（条目数只减不增，上限 12）。行数基线按本批次实际增长更新（新增能力/安全代码/三语 key），条目数未增加。新增条目必须带 batch 与 reason。",
+  "maxEntries": 12,
+  "entries": [
+    {
+      "file": "node/crc64/pure-js/crc.js",
+      "lines": 33384,
+      "batch": "P2",
+      "reason": "emscripten 生成代码（CRC64 纯 JS 兜底），不手工维护"
+    },
+    {
+      "file": "node/capabilities/services/oss2.js",
+      "lines": 2125,
+      "batch": "P6c",
+      "reason": "P6c 拆分为 services/oss/* 8 个文件后移除本条（本批次新增 logger 注入 1 行）"
+    },
+    {
+      "file": "app/preload/api-manifest.js",
+      "lines": 994,
+      "batch": "6d-未纳入",
+      "reason": "Q-2 默认不纳入；本批次新增 reportError/probeUrl/isAvailableAsync 三个条目"
+    },
+    {
+      "file": "node/ossstore/lib/upload-job.js",
+      "lines": 803,
+      "batch": "不计入",
+      "reason": "ossstore 上传任务状态机，超出本批次范围"
+    },
+    {
+      "file": "node/ossstore/lib/download-job.js",
+      "lines": 764,
+      "batch": "不计入",
+      "reason": "ossstore 下载任务状态机，超出本批次范围（logger 注入 1 行）"
+    },
+    {
+      "file": "app/renderer/stores/transfer.js",
+      "lines": 729,
+      "batch": "6e-未纳入",
+      "reason": "Q-2 默认不纳入（transfer store 拆分为后续项），长期豁免"
+    },
+    {
+      "file": "app/renderer/pages/FilesPage.vue",
+      "lines": 654,
+      "batch": "6e-未纳入",
+      "reason": "Q-2 默认不纳入（页面 composable 抽离为后续项），长期豁免"
+    },
+    {
+      "file": "main.js",
+      "lines": 783,
+      "batch": "长期",
+      "reason": "主进程 IPC 聚合入口；本批次新增日志/端口/安全拦截/探测与错误上报链路"
+    },
+    {
+      "file": "node/i18n/ja-JP.js",
+      "lines": 584,
+      "batch": "不计入",
+      "reason": "语言资源表（本批次新增 releaseNotes / preview.serviceUnavailable 两个 key）"
+    },
+    {
+      "file": "node/i18n/en-US.js",
+      "lines": 581,
+      "batch": "不计入",
+      "reason": "语言资源表（本批次新增 2 个 key）"
+    },
+    {
+      "file": "node/i18n/zh-CN.js",
+      "lines": 561,
+      "batch": "不计入",
+      "reason": "语言资源表（本批次新增 2 个 key）"
+    },
+    {
+      "file": "app/renderer/styles/vscode-theme.css",
+      "lines": 525,
+      "batch": "长期",
+      "reason": "主题变量与组件覆盖集中定义，色值单一来源"
+    }
+  ]
+}

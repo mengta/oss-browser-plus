@@ -19,6 +19,7 @@ import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 import * as esbuild from 'esbuild';
 import vuePlugin from './tools/esbuild-vue-plugin.mjs';
+import { crc64Filter } from './tools/build-filters.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -28,6 +29,30 @@ const OPTS = {
   watch: args.includes('--watch'),
   distInstall: args.includes('--dist-install'),
 };
+
+// P1（R-P1-01）：构建目标平台解析。--target 优先，其次 PLATFORM/ARCH 环境变量，最后本机。
+// 非法格式显式失败（非 0），不静默回退本机平台。
+function resolveTarget() {
+  const explicit = args.find((a) => a.startsWith('--target='));
+  let raw = explicit ? explicit.slice('--target='.length) : '';
+  if (!raw && process.env.PLATFORM && process.env.ARCH) {
+    raw = `${process.env.PLATFORM}-${process.env.ARCH}`;
+  }
+  if (!raw) {
+    return { platform: process.platform, arch: process.arch };
+  }
+  const matched = /^(win32|linux|darwin)-(x64|arm64|ia32)$/.exec(raw);
+  if (!matched) {
+    console.error(
+      `BUILD_TARGET_INVALID: "${raw}" (expected <win32|linux|darwin>-<x64|arm64|ia32>)`
+    );
+    process.exit(1);
+  }
+  return { platform: matched[1], arch: matched[2] };
+}
+
+const TARGET = resolveTarget();
+const TARGET_DIR = `${TARGET.platform}-${TARGET.arch}`;
 
 function walk(dir, filter) {
   const out = [];
@@ -68,71 +93,29 @@ async function taskAppJS() {
   // B4-07：Angular 侧不再打包（Vue bundle 输出 dist/app.js）
 }
 
-// ---------- 任务：templates（templates.js，$templateCache standalone） ----------
-function taskTemplates() {
-  // B4-07: Angular templates removed (placeholder for R-12)
-  console.log('--rebuilding templates.js (placeholder)...');
-  fs.writeFileSync(path.join(DIST, 'templates.js'), '// templates removed\n');
-  console.log('--done dist/templates.js');
-}
 
 // ---------- 任务：css（app.css） ----------
 function taskAppCSS() {
   console.log('--rebuilding app.css...');
   const files = walk(path.join(ROOT, 'app'), (p) => p.endsWith('.css'));
+  // P1（R-P1-04）：bootstrap 子集先出，vscode-theme 最后，保证主题色覆盖
+  const order = (p) => {
+    if (p.endsWith('bootstrap-subset.css')) return 0;
+    if (p.endsWith('vscode-theme.css')) return 2;
+    return 1;
+  };
+  files.sort((a, b) => order(a) - order(b) || a.localeCompare(b));
   concatWrite(files, path.join(DIST, 'app.css'));
 }
 
-// ---------- 任务：libJS（lib.js，vendor 顺序与 gulpfile.js:97-129 一致） ----------
-function taskLibJS() {
-  const vendorList = [
-    './node_modules/jquery/dist/jquery.js',
-    './node_modules/bootstrap/dist/js/bootstrap.js',
-  ];
-  const files = [];
-  const missing = [];
-  for (const rel of vendorList) {
-    const abs = path.join(ROOT, rel);
-    if (fs.existsSync(abs)) files.push(abs);
-    else missing.push(rel);
-  }
-  if (missing.length) {
-    console.warn('[libJS] missing vendor files:', missing.join(', '));
-  }
-  concatWrite(files, path.join(DIST, 'lib.js'));
-}
-
-// ---------- 任务：libCSS（css/lib.css） ----------
-function taskLibCSS() {
-  const list = [
-    './node_modules/bootstrap/dist/css/bootstrap.css',
-  ];
-  const files = list.map((r) => path.join(ROOT, r)).filter((f) => fs.existsSync(f));
-  concatWrite(files, path.join(DIST, 'css', 'lib.css'));
-}
-
-// ---------- 任务：copy-fonts ----------
-function taskCopyFonts() {
-  const dirs = [
-    path.join(ROOT, 'node_modules', 'bootstrap', 'fonts'),
-
-  ];
-  for (const d of dirs) {
-    if (!fs.existsSync(d)) continue;
-    for (const f of walk(d)) {
-      const dest = path.join(DIST, 'fonts', path.basename(f));
-      fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.copyFileSync(f, dest);
-    }
-  }
-  console.log('--done dist/fonts');
-}
 
 // ---------- 任务：copy-icons / copy-node / copy-docs / copy-static ----------
-function copyTree(srcDir, destDir) {
+function copyTree(srcDir, destDir, { filter } = {}) {
   if (!fs.existsSync(srcDir)) return;
   for (const f of walk(srcDir)) {
-    const dest = path.join(destDir, path.relative(srcDir, f));
+    const rel = toPosix(path.relative(srcDir, f));
+    if (filter && !filter(rel)) continue;
+    const dest = path.join(destDir, rel);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.copyFileSync(f, dest);
   }
@@ -141,14 +124,22 @@ function copyTree(srcDir, destDir) {
 function taskCopyIcons() {
   copyTree(path.join(ROOT, 'app', 'icons'), path.join(DIST, 'icons'));
 }
+
+// P1（R-P1-02）：crc64 裁剪谓词抽到 tools/build-filters.mjs（可单测）
 function taskCopyNode() {
-  copyTree(path.join(ROOT, 'node'), path.join(DIST, 'node'));
+  copyTree(path.join(ROOT, 'node'), path.join(DIST, 'node'), {
+    filter: (rel) => crc64Filter(rel, TARGET_DIR),
+  });
 }
 function taskCopyDocs() {
   copyTree(path.join(ROOT, 'release-notes'), path.join(DIST, 'release-notes'));
 }
 function taskCopyStatic() {
-  copyTree(path.join(ROOT, 'static'), path.join(DIST, 'static'));
+  // P1（R-P1-05）：静态资源白名单（jquery/diff_match_patch 等死资产不再复制）
+  const allowed = new Set(['flv.js', 'flv-player.html', 'soft-link.svg']);
+  copyTree(path.join(ROOT, 'static'), path.join(DIST, 'static'), {
+    filter: (rel) => allowed.has(rel),
+  });
 }
 
 // ---------- 任务：copy-index ----------
@@ -157,7 +148,7 @@ function taskCopyIndex() {
     './app/index.html',
     './main.js',
     './server.js',
-    './vendor/*.js',
+
     './release-notes.md',
 
   ];
@@ -184,7 +175,10 @@ function recalcCspHashes() {
   while ((match = re.exec(html))) {
     hashes.push("'sha256-" + crypto.createHash('sha256').update(match[1], 'utf8').digest('base64') + "'");
   }
-  if (hashes.length === 0) return;
+  if (hashes.length === 0) {
+    console.log('--done CSP hashes: 0');
+    return;
+  }
   html = html.replace(
     /(<meta http-equiv="Content-Security-Policy" content=")([^"]*)(")/,
     (all, head, csp, tail) => {
@@ -262,6 +256,10 @@ async function taskRenderer() {
     outfile: path.join(DIST, 'app.js'),
     plugins: [vuePlugin()],
     loader: { '.svg': 'text', '.css': 'css' },
+    // P1（R-P1-03）：非 watch 构建启用压缩；不 drop console（保留错误诊断）
+    minify: !OPTS.watch,
+    legalComments: 'none',
+    sourcemap: false,
     define: {
       'process.env.NODE_ENV': JSON.stringify(OPTS.watch ? 'development' : 'production'),
     },
@@ -281,7 +279,7 @@ function debounce(fn, ms = 200) {
 function taskWatch() {
   console.log('--watching app/ static/ node/ (Ctrl+C to exit)');
   const rebuildJS = debounce(() => taskAppJS().catch((e) => console.error(e)));
-  const rebuildTpl = debounce(taskTemplates);
+
   const rebuildCSS = debounce(taskAppCSS);
   const reCopyIndex = debounce(taskCopyIndex);
   const reCopyStatic = debounce(taskCopyStatic);
@@ -313,7 +311,7 @@ function taskWatch() {
     )
       reRenderer();
     else if (name.endsWith('.js') && !name.endsWith('_test.js')) rebuildJS();
-    else if (name.endsWith('.html') && name !== 'index.html') rebuildTpl();
+    else if (name.endsWith('.html') && name !== 'index.html') reCopyStatic();
     else if (name.endsWith('.css')) rebuildCSS();
     else if (name === 'index.html') reCopyIndex();
   });
@@ -328,12 +326,9 @@ function taskWatch() {
 async function runBuild() {
   fs.rmSync(DIST, { recursive: true, force: true });
   fs.mkdirSync(DIST, { recursive: true });
-  taskTemplates();
+  console.log(`--target ${TARGET_DIR}`);
   taskAppCSS();
   taskCopyIndex();
-  taskLibJS();
-  taskLibCSS();
-  taskCopyFonts();
   taskCopyNode();
   taskCopyDocs();
   taskCopyIcons();

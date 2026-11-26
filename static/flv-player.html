@@ -24,7 +24,6 @@
   <video id="myFlvPlayer" class="player" controls></video>
 
   <script src="flv.js"></script>
-  <script src="jquery.min.js"></script>
   <script>
   var flvPlayer;
   init();
@@ -36,16 +35,19 @@
 
     var playerEl = document.getElementById('myFlvPlayer');
 
-    myFlvPlayer.onresize =function(){
-      var pw = $('#myFlvPlayer').width();
-      var ph = $('#myFlvPlayer').height();
-      var w = $(document).width();
-      var h = $(document).height();
-  
-      if(w/h > pw/ph){
-        $('#myFlvPlayer').css({height:h,width:'auto'});
+    // P1：去除 jQuery 依赖（jquery.min.js 已下线），改用原生 DOM 尺寸 API
+    window.onresize = function(){
+      var pw = playerEl.clientWidth || playerEl.videoWidth || 0;
+      var ph = playerEl.clientHeight || playerEl.videoHeight || 0;
+      var w = window.innerWidth;
+      var h = window.innerHeight;
+
+      if(pw && ph && w/h > pw/ph){
+        playerEl.style.height = h + 'px';
+        playerEl.style.width = 'auto';
       }else{
-        $('#myFlvPlayer').css({width:w,height:'auto'});
+        playerEl.style.width = w + 'px';
+        playerEl.style.height = 'auto';
       }
     }
 

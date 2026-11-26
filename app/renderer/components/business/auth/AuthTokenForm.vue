@@ -68,10 +68,10 @@ function onInput(event) {
   resize: vertical;
 }
 .atf-error {
-  color: #a1260d;
+  color: var(--vsc-danger);
 }
 .atf-ok {
-  color: #2ea043;
+  color: var(--vsc-success);
 }
 .atf-actions {
   display: flex;

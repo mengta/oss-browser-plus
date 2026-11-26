@@ -8,6 +8,7 @@ import CleanableInput from '@renderer/components/base/CleanableInput.vue';
 import CopyButton from '@renderer/components/base/CopyButton.vue';
 import TimerText from '@renderer/components/base/TimerText.vue';
 import BaseModal from '@renderer/components/base/BaseModal.vue';
+import { createRendererI18n } from '@renderer/i18n/index.js';
 import { useToastStore } from '@renderer/stores/toast.js';
 
 beforeEach(() => {
@@ -81,7 +82,10 @@ describe('CleanableInput', () => {
 describe('CopyButton', () => {
   it('复制成功弹 copy.successfully', async () => {
     const toast = useToastStore();
-    const wrapper = mount(CopyButton, { props: { text: 'secret-value' } });
+    const wrapper = mount(CopyButton, {
+      props: { text: 'secret-value' },
+      global: { plugins: [createRendererI18n('zh-CN')] },
+    });
     await wrapper.find('button').trigger('click');
     await Promise.resolve();
     expect(toast.items.some((item) => item.message === 'copy.successfully')).toBe(true);
@@ -91,7 +95,10 @@ describe('CopyButton', () => {
     const original = window.ossBrowser.system.clipboardWriteText;
     window.ossBrowser.system.clipboardWriteText = () => Promise.resolve({ ok: false, code: 'X', message: 'denied' });
     const toast = useToastStore();
-    const wrapper = mount(CopyButton, { props: { text: 'abc' } });
+    const wrapper = mount(CopyButton, {
+      props: { text: 'abc' },
+      global: { plugins: [createRendererI18n('zh-CN')] },
+    });
     await wrapper.find('button').trigger('click');
     await Promise.resolve();
     await Promise.resolve();

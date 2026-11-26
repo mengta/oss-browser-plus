@@ -55,7 +55,9 @@ function onDrop(e) {
     let p = '';
     if (api && typeof api.getPathForFile === 'function') {
       try {
-        p = api.getPathForFile(f) || '';
+        // net-bridge 统一返回 { ok, data }；同步方法同样需取 data
+        const res = api.getPathForFile(f);
+        p = res && res.ok === true ? String(res.data || '') : typeof res === 'string' ? res : '';
       } catch (err) {
         p = '';
       }
@@ -96,8 +98,8 @@ defineExpose({ docHandlers });
 .drop-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 153, 0.5);
-  box-shadow: inset 0 0 10px #ffeb3b;
+  background: rgba(0, 122, 204, 0.15);
+  box-shadow: inset 0 0 10px var(--vsc-accent);
   z-index: 20;
   pointer-events: none;
 }

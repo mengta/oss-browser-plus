@@ -72,8 +72,19 @@ export function subscribe(domain, callback) {
   if (typeof callback !== 'function') {
     return () => false;
   }
-  const subscriptionId = live[domain].subscribe(callback);
+  const pickId = (value) =>
+    value && typeof value === 'object' && value.ok === true ? value.data : value;
+  const raw = live[domain].subscribe(callback);
+  let subscriptionId = pickId(raw);
+  if (raw && typeof raw.then === 'function') {
+    raw.then((res) => {
+      subscriptionId = pickId(res);
+    }, () => {});
+  }
   return () => {
+    if (subscriptionId && typeof subscriptionId.then === 'function') {
+      return false;
+    }
     const current = bridge();
     if (current && current[domain] && typeof current[domain].unsubscribe === 'function') {
       return current[domain].unsubscribe(subscriptionId);

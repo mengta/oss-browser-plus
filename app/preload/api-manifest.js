@@ -99,6 +99,14 @@ module.exports = {
           result: '成功 { ok:true, data:{found,markdown} }；文件不存在返回 found:false；读取失败 IO',
           scope: '全局可用，只读发布目录',
         },
+        reportError: {
+          name: '上报渲染层错误',
+          channel: 'app:renderer-error',
+          purpose: '渲染层异常经主进程限流 + 脱敏写入日志（send，不阻塞）',
+          params: '{ kind:string, message:string, stack?:string, url?:string }',
+          result: '成功 true（不等待返回）',
+          scope: '全局可用，仅错误上报',
+        },
         detectInternalEndpoint: {
           name: '探测内网 Endpoint',
           purpose: '内网加速地址可用性判定（现状保留能力未启用）',
@@ -208,6 +216,14 @@ module.exports = {
           purpose: '判定操作系统凭证服务是否可用以决定 v2 或 v2d 降级',
           params: '无',
           result: '成功 { ok:true, data:boolean }；内部异常一律返回 false，不抛错',
+          scope: '全局可用，只读判定',
+        },
+        isAvailableAsync: {
+          name: '凭证服务可用性判定（异步）',
+          channel: 'credentials:is-available-async',
+          purpose: '启动预热异步探测，避免首屏同步 IPC 阻塞',
+          params: '无',
+          result: '成功 { ok:true, data:boolean }；内部异常返回 false',
           scope: '全局可用，只读判定',
         },
         protect: {
@@ -427,6 +443,14 @@ module.exports = {
           params: '{ bucket, key, content }',
           result: '成功 { ok:true }；失败 OSS_ERROR',
           scope: '仅文件页编辑',
+        },
+        probeUrl: {
+          name: '外网地址探测',
+          channel: 'app:probe-url',
+          purpose: '获取地址弹窗的可用性探测（渲染层 CSP 收紧后由主进程代发）',
+          params: 'target:string；opts?:{ timeoutMs?:number }',
+          result: '成功 { ok:true, data:{ status, ok, body } }；超时 TIMEOUT；非法 URL INVALID_ARG',
+          scope: '全局可用，仅地址探测',
         },
         getImageBase64Url: {
           name: '读取图片为 Base64',

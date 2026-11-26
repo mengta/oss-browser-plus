@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { createRendererStore } from '@renderer/stores/index.js';
 import { useBootstrapStore } from '@renderer/stores/bootstrap.js';
 import { useLangStore } from '@renderer/stores/lang.js';
 import { useToastStore } from '@renderer/stores/toast.js';
@@ -69,5 +70,15 @@ describe('ui store', () => {
     store.closeAll('all');
     await expect(pb).resolves.toBe('all');
     expect(store.depth).toBe(0);
+  });
+});
+
+describe('createRendererStore', () => {
+  it('返回独立的 pinia 实例', () => {
+    const first = createRendererStore();
+    const second = createRendererStore();
+
+    expect(typeof first.install).toBe('function');
+    expect(first).not.toBe(second);
   });
 });

@@ -98,18 +98,18 @@ onMounted(() => {
   color: var(--vsc-on-accent);
 }
 .cd-btn-danger {
-  border-color: #a1260d;
-  background: var(#a1260d);
+  border-color: var(--vsc-danger);
+  background: var(--vsc-danger-solid);
   color: var(--vsc-on-accent);
 }
 .cd-btn-warning {
-  border-color: #8a6d00;
-  background: var(#8a6d00);
+  border-color: var(--vsc-warning);
+  background: var(--vsc-warning-solid);
   color: var(--vsc-on-accent);
 }
 .cd-btn-success {
-  border-color: #2ea043;
-  background: var(#2ea043);
+  border-color: var(--vsc-success);
+  background: var(--vsc-success-solid);
   color: var(--vsc-on-accent);
 }
 </style>

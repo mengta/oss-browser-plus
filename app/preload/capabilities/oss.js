@@ -47,4 +47,8 @@ module.exports = Object.assign({}, base, {
       progressCallback
     );
   },
+  // P3（R-P3-04）：外网地址探测下沉主进程（渲染层 CSP 不再允许直连 https:）
+  probeUrl: function (target, opts) {
+    return invokeChannel('app:probe-url', [target, opts || {}], 5000);
+  },
 });

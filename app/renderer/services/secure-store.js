@@ -91,6 +91,21 @@ function randomBytes(length) {
   return buf;
 }
 
+function notifyDegrade(reason) {
+  if (degradedNotified) {
+    return;
+  }
+  degradedNotified = true;
+  try {
+    console.warn('[secure-store] degraded:', reason);
+  } catch (err) {}
+  if (onDegradeCb) {
+    try {
+      onDegradeCb(reason);
+    } catch (err) {}
+  }
+}
+
 function getDek() {
   if (dekLoaded) {
     return dekBytes;
@@ -104,18 +119,22 @@ function getDek() {
       dekBytes = b64ToBytes(released);
       return dekBytes;
     }
+    // P3（R-P3-06）：release 失败 → 仅会话内存 DEK（不落盘、不覆盖槽位），并显式告警（不静默）
     dekBytes = randomBytes(32);
-    localStorage.setItem(DEK_SLOT, DEK_D_PREFIX + bytesToB64(dekBytes));
+    notifyDegrade('release-failed');
     return dekBytes;
   }
 
   if (slot && slot.indexOf(DEK_D_PREFIX) === 0) {
+    // 历史 dek:d: 保持可读；可保护时迁移为 dek:p:，不再新增明文槽位
     dekBytes = b64ToBytes(slot.slice(DEK_D_PREFIX.length));
     if (safeStorageIsAvailable()) {
       const prot = safeStorageProtect(bytesToB64(dekBytes));
       if (prot) {
         localStorage.setItem(DEK_SLOT, DEK_P_PREFIX + prot);
       }
+    } else {
+      notifyDegrade('legacy-plaintext');
     }
     return dekBytes;
   }
@@ -123,9 +142,14 @@ function getDek() {
   dekBytes = randomBytes(32);
   if (safeStorageIsAvailable()) {
     const prot = safeStorageProtect(bytesToB64(dekBytes));
-    localStorage.setItem(DEK_SLOT, prot ? DEK_P_PREFIX + prot : DEK_D_PREFIX + bytesToB64(dekBytes));
+    if (prot) {
+      localStorage.setItem(DEK_SLOT, DEK_P_PREFIX + prot);
+    } else {
+      notifyDegrade('protect-failed');
+    }
   } else {
-    localStorage.setItem(DEK_SLOT, DEK_D_PREFIX + bytesToB64(dekBytes));
+    // 不可保护：DEK 仅存会话内存（不再写 dek:d: 明文）
+    notifyDegrade('safe-storage-unavailable');
   }
   return dekBytes;
 }
@@ -288,4 +312,26 @@ export function resetDekCache() {
   dekBytes = null;
   dekLoaded = false;
   degradedNotified = false;
+}
+// P3（R-P3-07）：异步可用性探测 + 启动预热（避免首屏同步凭证 IPC 阻塞）
+export async function isAvailableAsync() {
+  const api = credentials();
+  if (!api || typeof api.isAvailableAsync !== 'function') {
+    return safeStorageIsAvailable();
+  }
+  try {
+    const res = await api.isAvailableAsync();
+    return !!(res && res.ok && res.data === true);
+  } catch (err) {
+    return false;
+  }
+}
+
+export async function warmup() {
+  try {
+    getDek();
+  } catch (err) {
+    notifyDegrade('warmup-failed');
+  }
+  return true;
 }

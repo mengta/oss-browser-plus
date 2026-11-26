@@ -189,8 +189,8 @@ refresh();
   font-size: 12px;
 }
 .st-btn-add {
-  border-color: #2ea043;
-  color: #2ea043;
+  border-color: var(--vsc-success);
+  color: var(--vsc-success);
 }
 .ak-table {
   width: 100%;
@@ -210,7 +210,7 @@ refresh();
   color: var(--vsc-accent);
 }
 .text-danger {
-  color: #a1260d;
+  color: var(--vsc-danger);
 }
 .st-loading,
 .st-empty {

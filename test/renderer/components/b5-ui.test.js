@@ -2,13 +2,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia, getActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory } from 'vue-router';
-import ActivityBar from '@renderer/components/business/ActivityBar.vue';
+
 import CommandPalette from '@renderer/components/base/CommandPalette.vue';
 import FileToolbar from '@renderer/components/business/files/FileToolbar.vue';
 import AddressBar from '@renderer/components/business/files/AddressBar.vue';
 import App from '@renderer/App.vue';
 import { createRendererI18n } from '@renderer/i18n/index.js';
 import { useAuthStore } from '@renderer/stores/auth.js';
+import { useFavoritesStore } from '@renderer/stores/favorites.js';
 import { useUiStore } from '@renderer/stores/ui.js';
 import { useFilesStore } from '@renderer/stores/files.js';
 
@@ -33,28 +34,6 @@ beforeEach(() => {
   localStorage.clear();
   setActivePinia(createPinia());
   vi.restoreAllMocks();
-});
-
-describe('ActivityBar：活动栏入口', () => {
-  it('渲染文件/用户/收藏/设置/关于，点击打开对应弹窗或路由', async () => {
-    const pinia = getActivePinia();
-    useAuthStore(pinia).info = { id: 'LTAI-test', secret: 'sk' };
-    const wrapper = mountWith(ActivityBar);
-    await flushPromises();
-    expect(wrapper.find('[data-testid="activity-bar"]').exists()).toBe(true);
-    expect(wrapper.findAll('.ab-item').length).toBe(6);
-
-    const ui = useUiStore(pinia);
-    const openSpy = vi.spyOn(ui, 'open').mockResolvedValue(null);
-
-    await wrapper.find('[data-testid="activity-fav"]').trigger('click');
-    expect(openSpy).toHaveBeenCalledWith('fav-list');
-
-    await wrapper.find('[data-testid="activity-settings"]').trigger('click');
-    expect(openSpy).toHaveBeenCalledWith('settings');
-
-    expect(wrapper.find('[data-testid="activity-files"]').exists()).toBe(true);
-  });
 });
 
 describe('CommandPalette：Ctrl+Shift+P 命令面板', () => {
@@ -113,16 +92,13 @@ describe('FileToolbar：图标化', () => {
     expect(wrapper.find('[data-testid="file-mkdir"] svg').exists()).toBe(true);
   });
 });
-describe('App：活动栏与命令面板接入', () => {
-  it('登录态显示活动栏并启用 Ctrl+Shift+P', async () => {
+describe('App：命令面板接入', () => {
+  it('登录态启用 Ctrl+Shift+P', async () => {
     const pinia = getActivePinia();
     useAuthStore(pinia).info = { id: 'LTAI-test', secret: 'sk' };
     const wrapper = mountWith(App);
     await flushPromises();
     await flushPromises();
-
-    expect(wrapper.find('[data-testid="activity-bar"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="vue-app-main"]').classes()).toContain('with-activity');
 
     document.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'P', ctrlKey: true, shiftKey: true, bubbles: true })
@@ -132,6 +108,7 @@ describe('App：活动栏与命令面板接入', () => {
     expect(wrapper.findAll('.cp-item').length).toBeGreaterThan(5);
     expect(wrapper.find('[data-testid="command-transfer-open"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="command-theme-system"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="command-theme-pick"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="command-rename-selected"]').exists()).toBe(false);
 
     await wrapper.find('[data-testid="command-input"]').trigger('keydown', { key: 'Escape' });
@@ -169,26 +146,6 @@ describe('主题切换（Dark+/Light+）', () => {
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(localStorage.getItem('vsc-theme')).toBe('dark');
   });
-
-  it('ActivityBar 主题按钮在深/浅之间切换', async () => {
-    const pinia = getActivePinia();
-    useAuthStore(pinia).info = { id: 'LTAI-test', secret: 'sk' };
-    const ui = useUiStore(pinia);
-    ui.setTheme('dark');
-    const wrapper = mountWith(ActivityBar);
-    await flushPromises();
-
-    const btn = wrapper.find('[data-testid="activity-theme"]');
-    expect(btn.exists()).toBe(true);
-    await btn.trigger('click');
-    expect(ui.themeMode).toBe('light');
-    expect(ui.theme).toBe('light');
-    await btn.trigger('click');
-    expect(ui.themeMode).toBe('system');
-    await btn.trigger('click');
-    expect(ui.themeMode).toBe('dark');
-    expect(ui.theme).toBe('dark');
-  });
 });
 
 describe('AddressBar：面包屑导航', () => {
@@ -213,6 +170,21 @@ describe('AddressBar：面包屑导航', () => {
 
     await wrapper.find('[data-testid="address-input"]').trigger('focus');
     expect(wrapper.find('[data-testid="address-input"]').classes()).toContain('editing');
+  });
+
+  it('挂载时预热收藏并高亮当前目录（尾斜杠差异不影响）', async () => {
+    const pinia = getActivePinia();
+    useAuthStore(pinia).info = { id: 'LTAI-test', secret: 'sk', osspath: 'oss://demo/pre' };
+    const favorites = useFavoritesStore(pinia);
+    const warmSpy = vi.spyOn(favorites, 'warm').mockResolvedValue([]);
+    favorites.items = [{ url: 'oss://demo/pre/', time: 1 }];
+
+    const wrapper = mountWith(AddressBar);
+    await flushPromises();
+
+    expect(warmSpy).toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="address-fav"]').classes()).toContain('active');
+    expect(wrapper.find('[data-testid="address-fav"] .app-icon').attributes('aria-label')).toBe('star-filled');
   });
 });
 

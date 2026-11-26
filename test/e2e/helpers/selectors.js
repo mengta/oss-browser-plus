@@ -7,14 +7,25 @@
 // Playwright getByText/locator 语义等价形式。
 
 module.exports = {
-  // 窗口/品牌
-  navbarBrand: '.navbar-brand',
+  // 窗口/品牌（1.21.9 起登录标题移除：品牌区仅保留 logo，中文应用名落在 title 上）
+  navbarBrand: '[data-testid="topbar-brand"]',
+  brandLogo: '[data-testid="topbar-brand"] img.brand-logo',
   navbarBrandText: 'OSS浏览器',
 
   // 登录/顶栏（B1/B4-01 起由 Vue 承载）
   loginId: '[data-testid="login-id"]',
   loginSecret: '[data-testid="login-secret"]',
   loginSubmit: '[data-testid="login-submit"]',
+  loginBrand: '[data-testid="login-brand"]',
+  loginPanel: '[data-testid="login-panel"]',
+  loginBrandName: '[data-testid="login-brand-name"]',
+  loginFeature: '[data-testid="login-feature"]',
+  loginStatus: '[data-testid="login-status"]',
+  loginProvider: '[data-testid="login-provider"]',
+  loginTabAk: '[data-testid="login-tab-ak"]',
+  loginTabToken: '[data-testid="login-tab-token"]',
+  loginTokenForm: '[data-testid="auth-token-form"]',
+  loginCredentialForm: '[data-testid="credential-form"]',
   logoutBtn: '[data-testid="topbar-logout"]',
   logoutConfirm: '[data-testid="dialog-ok"]',
   langSettings: '[data-testid="topbar-lang"]',

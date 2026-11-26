@@ -330,11 +330,11 @@ defineExpose({ validate, applyExternal });
   border-radius: 2px;
 }
 .cf-invalid {
-  border-color: #a1260d;
+  border-color: var(--vsc-danger);
   background: var(--vsc-danger-bg);
 }
 .cf-error-text {
-  color: #a1260d;
+  color: var(--vsc-danger);
 }
 .cf-endpoint {
   display: flex;
@@ -379,6 +379,6 @@ defineExpose({ validate, applyExternal });
   font-size: 12px;
 }
 .red {
-  color: #a1260d;
+  color: var(--vsc-danger);
 }
 </style>

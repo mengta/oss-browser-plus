@@ -101,10 +101,10 @@ function onSubmit() {
   flex: 1;
 }
 .has-error :deep(.cleanable-input-el) {
-  border-color: #a1260d;
+  border-color: var(--vsc-danger);
 }
 .has-success :deep(.cleanable-input-el) {
-  border-color: #2ea043;
+  border-color: var(--vsc-success);
 }
 .st-btn {
   padding: 4px 12px;
@@ -115,8 +115,8 @@ function onSubmit() {
   font-size: 12px;
 }
 .st-btn-success {
-  background: var(#2ea043);
-  border-color: #2ea043;
+  background: var(--vsc-success-solid);
+  border-color: var(--vsc-success);
   color: var(--vsc-on-accent);
 }
 </style>

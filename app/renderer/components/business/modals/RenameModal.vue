@@ -201,7 +201,7 @@ function openMove(newPath) {
   word-break: break-all;
 }
 .has-error :deep(.cleanable-input-el) {
-  border-color: #a1260d;
+  border-color: var(--vsc-danger);
 }
 .st-btn {
   padding: 4px 12px;
@@ -216,8 +216,8 @@ function openMove(newPath) {
   cursor: not-allowed;
 }
 .st-btn-success {
-  background: var(#2ea043);
-  border-color: #2ea043;
+  background: var(--vsc-success-solid);
+  border-color: var(--vsc-success);
   color: var(--vsc-on-accent);
 }
 </style>

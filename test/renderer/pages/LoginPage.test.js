@@ -44,6 +44,35 @@ describe('LoginPage', () => {
     expect(wrapper.find('[data-testid="login-secure"]').exists()).toBe(true);
   });
 
+  it('左右分栏：品牌区/功能特性/连接状态/服务商齐全', () => {
+    const wrapper = mountPage(makeRouter());
+
+    expect(wrapper.find('[data-testid="login-brand"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="login-panel"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="login-brand-name"]').text()).toBe('OSS浏览器');
+    expect(wrapper.find('[data-testid="login-form-title"]').text()).toBe('连接存储账户');
+    expect(wrapper.findAll('[data-testid="login-feature"]').length).toBe(3);
+    expect(wrapper.find('[data-testid="login-status"]').text()).toContain('未连接');
+    expect(wrapper.find('[data-testid="login-provider"]').text()).toContain('阿里云 OSS');
+  });
+
+  it('登录方式 tab 具备可访问语义并可切换', async () => {
+    const wrapper = mountPage(makeRouter());
+    const akTab = wrapper.find('[data-testid="login-tab-ak"]');
+    const tokenTab = wrapper.find('[data-testid="login-tab-token"]');
+
+    expect(akTab.attributes('role')).toBe('tab');
+    expect(akTab.attributes('aria-selected')).toBe('true');
+    expect(tokenTab.attributes('aria-selected')).toBe('false');
+
+    await tokenTab.trigger('click');
+
+    expect(tokenTab.attributes('aria-selected')).toBe('true');
+    expect(akTab.attributes('aria-selected')).toBe('false');
+    expect(wrapper.find('[data-testid="auth-token-form"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="credential-form"]').exists()).toBe(false);
+  });
+
   it('空表单提交被必填校验拦截（红框点亮且不发起登录）', async () => {
     const router = makeRouter();
     await router.push('/login');
@@ -118,11 +147,12 @@ describe('LoginPage', () => {
     expect(router.currentRoute.value.path).toBe('/login');
   });
 
-  it('渲染 AK 历史与一键导入入口（含历史数徽标）', async () => {
+  it('渲染 AK 历史与配置导入入口（含历史数徽标）', async () => {
     const router = makeRouter();
     const wrapper = mountPage(router);
     expect(wrapper.find('[data-testid="login-histories"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="login-import"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="login-import"]').text()).toBe('配置导入');
     expect(wrapper.find('.login-badge').exists()).toBe(false);
 
     await wrapper.find('[data-testid="login-histories"]').trigger('click');

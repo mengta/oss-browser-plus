@@ -29,6 +29,19 @@ function normalizeDialogArgs(titleOrOptions, message, options) {
 }
 
 let systemThemeMq = null;
+let systemThemeHandler = null;
+
+// P7a（R-P7-05）：解绑系统主题监听。重复 setTheme 不重复注册；应用卸载时调用清理。
+export function disposeSystemTheme() {
+  if (!systemThemeMq) return false;
+  if (systemThemeHandler) {
+    if (systemThemeMq.removeEventListener) systemThemeMq.removeEventListener('change', systemThemeHandler);
+    else if (systemThemeMq.removeListener) systemThemeMq.removeListener(systemThemeHandler);
+  }
+  systemThemeMq = null;
+  systemThemeHandler = null;
+  return true;
+}
 
 // themeMode: 'dark' | 'light' | 'system'；system 跟随 prefers-color-scheme
 export function resolveThemeMode(mode) {
@@ -46,6 +59,7 @@ export const useUiStore = defineStore('ui', {
     // B4-05：升级链路状态（顶栏角标/关于页共享）
     theme: 'dark',
     themeMode: 'dark',
+    themePickerOpen: false,
   }),
   getters: {
     depth: (state) => state.stack.length,
@@ -85,6 +99,12 @@ export const useUiStore = defineStore('ui', {
       } catch (err) {}
       this.watchSystemTheme();
     },
+    openThemePicker() {
+      this.themePickerOpen = true;
+    },
+    closeThemePicker() {
+      this.themePickerOpen = false;
+    },
     watchSystemTheme() {
       if (typeof window === 'undefined' || typeof window.matchMedia !== 'function' || systemThemeMq) return;
       systemThemeMq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -97,6 +117,7 @@ export const useUiStore = defineStore('ui', {
       };
       if (systemThemeMq.addEventListener) systemThemeMq.addEventListener('change', handler);
       else if (systemThemeMq.addListener) systemThemeMq.addListener(handler);
+      systemThemeHandler = handler;
     },
     closeAll(result) {
       while (this.stack.length > 0) {

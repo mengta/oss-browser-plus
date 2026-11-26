@@ -1,4 +1,5 @@
 "use strict";
+var log = require('../../lib/logger').logger('ossstore.download-job');
 
 var Base = require("./base");
 var fs = require("fs");
@@ -41,11 +42,11 @@ class DownloadJob extends Base {
     Object.assign(this._config, config);
 
     if (!this._config.from) {
-      console.log("需要 from");
+      log.debug("需要 from");
       return;
     }
     if (!this._config.to) {
-      console.log("需要 to");
+      log.debug("需要 to");
       return;
     }
 
@@ -67,7 +68,7 @@ class DownloadJob extends Base {
     this.checkPoints = this._config.checkPoints;
     this.enableCrc64 = this._config.enableCrc64;
 
-    //console.log('created download job');
+    //log.debug('created download job');
 
     this.maxConcurrency = parseInt(
       localStorage.getItem("downloadConcurrecyPartSize") || 5
@@ -148,12 +149,12 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
       err.message.indexOf("getaddrinfo ENOTFOUND") != -1
     ) {
       self.message = "failed to get oss object meta: " + err.message;
-      console.error(self.message, self.to.path);
+      log.error(self.message, self.to.path);
       self.stop();
       //self.emit('error', err);
     } else {
       self.message = "failed to get oss object meta: " + err.message;
-      console.error(self.message, self.to.path);
+      log.error(self.message, self.to.path);
       self._changeStatus("failed");
       self.emit("error", err);
     }
@@ -161,12 +162,12 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
   }
 
   // fileMd5 = headers['content-md5'];//.replace(/(^\"*)|(\"*$)/g, '');
-  //console.log('file md5:',fileMd5);
+  //log.debug('file md5:',fileMd5);
   hashCrc64ecma = headers["x-oss-hash-crc64ecma"];
   if (self.hashCrc64ecma && self.hashCrc64ecma !== hashCrc64ecma) {
     // 做下判断，防止原始文件发生变更
     self.message = "文件已经发生变更，请重新下载该文件";
-    console.error(self.message, self.to.path);
+    log.error(self.message, self.to.path);
     self._changeStatus("failed");
     return false;
   }
@@ -179,8 +180,8 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
     fs.writeFile(self.to.path, "", function (err) {
       if (err) {
         self.message = "failed to open local file:" + err.message;
-        //console.error(self.message);
-        console.error(self.message, self.to.path);
+        //log.error(self.message);
+        log.error(self.message, self.to.path);
         self._changeStatus("failed");
         self.emit("error", err);
       } else {
@@ -194,7 +195,7 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
           done: 0,
         });
         self.emit("complete");
-        console.log(
+        log.debug(
           "download: " + self.to.path + " %celapse",
           "background:green;color:white",
           self.endTime - self.startTime,
@@ -252,7 +253,7 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
     util.createFileIfNotExists(tmpName);
   } catch (err) {
     self.message = "failed to open local file:" + err.message;
-    console.error(self.message, self.to.path);
+    log.error(self.message, self.to.path);
     self._changeStatus("failed");
     self.emit("error", err);
     return;
@@ -264,7 +265,7 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
   self.fd = fd;
 
   util.getFreeDiskSize(tmpName, function (err, freeDiskSize) {
-    console.log(
+    log.debug(
       "got free disk size:",
       freeDiskSize,
       contentLength,
@@ -288,7 +289,7 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
 
     const partNumber = n + 1;
     if (checkPoints.Parts[partNumber].done) {
-      console.log(`part [${n}] has finished`);
+      log.debug(`part [${n}] has finished`);
       return;
     }
 
@@ -315,7 +316,7 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
       //   start: Date.now()
       // };
       const part = checkPoints.Parts[partNumber];
-      console.log(part, "part download");
+      log.debug(part, "part download");
       // 保留原始分片信息，出错后进行重置
       const originPart = Object.assign({}, part);
 
@@ -348,7 +349,7 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
                 !self.stopFlag
               ) {
                 const message = "重新下载: download size != part size";
-                console.error(message, "part");
+                log.error(message, "part");
                 const err = new Error();
                 err.message = message;
                 _handleError(err, partNumber);
@@ -399,7 +400,7 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
         ) {
           self.writing = false;
           if (err) {
-            console.error(err, "err");
+            log.error(err, "err");
             self.message = "文件写入失败, 重新尝试下载: " + err.message;
             self.stop();
             return false;
@@ -407,14 +408,14 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
           if (bytesWritten !== length) {
             const err = new Error();
             err.message = "文件写入长度不一致";
-            console.error("文件写入长度不一致，重新下载");
+            log.error("文件写入长度不一致，重新下载");
             _handleError(err, partNumber);
             return false;
           }
           part.loaded += length;
           part.position += length;
           if (part.loaded > part.size) {
-            console.error(part.loaded, part.size);
+            log.error(part.loaded, part.size);
             part.done = false;
             self.message = "文件写入长度大于实际长度，重新下载";
             self.stop();
@@ -439,7 +440,7 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
       }
 
       function _handleError(err, partNumber) {
-        console.error("download error", err);
+        log.error("download error", err);
         // 重置原始状态
         checkPoints.Parts[partNumber] = originPart;
         self.dataCache.cleanPart(partNumber);
@@ -447,7 +448,7 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
         if (err.code == "RequestAbortedError") {
           // 必须用callback 而不是 promise 方式才能 abort 请求;
           //用户取消
-          console.warn("用户取消");
+          log.warn("用户取消");
           return;
         }
 
@@ -457,22 +458,22 @@ DownloadJob.prototype.startDownload = async function (checkPoints) {
 
         if (retryCount >= maxRetries) {
           self.message = friendlyError;
-          //console.error(self.message);
-          console.error(self.message, self.to.path);
+          //log.error(self.message);
+          log.error(self.message, self.to.path);
           //self._changeStatus('failed');
           self.stop();
           //self.emit('error', err);
           //util.closeFD(keepFd);
         } else if (err.code == "InvalidObjectState") {
           self.message = friendlyError;
-          //console.error(self.message);
-          console.error(self.message, self.to.path);
+          //log.error(self.message);
+          log.error(self.message, self.to.path);
           self._changeStatus("failed");
           self.emit("error", err);
           //util.closeFD(keepFd);
         } else {
           retryCount++;
-          console.log(
+          log.debug(
             `retry download part [${partNumber}] error:${err}, ${self.to.path}`
           );
           setTimeout(function () {
@@ -509,14 +510,14 @@ DownloadJob.prototype._calPartCRC64Stream = function (s, partNumber) {
             len: item.size,
             partNumber: item.PartNumber,
           }));
-        console.log(
+        log.debug(
           `part [${partNumber}] crc64 finish use: '${
             +new Date() - start
           } ms, crc64 is ${data}`,
           list
         );
       } catch (e) {
-        console.error(e);
+        log.error(e);
       }
     })
     .catch((err) => {
@@ -524,7 +525,7 @@ DownloadJob.prototype._calPartCRC64Stream = function (s, partNumber) {
       part.loaded = 0;
       part.done = false;
       part.crc64 = "";
-      console.error(self.message, self.to.path, err);
+      log.error(self.message, self.to.path, err);
       self.stop();
       self._changeStatus("failed");
       self.emit("error", err);
@@ -570,7 +571,7 @@ DownloadJob.prototype._complete = async function (
   try {
     if (!self.dataCache.isEmpty()) {
       const err = new Error();
-      console.error("download finished: ", self.dataCache);
+      log.error("download finished: ", self.dataCache);
       err.message = "文件下载错误：has data cache";
       throw err;
     }
@@ -578,7 +579,7 @@ DownloadJob.prototype._complete = async function (
     await Promise.all(self.crc64Promise);
     const crc64List = this._getCRC64List(checkPoints);
     const res = await util.combineCrc64(crc64List);
-    console.log("combine crc64  use: " + (+new Date() - start) + "ms");
+    log.debug("combine crc64  use: " + (+new Date() - start) + "ms");
     const stats = fs.statSync(tmpName);
     const fileSize = stats.size;
     if (res === hashCrc64ecma) {
@@ -589,7 +590,7 @@ DownloadJob.prototype._complete = async function (
         } catch (err) {
           if (fileSize === self.prog.total) {
             // 文件已经下载完, 长度也正确，没必要重新下载，暂停即可
-            console.error("rename error", err);
+            log.error("rename error", err);
             self.message = "文件重名失败: " + err.message;
             self.stop();
             return;
@@ -614,7 +615,7 @@ DownloadJob.prototype._complete = async function (
       );
       self.emit("complete");
       util.closeFD(self.fd);
-      console.log(
+      log.debug(
         "download: " + self.to.path + " %celapse",
         "background:green;color:white",
         self.endTime - self.startTime,
@@ -627,7 +628,7 @@ DownloadJob.prototype._complete = async function (
     }
   } catch (err) {
     self.message = err.message || err;
-    console.error(self.message, self.to.path, checkPoints);
+    log.error(self.message, self.to.path, checkPoints);
     self._changeStatus("failed");
     util.deleteFileIfExists(tmpName);
     self.emit("error", err);
@@ -671,11 +672,11 @@ DownloadJob.prototype._changeStatus = function (status, retryTimes) {
   if (status == "failed" || status == "stopped" || status == "finished") {
     self.endTime = new Date().getTime();
     //util.closeFD(self.keepFd);
-    console.log("clear speed tid, status:", self.status, self.fd, self);
+    log.debug("clear speed tid, status:", self.status, self.fd, self);
     try {
      if (self.fd) util.closeFD(self.fd); // #50555373 不关闭会导致windows下删除job后，缓冲文件不会删除
     } catch (e) {
-      console.error(e);
+      log.error(e);
     }
 
     clearInterval(self.speedTid);
@@ -729,7 +730,7 @@ DownloadJob.prototype.startSpeedCounter = function () {
         self.chunkSize,
         self.maxConcurrency
       );
-      // console.log('max concurrency:', self.maxConcurrency);
+      // log.debug('max concurrency:', self.maxConcurrency);
     }
   }, 1000);
 
@@ -753,7 +754,7 @@ DownloadJob.prototype._getCRC64List = function (checkPoints) {
     return parts.map((item) => ({ crc64: item.crc64, len: item.size }));
   } else {
     const err = new Error();
-    console.error("文件检验失败，请重新下载", checkPoints);
+    log.error("文件检验失败，请重新下载", checkPoints);
     err.message = "文件检验失败，请重新下载: get CRC64List error";
     throw err;
   }

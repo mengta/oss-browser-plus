@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { sanitizeHtml } from '@renderer/services/markdown.js';
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
+import showdown from 'showdown';
+import { sanitizeHtml, renderMarkdown, setRenderErrorHandler, resetMarkdownConverter } from '@renderer/services/markdown.js';
 
 // B2-14（Q-07）：showdown 保留 + 显式 sanitize 白名单（等价迁移前 ngSanitize 语义）
 describe('sanitizeHtml 白名单', () => {
@@ -42,5 +43,75 @@ describe('sanitizeHtml 白名单', () => {
   it('白名单内 img src 保留 https/data:image', () => {
     expect(sanitizeHtml('<img src="https://a.b/i.png" alt="a">')).toContain('src="https://a.b/i.png"');
     expect(sanitizeHtml('<img src="data:image/png;base64,AAA" alt="b">')).toContain('src="data:image/png;base64,AAA"');
+  });
+});
+// P2（R-P2-01/R-P2-02 · V-01/V-02）：显式 import showdown 后的渲染回归 + 降级可见
+describe('renderMarkdown（showdown 显式渲染）', () => {
+  afterEach(() => {
+    setRenderErrorHandler(null);
+    vi.restoreAllMocks();
+  });
+
+  it('渲染标题/段落/列表/链接/代码块/表格为对应 HTML 标签', () => {
+    const md = [
+      '# 标题一',
+      '## 标题二',
+      '',
+      '段落文本',
+      '',
+      '- 项一',
+      '- 项二',
+      '',
+      '[链接](https://example.com)',
+      '',
+      '```js',
+      'const a = 1;',
+      '```',
+      '',
+      '| 列A | 列B |',
+      '| --- | --- |',
+      '| 1 | 2 |',
+    ].join('\n');
+    const html = renderMarkdown(md);
+    expect(html).toContain('<h1');
+    expect(html).toContain('<h2');
+    expect(html).toContain('<p>');
+    expect(html).toContain('<ul>');
+    expect(html).toContain('<li>');
+    expect(html).toContain('href="https://example.com"');
+    expect(html).toContain('<code');
+    expect(html).toContain('<table>');
+    expect(html).toContain('<th');
+  });
+
+  it('剥离 script/onerror/javascript: 等注入向量', () => {
+    const html = renderMarkdown('<script>alert(1)</script>\n\n<img src="x" onerror="alert(2)">\n\n[x](javascript:alert(3))');
+    expect(html).not.toContain('<script');
+    expect(html).not.toContain('onerror');
+    // eslint-disable-next-line no-script-url -- 用例数据：断言伪协议已被拦截
+    expect(html).not.toContain('javascript:');
+  });
+
+  it('渲染失败时返回安全转义文本并回调 MARKDOWN_RENDER_FAILED（不静默）', () => {
+    const events = [];
+    setRenderErrorHandler((info) => events.push(info));
+    const Original = showdown.Converter;
+    showdown.Converter = class {
+      makeHtml() {
+        throw new Error('boom');
+      }
+    };
+    resetMarkdownConverter();
+    try {
+      const html = renderMarkdown('# 标题 <b>x</b>');
+      expect(events.length).toBe(1);
+      expect(events[0].code).toBe('MARKDOWN_RENDER_FAILED');
+      expect(html).toContain('<pre>');
+      expect(html).not.toContain('<b>x</b>');
+      expect(html).toContain('&lt;b&gt;');
+    } finally {
+      showdown.Converter = Original;
+      resetMarkdownConverter();
+    }
   });
 });

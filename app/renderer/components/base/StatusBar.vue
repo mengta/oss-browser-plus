@@ -1,7 +1,7 @@
 <template>
   <footer class="status-bar" data-testid="status-bar">
     <div class="sb-left">
-      <span class="sb-item sb-brand" data-testid="status-brand">{{ t('app.name') }}</span>
+
       <template v-if="loggedIn">
         <span class="sb-item" data-testid="status-path">{{ pathText }}</span>
         <span class="sb-item" data-testid="status-count">{{ filesCount }}</span>
@@ -27,7 +27,7 @@ import { useBootstrapStore } from '../../stores/bootstrap.js';
 import { useFilesStore } from '../../stores/files.js';
 import { useTransferStore } from '../../stores/transfer.js';
 
-const { t, locale } = useI18n();
+const { locale } = useI18n();
 const route = useRoute();
 const authStore = useAuthStore();
 const bootstrapStore = useBootstrapStore();
@@ -86,7 +86,5 @@ const localeText = computed(() => String(locale.value || 'zh-CN'));
 .sb-item:hover {
   background: rgba(255, 255, 255, 0.14);
 }
-.sb-brand {
-  font-weight: 600;
-}
+
 </style>

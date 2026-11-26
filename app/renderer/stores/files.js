@@ -4,6 +4,7 @@
 // 选中 sel 双轨（map + 派生数组）、视图 'is-list-view' localStorage、shift 区间批量选中。
 import { defineStore } from 'pinia';
 import { ossClient } from '../services/oss-client.js';
+import { useToastStore } from './toast.js';
 
 const VIEW_LS_KEY = 'is-list-view';
 
@@ -42,6 +43,27 @@ function compareBy(key, dir) {
     }
     return String(av).localeCompare(String(bv)) * factor;
   };
+}
+
+// P5（R-P5-03）：排序态下的线性归并（目录置顶语义保持，O(n+m) 而非整体 sort）
+function mergeTwoSorted(a, b, cmp) {
+  const out = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    out.push(cmp(a[i], b[j]) <= 0 ? a[i++] : b[j++]);
+  }
+  while (i < a.length) out.push(a[i++]);
+  while (j < b.length) out.push(b[j++]);
+  return out;
+}
+
+function mergeSortedItems(current, incoming, cmp) {
+  const curFolders = current.filter((i) => i.isFolder);
+  const curFiles = current.filter((i) => !i.isFolder);
+  const newFolders = incoming.filter((i) => i.isFolder).sort(cmp);
+  const newFiles = incoming.filter((i) => !i.isFolder).sort(cmp);
+  return mergeTwoSorted(curFolders, newFolders, cmp).concat(mergeTwoSorted(curFiles, newFiles, cmp));
 }
 
 export const useFilesStore = defineStore('files', {
@@ -105,6 +127,16 @@ export const useFilesStore = defineStore('files', {
       }
     },
 
+    notifyError(err) {
+      const code = (err && err.code) || 'Error';
+      const message = (err && err.message) || String(err || '');
+      try {
+        useToastStore().push(code + ': ' + message, 'danger', 4000);
+      } catch (e) {
+        console.error(code + ': ' + message, err);
+      }
+    },
+
     // ---------- Bucket ----------
     loadBuckets() {
       this.isLoading = true;
@@ -114,6 +146,11 @@ export const useFilesStore = defineStore('files', {
           this.buckets = Array.isArray(data) ? data : [];
           this.bucketsLoaded = true;
           return this.buckets;
+        })
+        .catch((err) => {
+          this.buckets = [];
+          this.notifyError(err);
+          throw err;
         })
         .finally(() => {
           this.isLoading = false;
@@ -141,18 +178,37 @@ export const useFilesStore = defineStore('files', {
       }
       this.isLoading = true;
       const marker = reset ? '' : this.marker || '';
+      const region = this.region || this.regionOf(this.bucket);
       return ossClient
-        .listFiles(this.region, this.bucket, this.prefix, marker)
+        .listFiles(region, this.bucket, this.prefix, marker)
         .then((result) => {
           const list = (result && result.data) || [];
-          this.items = reset ? list : this.items.concat(list);
+          if (reset) {
+            this.items = list;
+            // P5：reset 时应用排序（用户点击排序亦走 setSort → applySort）
+            if (this.sortKey) {
+              this.applySort();
+            }
+          } else if (this.sortKey) {
+            // 排序态：新片段排序后线性归并（保持顺序稳定、无重复/丢失）
+            const cmp = compareBy(this.sortKey, this.sortDir);
+            this.items = mergeSortedItems(this.items, list, cmp);
+          } else {
+            // 原地追加，避免 concat 导致累计拷贝（O(n²)）
+            for (let i = 0; i < list.length; i += 1) this.items.push(list[i]);
+          }
           this.marker = (result && result.marker) || null;
           this.lastSelectedIndex = null;
           this.clearSelection();
-          if (this.sortKey) {
-            this.applySort();
-          }
           return this.items;
+        })
+        .catch((err) => {
+          if (reset) {
+            this.items = [];
+            this.marker = null;
+          }
+          this.notifyError(err);
+          throw err;
         })
         .finally(() => {
           this.isLoading = false;
@@ -167,14 +223,21 @@ export const useFilesStore = defineStore('files', {
     },
 
     // ---------- 导航 ----------
-    navigate(address) {
+    async navigate(address) {
       const parsed = parseOssAddress(address);
       if (!parsed || !parsed.bucket) {
-        return Promise.resolve(null);
+        return null;
       }
       this.bucket = parsed.bucket;
       this.prefix = parsed.key || '';
       if (!this.region) {
+        if (!this.bucketsLoaded) {
+          try {
+            await this.loadBuckets();
+          } catch (err) {
+            // 仅对象权限账号无法列举 bucket：沿用已有 region/端点继续
+          }
+        }
         this.region = this.regionOf(this.bucket);
       }
       this.searchKeyword = '';

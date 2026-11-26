@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia, getActivePinia } from 'pinia';
 import { useTransferStore } from '@renderer/stores/transfer.js';
@@ -24,7 +24,9 @@ function installTransfer(overrides) {
       progressCb = cb;
       return 'sub-1';
     },
-    unsubscribe() {},
+    unsubscribe(id) {
+      transferCalls.push(['unsubscribe', id]);
+    },
     scanFolder(localPath) {
       transferCalls.push(['scanFolder', localPath]);
       return Promise.resolve({
@@ -89,12 +91,23 @@ function mountWith(component, props) {
 }
 
 beforeEach(() => {
+  vi.useRealTimers();
   localStorage.clear();
   setActivePinia(createPinia());
   window.ossBrowser = window.ossBrowser || {};
   delete window.ossBrowser.transfer;
   delete window.ossBrowser.oss;
   vi.restoreAllMocks();
+});
+
+// 消除跨用例的定时器泄漏：每个用例结束清理当前 store 的定时器并恢复真实计时器
+afterEach(() => {
+  try {
+    useTransferStore().dispose();
+  } catch (err) {
+    /* 用例内 pinia 已被替换时忽略 */
+  }
+  vi.useRealTimers();
 });
 
 async function seedStore() {
@@ -107,6 +120,25 @@ async function seedStore() {
   store.subscribe();
   return store;
 }
+
+describe('transfer store：订阅', () => {
+  it('subscribe 返回异步信封时提取 id，dispose 正确退订', async () => {
+    installTransfer({
+      subscribe(cb) {
+        progressCb = cb;
+        return Promise.resolve({ ok: true, data: 'sub-9' });
+      },
+    });
+    setActivePinia(createPinia());
+    const store = useTransferStore();
+    store.subscribe();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(store.subscriptionId).toBe('sub-9');
+    store.dispose();
+    expect(transferCalls).toContainEqual(['unsubscribe', 'sub-9']);
+  });
+});
 
 describe('transfer store：目录递归入队', () => {
   it('scanFolder 展开目录+文件：目录 createFolder（relative 结尾 /），文件 createUpload（prefix 拼接）', async () => {
@@ -368,7 +400,7 @@ describe('UploadsPanel：行渲染与操作', () => {
 
     await wrapper.find('[data-testid="uploads-clear-all"]').trigger('click');
     await flushPromises();
-    expect(confirmSpy).toHaveBeenCalled();
+    await vi.waitFor(() => expect(confirmSpy).toHaveBeenCalled());
     expect(store.uploads.length).toBe(0);
   });
 });

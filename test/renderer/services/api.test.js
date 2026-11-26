@@ -76,6 +76,20 @@ describe('api 门面', () => {
     expect(res && res.ok).toBe(true);
   });
 
+  it('subscribeTransfer 兼容 net-bridge 异步信封并正确退订', async () => {
+    const calls = [];
+    window.ossBrowser.transfer.subscribe = () => Promise.resolve({ ok: true, data: 'sub-9' });
+    window.ossBrowser.transfer.unsubscribe = (id) => {
+      calls.push(id);
+      return { ok: true };
+    };
+    const off = subscribeTransfer(() => {});
+    await Promise.resolve();
+    await Promise.resolve();
+    await off();
+    expect(calls).toEqual(['sub-9']);
+  });
+
   it('bootstrapSync 同步返回快照', () => {
     const res = bootstrapSync();
     expect(res.ok).toBe(true);

@@ -98,8 +98,8 @@ test('存量凭证惰性迁移：v1/v0 读取即升级，无明文无旧密文�
   }
 
   // ③ 断言 4：应用未崩溃、登录页可用（4.2.2-1）
-  const brand = await page.textContent(SEL.navbarBrand);
-  expect(brand.trim()).toBe(SEL.navbarBrandText);
+  const brandTitle = await page.getAttribute(SEL.navbarBrand, 'title');
+  expect(brandTitle).toBe(SEL.navbarBrandText);
 
   // 清理：移除测试预置键，避免污染本机 userData 后续手动 E2E
   await page.evaluate(() => {

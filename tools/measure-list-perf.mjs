@@ -13,6 +13,8 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const TMP = path.join(ROOT, '.codeartsdoer', 'temp', 'perf');
 const ROWS = Number((process.argv.find((a) => a.indexOf('--rows=') === 0) || '--rows=1000').split('=')[1]) || 1000;
 const DURATION = Number((process.argv.find((a) => a.indexOf('--duration=') === 0) || '--duration=10000').split('=')[1]) || 10000;
+// P5（R-P5-05）：--gate 使用更严格阈值；环境缺失时退出 2（打印 SKIP_ENV），不得以 0 退出
+const GATE = process.argv.includes('--gate');
 
 function toPosix(p) {
   return p.replace(/\\/g, '/');
@@ -172,17 +174,24 @@ async function main() {
 
   await browser.close();
 
+  // 视口 600px / 行高 32px（与 FileList ROW_HEIGHT 一致）；窗口化后行数应 ≤ 可视+20
+  const viewportRows = Math.ceil(600 / 32);
+  const thresholds = GATE
+    ? { firstPaintMs: 500, fps: 50, maxRows: viewportRows + 20 }
+    : { firstPaintMs: 1500, fps: 50, maxRows: ROWS };
+
   const result = {
     rows: ROWS,
     rowCount: perf.rowCount,
     firstPaintMs: Math.round(perf.firstPaintMs),
     fps: Math.round(fps * 10) / 10,
     dtoSerializeMs: Math.round(perf.dtoSerializeMs * 100) / 100,
-    thresholds: { firstPaintMs: 1500, fps: 50, rowCount: ROWS },
+    gate: GATE,
+    thresholds,
     pass: {
-      firstPaint: perf.firstPaintMs <= 1500,
-      fps: fps >= 50,
-      rowsRendered: perf.rowCount === ROWS,
+      firstPaint: perf.firstPaintMs <= thresholds.firstPaintMs,
+      fps: fps >= thresholds.fps,
+      rowsRendered: perf.rowCount <= thresholds.maxRows,
     },
   };
   result.pass.all = result.pass.firstPaint && result.pass.fps && result.pass.rowsRendered;
@@ -201,6 +210,11 @@ async function main() {
 }
 
 main().catch((err) => {
+  if (GATE) {
+    // 环境缺失（无 Chromium/执行器）→ SKIP_ENV + 退出 2，不以 0 通过
+    console.error('SKIP_ENV: ' + ((err && err.message) || String(err)));
+    process.exit(2);
+  }
   console.error(err);
   process.exitCode = 1;
 });

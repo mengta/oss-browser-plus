@@ -40,7 +40,10 @@ function normalizeLocales(locales) {
     if (!entry || typeof entry !== 'object') continue;
     out[key] = {
       label: typeof entry.label === 'string' ? entry.label : key,
-      content: entry.content && typeof entry.content === 'object' ? entry.content : {},
+      content:
+        entry.content && typeof entry.content === 'object' && !Array.isArray(entry.content)
+          ? entry.content
+          : {},
     };
   }
   return out;

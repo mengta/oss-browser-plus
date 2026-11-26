@@ -59,7 +59,7 @@ watch(text, (next) => {
   min-width: 480px;
 }
 .text-danger {
-  color: #a1260d;
+  color: var(--vsc-danger);
   font-size: 12px;
   margin-bottom: 4px;
 }

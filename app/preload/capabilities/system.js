@@ -9,6 +9,7 @@ const CHANNELS = {
   openDevTools: 'app:open-dev-tools',
   refreshPage: 'app:refresh-page',
   installRestart: 'app:install-restart',
+  rendererError: 'app:renderer-error',
   showOpenDialog: 'dialog:show-open-dialog',
   clipboardReadText: 'clipboard:read-text',
   clipboardWriteText: 'clipboard:write-text',
@@ -118,7 +119,12 @@ async function installAndRestart(version) {
   if (typeof version !== 'string' || !VERSION_PATTERN.test(version)) {
     throw codedError('INVALID_ARG', 'invalid version');
   }
-  await invoke(CHANNELS.installRestart, [version], DEFAULT_TIMEOUT);
+  // app:install-restart 是少数直接返回 IPC 信封的通道：必须检查 ok:false，
+  // 否则版本/路径/安装包校验失败会被当作成功（升级静默失败）。
+  const result = await invoke(CHANNELS.installRestart, [version], DEFAULT_TIMEOUT);
+  if (result && result.ok === false) {
+    throw codedError(result.code || 'INSTALL_FAILED', result.message || 'install failed');
+  }
   return true;
 }
 
@@ -273,6 +279,16 @@ function unsubscribeWindowState(subscriptionId) {
   return true;
 }
 
+// P4（R-P4-05）：渲染层错误上报（send，不等待返回；主进程限流 + 脱敏落盘）
+function reportError(payload) {
+  try {
+    ipcRenderer.send(CHANNELS.rendererError, payload);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
 module.exports = {
   getStaticServerPort,
   openDevTools,
@@ -284,6 +300,7 @@ module.exports = {
   clipboardReadText,
   clipboardWriteText,
   readReleaseNotes,
+  reportError,
   detectInternalEndpoint,
   pathDirname,
   pathJoin,

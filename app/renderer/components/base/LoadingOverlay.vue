@@ -32,7 +32,7 @@ defineProps({
   position: absolute;
   width: 16px;
   height: 16px;
-  background: var(#2ea043);
+  background: var(--vsc-success-solid);
   border-radius: 2px;
   animation: loadEffect-square 1.2s infinite ease-in-out;
 }

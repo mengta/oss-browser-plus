@@ -9,6 +9,11 @@ const SYNC_CHANNELS = {
   release: 'credentials:release',
 };
 
+// P3（R-P3-07）：异步可用性探测（启动预热用，避免首屏同步 IPC）
+const ASYNC_CHANNELS = {
+  isAvailableAsync: 'credentials:is-available-async',
+};
+
 const GCM_ALGO = 'aes-256-gcm';
 const GCM_IV_LEN = 12;
 const GCM_TAG_LEN = 16;
@@ -84,6 +89,15 @@ function isAvailable() {
   return syncCall(SYNC_CHANNELS.isAvailable, []);
 }
 
+async function isAvailableAsync() {
+  try {
+    const value = await ipcRenderer.invoke(ASYNC_CHANNELS.isAvailableAsync);
+    return value === true;
+  } catch (err) {
+    throw codedError('INTERNAL', (err && err.message) || 'isAvailableAsync failed');
+  }
+}
+
 function protect(plainB64) {
   if (typeof plainB64 !== 'string') throw codedError('INVALID_ARG', 'plainB64 must be a string');
   return syncCall(SYNC_CHANNELS.protect, [plainB64]);
@@ -135,6 +149,7 @@ function legacyDecipher(encrypted, keyB64, algorithm) {
 
 module.exports = {
   isAvailable,
+  isAvailableAsync,
   protect,
   release,
   aesGcmEncrypt,

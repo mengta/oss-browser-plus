@@ -1,0 +1,127 @@
+name: PR Gate
+
+# P2（R-P2-03/R-P2-04）：PR/push 真门禁。
+# 约束：不出现 --fix / git restore / git checkout -- / git add（CI 只读校验，禁止改写工作区）；
+#      不依赖 lint-staged（Windows 回滚会卷掉未提交编辑）。
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: Static checks (lint + IPC allowlist)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies (npm ci)
+        shell: bash
+        run: |
+          set +e
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund 2>&1 | tee npm-lock.log
+          npm ci 2>&1 | tee npm-ci.log
+          EXIT=${PIPESTATUS[0]}
+          if [ "$EXIT" -ne 0 ]; then
+            SUMMARY=$(grep -E "npm ERR|ERESOLVE|EUSAGE|error" npm-ci.log | head -12 | paste -sd ' ' - | cut -c1-900)
+            echo "::error::npm ci failed: ${SUMMARY}"
+            exit 1
+          fi
+
+      - name: Lint (read-only, no --fix)
+        run: npm run lint:ci
+
+      - name: Verify IPC allowlist
+        run: node tools/verify-allowlist.mjs --require-all
+
+      - name: Logging & size rules
+        run: |
+          node tools/count-console.mjs --fail-on-hit
+          node tools/verify-line-count.mjs --check
+
+      - name: List performance gate (virtual scroll)
+        run: node tools/measure-list-perf.mjs --rows=1000 --gate
+
+  unit:
+    name: Unit tests (ava + Vitest)
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies (npm ci)
+        shell: bash
+        run: |
+          set +e
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund 2>&1 | tee npm-lock.log
+          npm ci 2>&1 | tee npm-ci.log
+          EXIT=${PIPESTATUS[0]}
+          if [ "$EXIT" -ne 0 ]; then
+            SUMMARY=$(grep -E "npm ERR|ERESOLVE|EUSAGE|error" npm-ci.log | head -12 | paste -sd ' ' - | cut -c1-900)
+            echo "::error::npm ci failed: ${SUMMARY}"
+            exit 1
+          fi
+
+      - name: ava (main process unit tests)
+        run: npm test
+
+      - name: Vitest (renderer unit tests)
+        run: npm run test:renderer
+
+  build:
+    name: Build smoke
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies (npm ci)
+        shell: bash
+        run: |
+          set +e
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund 2>&1 | tee npm-lock.log
+          npm ci 2>&1 | tee npm-ci.log
+          EXIT=${PIPESTATUS[0]}
+          if [ "$EXIT" -ne 0 ]; then
+            SUMMARY=$(grep -E "npm ERR|ERESOLVE|EUSAGE|error" npm-ci.log | head -12 | paste -sd ' ' - | cut -c1-900)
+            echo "::error::npm ci failed: ${SUMMARY}"
+            exit 1
+          fi
+
+      - name: Build
+        run: npm run build

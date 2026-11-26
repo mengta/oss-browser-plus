@@ -1,3 +1,4 @@
+var log = require('../../lib/logger').logger('capabilities.oss2');
 /* eslint-disable no-unexpected-multiline */
 angular.module('web').factory('ossSvs2', [
   '$q',
@@ -17,7 +18,7 @@ angular.module('web').factory('ossSvs2', [
     var keepListFilesJob;
 
     var DEF_ADDR = 'oss://';
-    // var ALY = require('aliyun-sdk');
+    var ALY = require('../sdk/aliyun-sdk-adapter');
     // var path = require("path");
     var AliOSS = require('ali-oss');
     const platform = require('platform');
@@ -335,7 +336,7 @@ angular.module('web').factory('ossSvs2', [
                     }
                   })['catch']((e) => {
                     progress.errorCount += files.length;
-                    console.error('删除失败', e);
+                    log.error('删除失败', e);
                   });
                 }
 
@@ -399,7 +400,7 @@ angular.module('web').factory('ossSvs2', [
             }
           })['catch']((e) => {
             progress.errorCount += files.length;
-            console.error('删除失败', e);
+            log.error('删除失败', e);
             reject(e);
           });
         });
@@ -449,7 +450,7 @@ angular.module('web').factory('ossSvs2', [
         var toKey = to.key;
         var fromKey = '/' + from.bucket + '/' + encodeURIComponent(from.key);
 
-        console.info(
+        log.info(
             removeAfterCopy ? 'move' : 'copy',
             '::',
             from.bucket + '/' + from.key,
@@ -1813,7 +1814,7 @@ angular.module('web').factory('ossSvs2', [
         function _dig() {
           // opt.MaxKeys=50
           client.listBuckets(opt, function(err, result) {
-            // console.log(opt, err, result)
+            // log.debug(opt, err, result)
             if (err) {
               handleError(err);
               reject(err);
@@ -1838,7 +1839,7 @@ angular.module('web').factory('ossSvs2', [
               t = t.concat(result.Buckets);
             }
             // resolve(t);
-            // console.log(result)
+            // log.debug(result)
 
             if (result.NextMarker) {
               opt.Marker = result.NextMarker;
@@ -1887,7 +1888,7 @@ angular.module('web').factory('ossSvs2', [
           err.code == 'NetworkingError' &&
           err.message.indexOf('ENOTFOUND') != -1
         ) {
-          console.error(err);
+          log.error(err);
         } else { Toast.error(err.code + ': ' + err.message, undefined, err.requestId); }
       }
 
@@ -1927,7 +1928,7 @@ angular.module('web').factory('ossSvs2', [
           endpointname
       );
 
-      console.log('[endpoint]:', endpoint);
+      log.debug('[endpoint]:', endpoint);
       const timeout = settingsSvs.connectTimeout.get();
       const options = {
         // region: authInfo.region,

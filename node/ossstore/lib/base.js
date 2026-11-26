@@ -16,7 +16,7 @@ Base.prototype.off = function (evt, fn) {
   if (this._eventStack[evt]) {
     var arr = this._eventStack[evt];
     for (var i = 0; i < arr.length; i++) {
-      if (fn === item) {
+      if (fn === arr[i]) {
         arr.splice(i, 1);
         break;
       }

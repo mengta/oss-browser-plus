@@ -156,7 +156,7 @@ const CONVENTION_CHANNEL_DOMAINS = ['oss', 'sts', 'ram', 'transfer', 'upgrade'];
 
 function ruleChannelParity(manifest) {
   const mainSource = fs.readFileSync(path.join(ROOT, 'main.js'), 'utf8');
-  const explicit = [...mainSource.matchAll(/ipcMain\.handle\s*\(\s*['"]([^'"]+)['"]/g)].map((m) => m[1]);
+  const explicit = [...mainSource.matchAll(/ipcMain\.(?:handle|on)\s*\(\s*['"]([^'"]+)['"]/g)].map((m) => m[1]);
   const declared = [...mainSource.matchAll(/['"]((?:oss|sts|ram|transfer|upgrade):[A-Za-z0-9_]+)['"]/g)].map((m) => m[1]);
   const handlers = new Set(explicit.concat(declared));
   const manifestChannels = new Set();
@@ -168,12 +168,12 @@ function ruleChannelParity(manifest) {
       else if (CONVENTION_CHANNEL_DOMAINS.indexOf(domain) >= 0) manifestChannels.add(domain + ':' + method);
     }
   }
-  if (handlers.size === 0) violations.push('[R4] 未从 main.js 解析到任何 ipcMain.handle 通道');
+  if (handlers.size === 0) violations.push('[R4] 未从 main.js 解析到任何 ipcMain.handle/on 通道');
   for (const channel of handlers) {
     if (!manifestChannels.has(channel)) violations.push(`[R4] 主进程通道 ${channel} 未在 manifest 登记`);
   }
   for (const channel of manifestChannels) {
-    if (!handlers.has(channel)) violations.push(`[R4] manifest 通道 ${channel} 在主进程无 ipcMain.handle`);
+    if (!handlers.has(channel)) violations.push(`[R4] manifest 通道 ${channel} 在主进程无 ipcMain.handle/on`);
   }
   notes.push(`[R4] 主进程通道 ${handlers.size} 个 / manifest 登记 ${manifestChannels.size} 个`);
 }

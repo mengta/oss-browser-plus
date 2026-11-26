@@ -2,6 +2,19 @@
   <BaseModal :visible="true" :title="t('settings')" :mask-closable="false" @close="onCancel">
     <div class="settings-body" data-testid="settings-modal">
       <fieldset>
+        <legend><h5 class="st-legend">{{ t('settings.subtitle.appearance') }}</h5></legend>
+
+        <div class="st-row">
+          <label class="st-label">{{ t('settings.theme') }}:</label>
+          <select v-model="themeMode" class="st-input st-select" data-testid="settings-theme" @change="changeTheme">
+            <option value="dark">{{ t('theme.dark') }}</option>
+            <option value="light">{{ t('theme.light') }}</option>
+            <option value="system">{{ t('theme.system') }}</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
         <legend><h5 class="st-legend">{{ t('settings.subtitle.updown') }}</h5></legend>
 
         <div class="st-row">
@@ -81,7 +94,7 @@
         </div>
 
         <div class="st-row">
-          <label class="st-label">保存历史记录长度:</label>
+          <label class="st-label">{{ t('settings.historiesLength') }}:</label>
           <input
             v-model.number="form.historiesLength"
             type="number"
@@ -256,7 +269,7 @@ import { useSettingsStore } from '../../../stores/settings.js';
 import { useUiStore } from '../../../stores/ui.js';
 import { useToastStore } from '../../../stores/toast.js';
 import { api } from '../../../services/api.js';
-import { persistLocale, availableLocales } from '../../../i18n/index.js';
+import { setLocale, availableLocales } from '../../../i18n/index.js';
 import { snapshot } from '../../../bootstrap.js';
 
 // 等价 settingsCtrl + settings.html（B2-02 设置页主体 / B2-03 SMTP）
@@ -292,6 +305,7 @@ const langList = availableLocales.map((lang) => ({
   label: (snapshot && snapshot.locales && snapshot.locales[lang] && snapshot.locales[lang].label) || lang,
 }));
 const locale = ref((typeof localStorage !== 'undefined' && localStorage.getItem('lang')) || 'zh-CN');
+const themeMode = ref(ui.themeMode);
 
 const REFRESH_KEYS = ['logFile', 'logFileInfo', 'uploadPartSize', 'uploadAndDownloadRetryTimes'];
 
@@ -335,8 +349,12 @@ function setMailChange() {
 }
 
 function changeLanguage() {
-  persistLocale(locale.value);
+  setLocale(locale.value);
   toast.push(t('setup.success'), 'success', 1000);
+}
+
+function changeTheme() {
+  ui.setTheme(themeMode.value);
 }
 
 function openExternal(url) {

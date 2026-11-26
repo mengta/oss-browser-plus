@@ -5,8 +5,13 @@
 // 注意：显式清除 ELECTRON_RUN_AS_NODE（防宿主会话残留导致纯 Node 模式启动，P2 实测教训）。
 
 const { _electron: electron } = require('playwright');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
-const ROOT = require('path').resolve(__dirname, '..', '..', '..');
+const ROOT = path.resolve(__dirname, '..', '..', '..');
+// 单实例锁按 userData 目录生效：使用独立目录，避免与用户已运行的 oss-browser 实例冲突
+const USER_DATA_DIR = path.join(os.tmpdir(), 'oss-browser-e2e-' + process.pid);
 
 // B4-09 收口：AngularJS 运行时已移除；smoke-10 存量迁移断言使用 angular.element(...).injector()
 // 读取 settingsSvs。按测试辅助注入最小兼容垫片（用例本体零修改），mailSender 用凭证白名单解密。
@@ -85,12 +90,16 @@ async function launchApp() {
   delete process.env.ELECTRON_RUN_AS_NODE;
   const env = Object.assign({}, process.env);
   delete env.ELECTRON_RUN_AS_NODE;
+  // Playwright 会把 options.env 合并进 process.env：显式置 undefined 才能覆盖宿主残留键，
+  // 否则子进程仍按 Node 模式启动（ipcMain undefined）。
+  env.ELECTRON_RUN_AS_NODE = undefined;
   // TLS 开关默认关闭（D7：默认走系统证书校验；Apsara Stack 场景经环境变量开启）
   delete env.OSS_BROWSER_ALLOW_INSECURE_TLS;
   env.NODE_ENV = env.NODE_ENV || 'test';
 
+  fs.mkdirSync(USER_DATA_DIR, { recursive: true });
   const app = await electron.launch({
-    args: ['.'],
+    args: ['.', '--user-data-dir=' + USER_DATA_DIR],
     cwd: ROOT,
     env,
   });

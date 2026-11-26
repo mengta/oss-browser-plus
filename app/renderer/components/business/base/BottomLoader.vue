@@ -1,7 +1,7 @@
 <template>
   <div ref="el" class="bottom-loader" data-testid="bottom-loader">
     <slot>
-      <span class="loading-more">{{ text }}</span>
+      <span v-if="loading" class="loading-more">{{ text }}</span>
     </slot>
   </div>
 </template>
@@ -11,9 +11,11 @@
 // 监听最近可滚动祖先的滚动，触底（parent.clientHeight + scrollTop + 10 >= scrollHeight）
 // 经 500ms 防抖触发 loadMore；挂载后立即检查一次（内容不足一屏自动续载）。
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { findScrollParent } from '../../../services/scroll-parent.js';
 
 const props = defineProps({
   disabled: { type: Boolean, default: false },
+  loading: { type: Boolean, default: false },
   text: { type: String, default: 'loading more...' },
 });
 const emit = defineEmits(['loadMore']);
@@ -23,16 +25,8 @@ let timer = null;
 let scroller = null;
 
 function findScroller() {
-  let node = el.value && el.value.parentElement;
-  while (node) {
-    const style = typeof getComputedStyle === 'function' ? getComputedStyle(node) : null;
-    const overflow = style ? style.overflowY : '';
-    if (overflow === 'auto' || overflow === 'scroll') {
-      return node;
-    }
-    node = node.parentElement;
-  }
-  return el.value ? el.value.parentElement : null;
+  // P5（R-P5-06）：与滚动父级查找逻辑共用（services/scroll-parent.js）
+  return findScrollParent(el.value);
 }
 
 function check() {

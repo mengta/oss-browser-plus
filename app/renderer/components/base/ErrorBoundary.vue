@@ -1,7 +1,7 @@
 <template>
   <div class="error-boundary">
     <div v-if="error" class="eb-box" data-testid="error-boundary">
-      <div class="eb-title" data-testid="error-boundary-message">页面渲染异常</div>
+      <div class="eb-title" data-testid="error-boundary-message">{{ t('error.render') }}</div>
       <div class="eb-detail">{{ error.message }}</div>
       <div class="eb-actions">
         <button type="button" class="st-btn st-btn-primary" data-testid="error-boundary-retry" @click="retry">
@@ -51,7 +51,7 @@ function dismiss() {
   margin: 20px auto;
   max-width: 560px;
   padding: 16px;
-  border: 1px solid #8a6d00;
+  border: 1px solid var(--vsc-warning-solid);
   border-radius: 2px;
   background: var(--vsc-warning-bg);
   color: var(--vsc-warning);

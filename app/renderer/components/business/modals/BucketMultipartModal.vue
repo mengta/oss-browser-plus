@@ -266,8 +266,8 @@ onMounted(() => {
   font-size: 12px;
 }
 .st-btn-danger {
-  background: var(#a1260d);
-  border-color: #a1260d;
+  background: var(--vsc-danger-solid);
+  border-color: var(--vsc-danger);
   color: var(--vsc-on-accent);
 }
 </style>

@@ -19,6 +19,12 @@ function persist(items) {
   return live.writeFavorites(username(), JSON.stringify(items));
 }
 
+function normalizeAddr(addr) {
+  const value = String(addr == null ? '' : addr).trim();
+  if (!value) return '';
+  return value.replace(/\/+$/, '') || 'oss://';
+}
+
 export const useFavoritesStore = defineStore('favorites', {
   state: () => ({
     items: [],
@@ -57,14 +63,16 @@ export const useFavoritesStore = defineStore('favorites', {
       return this.items;
     },
     has(addr) {
-      return this.items.some((item) => item.url === addr);
+      const target = normalizeAddr(addr);
+      return this.items.some((item) => normalizeAddr(item.url) === target);
     },
     add(addr) {
+      const target = normalizeAddr(addr);
       let arr = this.items.slice();
       if (arr.length >= MAX) {
         return false;
       }
-      arr = arr.filter((item) => item.url !== addr);
+      arr = arr.filter((item) => normalizeAddr(item.url) !== target);
       arr.push({ url: addr, time: Date.now() });
       if (arr.length > MAX) {
         arr.splice(MAX, arr.length - MAX);
@@ -74,9 +82,14 @@ export const useFavoritesStore = defineStore('favorites', {
       return true;
     },
     remove(addr) {
-      const arr = this.items.filter((item) => item.url !== addr);
+      const target = normalizeAddr(addr);
+      const arr = this.items.filter((item) => normalizeAddr(item.url) !== target);
       this.items = arr;
       persist(arr);
+    },
+    reset() {
+      this.items = [];
+      this.warmed = false;
     },
   },
 });

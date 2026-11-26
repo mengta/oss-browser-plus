@@ -193,10 +193,10 @@ function onClose() {
   height: 100%;
 }
 .progress-bar-success {
-  background: var(#2ea043);
+  background: var(--vsc-success-solid);
 }
 .progress-bar-danger {
-  background: var(#a1260d);
+  background: var(--vsc-danger-solid);
 }
 .progress-label {
   font-size: 12px;
@@ -206,7 +206,7 @@ function onClose() {
   color: var(--vsc-warning);
 }
 .text-danger {
-  color: #a1260d;
+  color: var(--vsc-danger);
 }
 .text-success {
   color: var(--vsc-success);
@@ -215,7 +215,7 @@ function onClose() {
   color: var(--vsc-link);
 }
 .text-folder {
-  color: #dcb67a;
+  color: var(--vsc-highlight);
 }
 .st-btn {
   padding: 4px 12px;
@@ -230,8 +230,8 @@ function onClose() {
   cursor: not-allowed;
 }
 .st-btn-warning {
-  background: var(#8a6d00);
-  border-color: #8a6d00;
+  background: var(--vsc-warning-solid);
+  border-color: var(--vsc-warning);
   color: var(--vsc-on-accent);
 }
 </style>

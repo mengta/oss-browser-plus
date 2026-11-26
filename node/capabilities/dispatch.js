@@ -126,7 +126,9 @@ function dispatch(domain, method, auth, args) {
       if (!api || typeof api[method] !== 'function') {
         throw codedError('UNAVAILABLE', domain + '.' + method + ' is unavailable');
       }
-      return await api[method].apply(null, [normalized].concat(callArgs));
+      // 仅任务创建需要凭证；暂停/恢复/查询等按 taskId 定位，不能再注入 auth 作为首参
+      const needsAuth = method === 'createUpload' || method === 'createDownload';
+      return await api[method].apply(null, (needsAuth ? [normalized] : []).concat(callArgs));
     }
     if (domain === 'upgrade') {
       // Vue3-B3 前置：升级主进程化，无需 OSS 凭据
@@ -145,6 +147,18 @@ function dispatch(domain, method, auth, args) {
     const service = serviceOf(domain);
     if (!service || typeof service[method] !== 'function') {
       throw codedError('UNAVAILABLE', domain + '.' + method + ' is unavailable');
+    }
+    // P6a/P6b（R-P6-01）：STS/RAM 已去 Angular 依赖，统一以 ctx 作为首参
+    const ctx = {
+      auth: normalized,
+      requestPayer: normalized.requestpaystatus === 'YES' ? 'requester' : undefined,
+    };
+    if (domain === 'sts' || domain === 'ram') {
+      try {
+        return await service[method].apply(service, [ctx].concat(callArgs));
+      } catch (err) {
+        throw normalizeServiceError(err);
+      }
     }
     // Vue3-B3-09：批量删除/复制的进度回调注入（两个服务签名第 4 参均为进度回调）
     if (domain === 'oss' && (method === 'deleteFiles' || method === 'copyFiles')) {

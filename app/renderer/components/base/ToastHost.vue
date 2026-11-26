@@ -44,17 +44,17 @@ const toast = useToastStore();
   word-break: break-all;
 }
 .toast-success {
-  background: var(#2ea043);
+  background: var(--vsc-success-solid);
 }
 .toast-info {
   background: var(--vsc-accent);
 }
 .toast-warning,
 .toast-warn {
-  background: var(#8a6d00);
+  background: var(--vsc-warning-solid);
 }
 .toast-danger,
 .toast-error {
-  background: var(#a1260d);
+  background: var(--vsc-danger-solid);
 }
 </style>

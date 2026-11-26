@@ -210,6 +210,35 @@ async function main() {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await shot(page, mode, 'vscode-' + mode + '-v2.png', mode === 'files' ? '[data-testid="file-row"]' : mode === 'about' ? '[data-testid="about-modal"]' : '[data-testid="login-id"]');
     if (mode === 'login') {
+      // AK 历史面板：注入一条明文历史，验证搜索框与 Secret 均为深色主题（不应白底）
+      await page.evaluate(() => {
+        localStorage.setItem(
+          'auth-his',
+          JSON.stringify([
+            { id: 'LTAI-demo', secret: 'sk-demo-secret', region: 'oss-cn-hangzhou', requestpaystatus: 'NO' },
+          ])
+        );
+      });
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('[data-testid="login-histories"]', { timeout: 10000 });
+      await page.click('[data-testid="login-histories"]');
+      await page.waitForSelector('.akh-search', { timeout: 5000 });
+      await page.waitForTimeout(200);
+      const akhColors = await page.evaluate(() => {
+        const s = document.querySelector('.akh-search');
+        const c = document.querySelector('.akh-secret');
+        const bg = (el) => (el ? getComputedStyle(el).backgroundColor : null);
+        const fg = (el) => (el ? getComputedStyle(el).color : null);
+        return {
+          search: s ? { bg: bg(s), fg: fg(s) } : null,
+          secret: c ? { bg: bg(c), fg: fg(c) } : null,
+        };
+      });
+      process.stdout.write('akh colors: ' + JSON.stringify(akhColors) + String.fromCharCode(10));
+      await page.screenshot({ path: path.join(OUT, 'vscode-akh-panel.png'), fullPage: false });
+      await page.click('[data-testid="base-modal-close"]');
+      await page.waitForTimeout(200);
+
       await page.hover('[data-testid="login-eptpl-help"]');
       await page.waitForTimeout(300);
       await page.screenshot({ path: path.join(OUT, 'vscode-login-tooltip.png'), fullPage: false });
@@ -239,6 +268,30 @@ async function main() {
         return { body: bg('body'), topbar: bg('.navbar'), button: bg('.btn-default'), buttonFg: fg('.btn-default'), input: bg('input[type="text"]'), tableHeader: bg('.table thead th'), statusbar: bg('[data-testid="status-bar"]') };
       });
       process.stdout.write('light styles: ' + JSON.stringify(lightStyles) + String.fromCharCode(10));
+
+      // 传输中心浮窗：展开、测量右下角定位与尺寸、截图后关闭
+      await page.click('[data-testid="dock-upload"]');
+      await page.waitForSelector('[data-testid="transfer-tabs"]', { timeout: 5000 });
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: path.join(OUT, 'vscode-transfer-dock.png'), fullPage: false });
+      const dock = await page.evaluate(() => {
+        const frame = document.querySelector('.trans-frame');
+        if (!frame) return null;
+        const r = frame.getBoundingClientRect();
+        return {
+          left: Math.round(r.left),
+          right: Math.round(r.right),
+          top: Math.round(r.top),
+          bottom: Math.round(r.bottom),
+          width: Math.round(r.width),
+          height: Math.round(r.height),
+          vw: window.innerWidth,
+          vh: window.innerHeight,
+        };
+      });
+      process.stdout.write('transfer dock: ' + JSON.stringify(dock) + String.fromCharCode(10));
+      await page.click('[data-testid="dock-close"]');
+      await page.waitForTimeout(200);
     }
     const align = await page.evaluate(() => {
       const cy = (sel) => {
@@ -249,7 +302,7 @@ async function main() {
       };
       return {
         brand: cy('.navbar-brand'),
-        version: cy('.app-version'),
+
         settings: cy('[data-testid="topbar-settings"]'),
         about: cy('[data-testid="topbar-about"]'),
       };

@@ -38,10 +38,14 @@ beforeEach(() => {
 });
 
 describe('TopBar：品牌/登录态/语言/退出/升级角标', () => {
-  it('未登录：品牌文案 + mini 入口（设置/关于/语言），无退出', async () => {
+  it('未登录：仅品牌图标 + mini 入口（设置/关于/语言），无退出', async () => {
     const { wrapper } = mountBar();
     await flushPromises();
-    expect(wrapper.find('.navbar-brand').text()).toContain('OSS浏览器');
+    const brand = wrapper.find('.navbar-brand');
+    expect(brand.text()).toBe('');
+    expect(brand.attributes('title')).toBe('OSS浏览器');
+    expect(brand.find('.brand-logo').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="topbar-version"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="topbar-settings"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="topbar-about"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="topbar-lang"]').exists()).toBe(false);

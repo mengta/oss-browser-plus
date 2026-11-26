@@ -5,6 +5,7 @@ import { nextTick } from 'vue';
 import { createRendererI18n } from '@renderer/i18n/index.js';
 import { useSettingsStore } from '@renderer/stores/settings.js';
 import { useToastStore } from '@renderer/stores/toast.js';
+import { useUiStore } from '@renderer/stores/ui.js';
 import SettingsModal from '@renderer/components/business/modals/SettingsModal.vue';
 import ModalHost from '@renderer/components/base/ModalHost.vue';
 import * as SecureStore from '@renderer/services/secure-store.js';
@@ -64,6 +65,22 @@ describe('SettingsModal（B2-02 设置页主体）', () => {
     expect(wrapper.find('[data-testid="settings-logFile"] input').element.checked).toBe(false);
     expect(wrapper.find('[data-testid="settings-logFileInfo"] input').element.checked).toBe(false);
     expect(wrapper.find('[data-testid="settings-language"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="settings-theme"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="settings-theme"]').element.value).toBe('dark');
+  });
+
+  it('外观设置切换颜色主题即时生效并持久化', async () => {
+    mountAll();
+    await nextTick();
+
+    const select = wrapper.find('[data-testid="settings-theme"]');
+    await select.setValue('light');
+    await nextTick();
+
+    const ui = useUiStore();
+    expect(ui.themeMode).toBe('light');
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(localStorage.getItem('vsc-theme')).toBe('light');
   });
 
   it('修改并发数后 500ms 防抖保存并 Toast 成功', async () => {

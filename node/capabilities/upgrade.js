@@ -9,6 +9,10 @@ const path = require('path');
 const fs = require('fs');
 const electron = require('electron');
 const ossUtil = require(path.join(__dirname, '..', 'ossstore', 'lib', 'util.js'));
+const { verifyManifest } = require('./upgrade-trust');
+const { logger } = require('../lib/logger');
+
+const log = logger('upgrade');
 
 const RESOURCES = path.resolve(__dirname, '..', '..');
 
@@ -61,7 +65,7 @@ async function check() {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!res.ok) throw codedError('NETWORK', 'HTTP ' + res.status);
-    manifest = await res.json();
+    manifest = JSON.parse(await res.text());
   } catch (err) {
     setState({ state: 'idle' });
     throw codedError('NETWORK', (err && err.message) || 'manifest unreachable');
@@ -73,6 +77,21 @@ async function check() {
   }
 
   const hasNew = compareVersion(currentVersion, manifest.version) < 0;
+
+  // P3（R-P3-01/R-P3-03）：验签失败仅禁用安装，保留版本检查能力（不静默放行）
+  let trust;
+  let unsafeReason = '';
+  try {
+    trust = verifyManifest(manifest);
+  } catch (err) {
+    unsafeReason = (err && err.code) || 'MANIFEST_INVALID';
+    trust = { ok: false };
+    log.error('upgrade.verify_failed', 'upgrade manifest not trusted', {
+      reason: unsafeReason,
+      version: String(manifest && manifest.version),
+    });
+  }
+
   const data = {
     hasNew: hasNew,
     version: manifest.version,
@@ -80,6 +99,9 @@ async function check() {
     packageUrl: manifest.package_url || '',
     packageUrls: manifest.package_urls || [],
     files: manifest.files || null,
+    safeInstall: trust.ok === true,
+    unsafeReason: trust.ok ? undefined : unsafeReason,
+    keyId: trust.keyId,
   };
   setState({ state: 'idle' });
   return data;
@@ -193,6 +215,7 @@ async function install(payload) {
   return true;
 }
 
-const api = { check: check, download: download, install: install };
+// P3（R-P3-02）：installVerified 为唯一安装入口（前置校验由 check().safeInstall 与主进程路径校验共同保证）
+const api = { check: check, download: download, install: install, installVerified: install };
 
 module.exports = { api: api, setSender: setSender, compareVersion: compareVersion };

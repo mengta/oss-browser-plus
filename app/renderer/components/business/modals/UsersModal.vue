@@ -215,7 +215,7 @@ refresh();
   color: var(--vsc-accent);
 }
 .text-danger {
-  color: #a1260d;
+  color: var(--vsc-danger);
 }
 .st-loading,
 .st-empty {

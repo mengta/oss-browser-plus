@@ -18,7 +18,8 @@
 
 - release.yml 重写：electron-builder + Node 24 钉版，发布矩阵收敛为 win64 / darwin / linux64（Electron 45 不再提供 ia32 二进制）。
 - 内置 locales 裁剪（zh-CN / en-US / ja），安装包体积约减少 11 MB。
-- CI 增加 lint 与测试门禁。
+- CI 增加真实门禁：`.github/workflows/pr-gate.yml`（pull_request / push main）执行 `lint:ci`（只读、不带 `--fix`）、`verify-allowlist`、ava、Vitest，再做构建冒烟；`release.yml` 在打包前执行同一命令集（E2E 仅 win64）。
+- `lint:ci` 覆盖 `app/**`、`test/**`、`main.js`、`server.js`、`build.mjs`、`gen.js`、`node/**`、`tools/**`；`.vue` 继承正确性规则子集。
 
 ### 工程化
 
@@ -27,8 +28,8 @@
 
 ### 测试保障
 
-- 单元测试从 148 增至 246 用例全绿（新增 ossSvs2 服务 69 例、filesCtrl 控制器 29 例，及凭证安全 / 下载管理器等存量批次）。
-- E2E 冒烟分级验证（7 passed / 6 skipped）。
+- 单元测试用例数与 passed/skipped 由 `tools/measure-tests.mjs` 生成并记录于 [docs/metrics.md](docs/metrics.md)（README 不再写死数字），`--check` 防止漂移。
+- E2E 冒烟分级验证（smoke-01 … smoke-11）。
 
 ## 下载
 
@@ -40,7 +41,7 @@
 
 ### Vue 3 架构（1.21.0）
 
-- 渲染层整体重写为 **Vue 3 + Pinia + Vue Router**，AngularJS 运行时已移除。
+- 渲染层整体重写为 **Vue 3 + Pinia + Vue Router**，AngularJS 运行时已在**渲染层移除**；主进程能力域（`node/capabilities/services/{oss2,ram,sts}.js`）仍运行在 Angular stub 上，正按批次迁移（P6 收口）。
 - 渲染世界无 Node、无原始 IPC；OSS/STS/RAM/邮件/传输/升级等能力统一经 `contextBridge` 白名单由主进程/preload 承载（`sandbox=false`）。
 - 构建：Vue bundle 为 `dist/app.js`；CodeMirror 6 取代 CM5；dayjs 取代 moment；内联 SVG 图标取代 Font Awesome 4；二维码使用 `qrcode-generator` + 自研 SVG。
 - 已知差异：入口页 CSP 为 `script-src 'self'`；分享邮件中的二维码为 SVG data URL；旧 Angular 路由不再提供。

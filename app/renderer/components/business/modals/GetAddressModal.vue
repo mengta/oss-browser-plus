@@ -153,24 +153,26 @@ function applyDomain() {
 
 async function probe(target) {
   try {
-    if (typeof fetch !== 'function') {
+    // P3（R-P3-04）：net-bridge 统一返回 { ok, data }，data 为 { status, ok, body }
+    const res = await ossClient.probeUrl(target);
+    const data = res && res.ok ? res.data : null;
+    if (!data) {
       step.value = 2;
       return;
     }
-    const res = await fetch(target, { headers: { Range: 'bytes=0-1', 'Cache-Control': 'no-cache' } });
-    if (res.status >= 200 && res.status <= 300) {
+    if (data.ok) {
       originUrl.value = target;
       applyDomain();
       step.value = 1;
-    } else if (res.status === 403) {
+    } else if (data.status === 403) {
       step.value = 2;
     } else {
-      err.value = (await res.text().catch(() => '')) || String(res.status);
+      err.value = data.body || String(data.status);
       step.value = 3;
     }
   } catch (e) {
-    err.value = (e && e.message) || String(e);
-    step.value = 3;
+    // 网络不可达/超时/通道异常时不阻断获取地址：直接进入签名链接步骤
+    step.value = 2;
   }
 }
 
@@ -213,7 +215,8 @@ async function loadDomains() {
 
 onMounted(async () => {
   const target = props.item.url;
-  if (target) {
+  // 仅探测外网 http(s) 地址；oss:// 或空 url 直接进入签名链接步骤，避免主进程 invalid url
+  if (target && /^https?:\/\//i.test(String(target))) {
     await probe(target);
   } else {
     step.value = 2;
@@ -339,8 +342,8 @@ function onClose() {
   cursor: not-allowed;
 }
 .st-btn-success {
-  background: var(#2ea043);
-  border-color: #2ea043;
+  background: var(--vsc-success-solid);
+  border-color: var(--vsc-success);
   color: var(--vsc-on-accent);
 }
 .st-btn-primary {

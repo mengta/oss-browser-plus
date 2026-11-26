@@ -16,6 +16,15 @@
         </small>
       </div>
 
+      <div v-if="releaseNotesVisible || releaseError" class="about-release-note" data-testid="about-release-notes">
+        <div class="about-release-title">{{ t('about.releaseNotes') }}</div>
+        <div v-if="releaseError && !releaseErrorDismissed" class="about-release-error" data-testid="about-release-error">
+          <span>{{ t('about.releaseNotesFailed') }}</span>
+          <button type="button" class="about-error-dismiss" :aria-label="t('close')" data-testid="about-release-error-dismiss" @click="releaseErrorDismissed = true"><span class="about-error-dismiss-icon" aria-hidden="true"></span></button>
+        </div>
+        <div v-if="releaseNotesVisible" class="about-release-body" data-testid="about-release-body" v-html="releaseNotesHtml"></div>
+      </div>
+
     </div>
 
     <template #footer>
@@ -25,22 +34,62 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BaseModal from '../../base/BaseModal.vue';
 import { api } from '../../../services/api.js';
 import { readSnapshot } from '../../../bootstrap.js';
+import { renderMarkdown, sanitizeHtml, setRenderErrorHandler } from '../../../services/markdown.js';
 
 // 等价 aboutCtrl + about.html：
-// 展示 logo/应用名/版本（含定制）/定制 about_html（未定制回退开源地址）；
-// 版本检测经 upgrade:check（等价 autoUpgradeSvs.load 检测部分）；
-// 新版本展示下载链接 / 下载进度 / 安装重启；release notes 经 showdown 渲染（B2-14 评估结论保留）。
+// 展示 logo/应用名/版本（含定制）/定制 about_html（未定制回退开源地址）/发行说明；
+// 定制 about_html 与发行说明均为外部内容，v-html 前统一 sanitize，渲染失败给出可关闭提示（不静默降级）。
 const emit = defineEmits(['close']);
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const snap = readSnapshot() || {};
 const appVersion = snap.appVersion || '0.0.0';
 const logo = snap.logo || 'icons/icon.png';
-const customAboutHtml = snap.aboutHtml || '';
+const customAboutHtml = sanitizeHtml(snap.aboutHtml || '');
+
+const releaseNotesHtml = ref('');
+const releaseNotesVisible = ref(false);
+const releaseError = ref('');
+const releaseErrorDismissed = ref(false);
+
+setRenderErrorHandler((info) => {
+  releaseError.value = (info && info.code) || 'MARKDOWN_RENDER_FAILED';
+});
+
+async function loadReleaseNotes() {
+  const system = api && api.system;
+  if (!system || typeof system.readReleaseNotes !== 'function') {
+    return;
+  }
+  try {
+    const res = await system.readReleaseNotes(appVersion, locale.value);
+    if (!res) {
+      releaseError.value = 'IO';
+      return;
+    }
+    if (res.ok !== true) {
+      releaseError.value = res.code || 'IO';
+      return;
+    }
+    if (!res.data || res.data.found !== true) {
+      return;
+    }
+    const html = renderMarkdown(res.data.markdown || '');
+    if (html) {
+      releaseNotesHtml.value = html;
+      releaseNotesVisible.value = true;
+    }
+  } catch (err) {
+    releaseError.value = (err && err.code) || 'MARKDOWN_RENDER_FAILED';
+  }
+}
+
+onMounted(loadReleaseNotes);
 
 function openURL(url) {
   if (api && api.system && typeof api.system.openExternal === 'function') {
@@ -63,7 +112,7 @@ function onCancel() {
   margin: 4px 0 8px;
 }
 .about-version {
-  color: #8a6d00;
+  color: var(--vsc-warning);
 }
 .about-custom,
 .about-opensource {
@@ -86,8 +135,8 @@ function onCancel() {
   font-size: 12px;
 }
 .about-btn-success {
-  border-color: #2ea043;
-  background: var(#2ea043);
+  border-color: var(--vsc-success);
+  background: var(--vsc-success-solid);
   color: var(--vsc-on-accent);
 }
 .about-progress {
@@ -101,14 +150,14 @@ function onCancel() {
 }
 .progress-fill {
   height: 100%;
-  background: #5bc0de;
+  background: var(--vsc-accent);
   transition: width 0.3s;
 }
 .about-actions {
   margin: 8px 0;
 }
 .about-error {
-  color: #a1260d;
+  color: var(--vsc-danger);
   margin: 6px 0;
 }
 .about-release-note {
@@ -118,5 +167,32 @@ function onCancel() {
   font-size: 12px;
   max-height: 220px;
   overflow: auto;
+}
+.about-release-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.about-release-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--vsc-danger);
+  margin: 6px 0;
+}
+.about-error-dismiss {
+  border: none;
+  background: transparent;
+  color: var(--vsc-danger);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 4px;
+}
+.about-error-dismiss-icon::before {
+  content: '×';
+}
+.about-release-body {
+  text-align: left;
+  line-height: 1.5;
 }
 </style>

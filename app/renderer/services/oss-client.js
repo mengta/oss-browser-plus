@@ -97,6 +97,16 @@ export const ossClient = {
   getImageBase64Url: proxy('getImageBase64Url'),
   // B3-12：代码预览保存
   saveContent: proxy('saveContent'),
+  // P3（R-P3-04）：外网地址探测走 app:probe-url 通道，不需要 OSS 凭证，
+  // 不能经 proxy 注入 auth（否则 target 变成凭证对象，主进程报 invalid url）。
+  // net-bridge 会把 preload 结果统一包成 { ok, data }，因此这里透传外层信封
+  probeUrl: function (target, opts) {
+    const api = bridge();
+    if (!api || typeof api.probeUrl !== 'function') {
+      return Promise.reject(new Error('oss.probeUrl is unavailable'));
+    }
+    return api.probeUrl(target, opts || {});
+  },
 };
 
 export default ossClient;

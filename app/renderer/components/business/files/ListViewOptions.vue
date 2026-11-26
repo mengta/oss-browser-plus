@@ -6,9 +6,10 @@
       data-testid="view-list"
       :class="{ active: filesStore.viewMode === 'list' }"
       :title="t('common.listView') || 'List view'"
+      :aria-pressed="filesStore.viewMode === 'list'"
       @click="filesStore.setView('list')"
     >
-      <AppIcon name="square" />
+      <AppIcon name="list" />
     </button>
     <button
       type="button"
@@ -16,9 +17,10 @@
       data-testid="view-blocks"
       :class="{ active: filesStore.viewMode === 'blocks' }"
       :title="t('common.blockView') || 'Block view'"
+      :aria-pressed="filesStore.viewMode === 'blocks'"
       @click="filesStore.setView('blocks')"
     >
-      <AppIcon name="file" />
+      <AppIcon name="grid" />
     </button>
   </div>
 </template>
@@ -40,14 +42,26 @@ const filesStore = useFilesStore();
   gap: 2px;
 }
 .btn-icon {
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 2px;
   background: none;
-  padding: 4px 6px;
+  padding: 0;
   cursor: pointer;
   line-height: 1;
   color: var(--vsc-fg-muted);
 }
+.btn-icon:hover {
+  background: var(--vsc-bg-hover);
+  color: var(--vsc-fg);
+}
 .btn-icon.active {
-  color: var(--vsc-link);
+  color: var(--vsc-accent);
+  background: rgba(0, 122, 204, 0.16);
+  border-color: rgba(0, 122, 204, 0.45);
 }
 </style>

@@ -51,6 +51,7 @@ export const useTransferStore = defineStore('transfer', {
     uploads: [],
     downloads: [],
     subscribed: false,
+    subscriptionId: '',
     concurrency: 0,
     downloadConcurrency: 0,
     retryTimes: 0,
@@ -59,6 +60,8 @@ export const useTransferStore = defineStore('transfer', {
     stopCreating: false,
     searchText: '',
     lastErrorDetail: null,
+    // P7a 延伸：可清理的调度定时器（避免实例销毁后的迟到回调污染状态）
+    timerIds: [],
   }),
 
   getters: {
@@ -88,7 +91,58 @@ export const useTransferStore = defineStore('transfer', {
       const api = transferApi();
       if (!api || typeof api.subscribe !== 'function') return;
       this.subscribed = true;
-      api.subscribe((payload) => this.onPayload(payload));
+      // net-bridge 会包成 { ok, data } 且订阅方法按异步处理；这里同时兼容原值与信封
+      const pickId = (value) => {
+        if (value && typeof value === 'object' && value.ok === true) return value.data || '';
+        return value && typeof value.then !== 'function' ? value : '';
+      };
+      const pending = api.subscribe((payload) => this.onPayload(payload));
+      if (pending && typeof pending.then === 'function') {
+        pending.then((res) => {
+          this.subscriptionId = pickId(res) || '';
+        }, () => {});
+      } else {
+        this.subscriptionId = pickId(pending) || '';
+      }
+    },
+
+    // P7a（R-P7-05）：取消广播订阅（卸载/热重载时避免重复回调）
+    dispose() {
+      // 先清理定时器（即使未订阅也要清，避免迟到回调）
+      this.clearTimers();
+      if (this._saveTimer) {
+        clearTimeout(this._saveTimer);
+        this._saveTimer = null;
+      }
+      if (this._saveDownTimer) {
+        clearTimeout(this._saveDownTimer);
+        this._saveDownTimer = null;
+      }
+      if (!this.subscribed) return;
+      const api = transferApi();
+      const id = this.subscriptionId;
+      this.subscribed = false;
+      this.subscriptionId = '';
+      if (api && typeof api.unsubscribe === 'function' && id) {
+        api.unsubscribe(id);
+      }
+    },
+
+    // 可清理的定时器调度（替代裸 setTimeout）
+    schedule(callback, delayMs) {
+      const id = setTimeout(() => {
+        const index = this.timerIds.indexOf(id);
+        if (index >= 0) this.timerIds.splice(index, 1);
+        callback();
+      }, delayMs);
+      this.timerIds.push(id);
+      return id;
+    },
+
+    clearTimers() {
+      if (!Array.isArray(this.timerIds) || this.timerIds.length === 0) return;
+      for (const id of this.timerIds) clearTimeout(id);
+      this.timerIds = [];
     },
 
     init() {
@@ -128,10 +182,10 @@ export const useTransferStore = defineStore('transfer', {
       if (prev !== task.status && terminal) {
         if (task.type === 'download') {
           this.downloadConcurrency = Math.max(0, this.downloadConcurrency - 1);
-          setTimeout(() => this.checkStartDownloads(), 100);
+          this.schedule(() => this.checkStartDownloads(), 100);
         } else {
           this.concurrency = Math.max(0, this.concurrency - 1);
-          setTimeout(() => this.checkStart(), 100);
+          this.schedule(() => this.checkStart(), 100);
         }
       }
       if (task.status === 'finished') {
@@ -424,7 +478,7 @@ export const useTransferStore = defineStore('transfer', {
           this.pause(task.taskId);
         }
       }
-      setTimeout(() => {
+      this.schedule(() => {
         if (kind === 'download') {
           this.saveDownloadProgress();
         } else {

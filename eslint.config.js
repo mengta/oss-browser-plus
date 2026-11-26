@@ -608,6 +608,9 @@ const sourceBlock = {
     },
 };
 
+// P2：规则预设（单一来源 = sourceBlock.rules），供 Vue SFC 块复用
+const baseRules = sourceBlock.rules;
+
 // B2 test 放宽块（复刻 .eslintrc.json overrides 语义）
 const testBlock = {
   files: ['test/**/*.js', 'test/**/*.mjs'],
@@ -661,10 +664,99 @@ const vueBlock = {
     sourceType: 'module',
     parser: vueEslintParser,
     parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+    globals: {
+      ...globals.browser,
+      ...globals.node,
+      ...globals.es2021,
+    },
   },
+  // 继承 baseRules 的正确性子集（no-undef/no-unused-vars/no-eval/no-debugger 等）；
+  // 纯格式规则不下发到 SFC，避免因历史风格差异产生大批非缺陷报错（登记于 docs/metrics.md）
   rules: {
+    semi: baseRules['semi'],
+    'no-undef': baseRules['no-undef'],
+    'no-unused-vars': 'warn',
+    'no-use-before-define': baseRules['no-use-before-define'],
+    'no-eval': baseRules['no-eval'],
+    'no-implied-eval': baseRules['no-implied-eval'],
+    'no-debugger': baseRules['no-debugger'],
+    'no-console': 'warn',
+    'no-dupe-args': baseRules['no-dupe-args'],
+    'no-dupe-keys': baseRules['no-dupe-keys'],
+    'no-unreachable': baseRules['no-unreachable'],
+    'no-cond-assign': baseRules['no-cond-assign'],
+    'no-constant-condition': baseRules['no-constant-condition'],
+    'no-self-assign': baseRules['no-self-assign'],
+    'no-unsafe-finally': baseRules['no-unsafe-finally'],
+    'no-func-assign': baseRules['no-func-assign'],
+    'no-obj-calls': baseRules['no-obj-calls'],
+    'valid-typeof': baseRules['valid-typeof'],
     'vue/no-bare-strings-in-template': 'warn',
   },
 };
 
-module.exports = [ignores, sourceBlock, testBlock, preloadBlock, vueBlock];
+// P2：主进程 CommonJS 块（main.js/server.js/gen.js/node/**）——此前完全未被 lint 覆盖
+const nodeSourceBlock = {
+  files: ['main.js', 'server.js', 'gen.js', 'node/**/*.js'],
+  // 生成代码与第三方测试脚本豁免静态规则（crc64 pure-js 为 emscripten 产物，两项均登记 docs/metrics.md）
+  ignores: [
+    'node/crc64/pure-js/**',
+    'node/crc64/cpp-addon/**',
+    'node/crc64/electron-crc64-prebuild/**',
+    'node/ossstore/test/**',
+  ],
+  languageOptions: {
+    ecmaVersion: 2022,
+    sourceType: 'commonjs',
+    globals: {
+      ...globals.node,
+      ...globals.browser,
+      ...globals.es2021,
+      // P6 前主进程 capability 仍依赖 angular stub（去化在 P6 收口）
+      angular: 'readonly',
+    },
+  },
+  rules: {
+    'no-undef': 'error',
+    'no-unused-vars': 'warn',
+    'no-eval': 'error',
+    'no-debugger': 'error',
+    'no-console': 'warn',
+    'no-dupe-keys': 'error',
+    'no-unreachable': 'error',
+  },
+};
+
+// P2：构建/工具脚本块（ESM：build.mjs/tools/**）
+const scriptsBlock = {
+  files: ['build.mjs', 'tools/**/*.mjs'],
+  languageOptions: {
+    ecmaVersion: 2022,
+    sourceType: 'module',
+    globals: {
+      ...globals.node,
+      // tools 内含 page.evaluate 内联浏览器上下文代码
+      ...globals.browser,
+      ...globals.es2021,
+    },
+  },
+  rules: {
+    'no-undef': 'error',
+    'no-unused-vars': 'warn',
+    'no-eval': 'error',
+    'no-debugger': 'error',
+    'no-console': 'off',
+    'no-dupe-keys': 'error',
+    'no-unreachable': 'error',
+  },
+};
+
+module.exports = [
+  ignores,
+  sourceBlock,
+  testBlock,
+  preloadBlock,
+  vueBlock,
+  nodeSourceBlock,
+  scriptsBlock,
+];

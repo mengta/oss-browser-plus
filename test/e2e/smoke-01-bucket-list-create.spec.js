@@ -33,6 +33,7 @@ test('登录后 Bucket 列表加载且测试 Bucket 可见', async () => {
   await login(page);
 
   await page.waitForSelector(SEL.navbarBrand, { timeout: 30000 });
-  const brand = await page.textContent(SEL.navbarBrand);
-  expect(brand).toBeTruthy();
+  // 品牌区为 logo + title（文字品牌随登录标题一并移除）
+  expect(await page.getAttribute(SEL.navbarBrand, 'title')).toBe(SEL.navbarBrandText);
+  expect(await page.locator(SEL.brandLogo).count()).toBe(1);
 });

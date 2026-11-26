@@ -6,6 +6,9 @@
 
 1. 构建产物就位：`npm run build`（globalSetup 会检查 dist/main.js，缺失时报错并提示先构建）
 2. Playwright 已随 devDependencies 安装（`@playwright/test`）
+3. 无需关闭本机已运行的 oss-browser：`helpers/launch.js` 使用独立用户数据目录
+   `--user-data-dir=<os.tmpdir>/oss-browser-e2e-<pid>` 启动，绕开 `requestSingleInstanceLock` 单实例锁争用；
+   同时显式覆盖宿主会话残留的 `ELECTRON_RUN_AS_NODE`，避免应用以 Node 模式启动（`ipcMain` undefined）。
 
 ## 凭证注入方法（环境变量，禁止写入任何文件）
 
@@ -64,6 +67,26 @@ npx playwright test --list       # 列出全部用例不执行
 
 ### smoke-09 release-notes
 全自动部分：静态服务 release-notes.md HTTP 200 且非空；关于弹窗 markdown 渲染视觉为人工抽查项（归入 P3 人工冒烟清单）。
+
+## 全自动新增冒烟项（smoke-13 / smoke-14，无需凭证）
+
+### smoke-13 应用安全基线与启动契约
+- preload 白名单完整暴露 11 个域（bootstrap/system/credentials/digest/storage/oss/sts/ram/mail/transfer/upgrade），
+  渲染层无 `require`/`process`/`module`；
+- `manifest` 中 `expose=false` 的内部能力（`oss.getClient*`、`oss.parseOSSPath`）不可见；
+- BrowserWindow 安全基线：`contextIsolation=true`、`nodeIntegration=false`、`sandbox=false`、`webSecurity≠false`；
+- bootstrap 快照字段完整、静态服务端口可达、启动链路无未捕获渲染异常且 `#app-ready` 落地。
+
+### smoke-14 无边框标题栏与主题持久化
+- 标题栏三按钮（最小化/最大化/关闭）渲染且可用；
+- 最大化按钮往返后 `system.isWindowMaximized()` 与真实窗口状态一致；
+- `vsc-theme` 持久化：写入 light 后重载，`html[data-theme]` 跟随恢复；
+- 窗口最大化状态订阅 `subscribeWindowState/unsubscribeWindowState` 可正常切换与解绑。
+- 说明：用例不点击最小化/关闭按钮（会导致窗口不可见或应用退出，破坏同 spec 后续断言）。
+
+### 既有用例的语义更新（1.21.9）
+登录标题移除后 `.navbar-brand` 只承载 logo：品牌断言由「文本等于 OSS浏览器」改为
+「`title` 属性等于中文应用名 + 品牌 logo 存在」，smoke-01/06/09/10 同步更新。
 
 ## Linux CI 注意事项
 

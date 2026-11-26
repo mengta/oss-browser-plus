@@ -26,16 +26,28 @@
   --vsc-success: #89d185;
   --vsc-warning: #cca700;
   --vsc-danger: #f14c4c;
+  --vsc-success-solid: #2ea043;
+  --vsc-warning-solid: #8a6d00;
+  --vsc-danger-solid: #a1260d;
   --vsc-success-bg: #1e3a1e;
   --vsc-warning-bg: #352a05;
   --vsc-danger-bg: #5a1d1d;
   --vsc-info-bg: #0e2a3a;
   --vsc-code-bg: #1e1e1e;
+  --vsc-highlight: #dcb67a;
   --vsc-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   --vsc-font: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
   --vsc-mono: "Cascadia Code", "Consolas", "Courier New", monospace;
   --vsc-titlebar-h: 35px;
   --vsc-statusbar-h: 22px;
+  --vsc-surface-1: #1e1e1e;
+  --vsc-surface-2: #252526;
+  --vsc-surface-3: #2d2d2d;
+  --vsc-btn-bg: #3a3d41;
+  --vsc-btn-bg-hover: #45494e;
+  --vsc-btn-fg: #e6e6e6;
+  --vsc-placeholder: #b4bcc4;
+  color-scheme: dark;
 }
 
 html,
@@ -103,6 +115,18 @@ a:hover {
 }
 
 /* ---------- 按钮 ---------- */
+/* 原生控件文字色：覆盖 UA 默认的黑色 buttontext（VS Code 次要按钮为灰底浅灰字） */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  color: var(--vsc-fg);
+}
+option {
+  background: var(--vsc-bg-input);
+  color: var(--vsc-fg);
+}
+
 .btn,
 .st-btn {
   border-radius: 2px !important;
@@ -113,13 +137,13 @@ a:hover {
 }
 .btn-default,
 .st-btn {
-  background: #3a3d41 !important;
+  background: var(--vsc-btn-bg) !important;
   border: 1px solid var(--vsc-border) !important;
-  color: var(--vsc-fg) !important;
+  color: var(--vsc-btn-fg) !important;
 }
 .btn-default:hover,
 .st-btn:hover {
-  background: #45494e !important;
+  background: var(--vsc-btn-bg-hover) !important;
 }
 .btn-primary,
 .st-btn-primary {
@@ -133,20 +157,20 @@ a:hover {
 }
 .btn-success,
 .st-btn-success {
-  background: #2ea043 !important;
-  border-color: #2ea043 !important;
+  background: var(--vsc-success-solid) !important;
+  border-color: var(--vsc-success-solid) !important;
   color: var(--vsc-on-accent) !important;
 }
 .btn-danger,
 .st-btn-danger {
-  background: #a1260d !important;
-  border-color: #a1260d !important;
+  background: var(--vsc-danger-solid) !important;
+  border-color: var(--vsc-danger-solid) !important;
   color: var(--vsc-on-accent) !important;
 }
 .btn-warning,
 .st-btn-warning {
-  background: #8a6d00 !important;
-  border-color: #8a6d00 !important;
+  background: var(--vsc-warning-solid) !important;
+  border-color: var(--vsc-warning-solid) !important;
   color: var(--vsc-on-accent) !important;
 }
 .btn[disabled],
@@ -160,6 +184,7 @@ input[type="text"],
 input[type="number"],
 input[type="email"],
 input[type="password"],
+input:not([type]),
 select,
 textarea {
   background: var(--vsc-bg-input);
@@ -179,8 +204,64 @@ textarea:focus {
   outline: 1px solid var(--vsc-accent);
   box-shadow: none;
 }
-.form-control::placeholder {
-  color: var(--vsc-fg-dim);
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--vsc-placeholder);
+}
+input[type="checkbox"] {
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--vsc-border-strong);
+  border-radius: 2px;
+  background: var(--vsc-bg-input);
+  cursor: pointer;
+  position: relative;
+  vertical-align: -2px;
+}
+input[type="checkbox"]:checked {
+  background: var(--vsc-accent);
+  border-color: var(--vsc-accent);
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 0;
+  width: 4px;
+  height: 8px;
+  border: solid var(--vsc-on-accent);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--vsc-accent);
+}
+
+/* ---------- 内联代码 / 代码块（覆盖 Bootstrap 粉白底） ---------- */
+code {
+  background: var(--vsc-bg-input);
+  color: var(--vsc-fg);
+  border-radius: 2px;
+  padding: 1px 4px;
+  font-family: var(--vsc-mono);
+}
+pre {
+  background: var(--vsc-bg-input);
+  color: var(--vsc-fg);
+  border: 1px solid var(--vsc-border-weak);
+  border-radius: 3px;
+  padding: 8px 10px;
+  font-family: var(--vsc-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 /* ---------- 表格 ---------- */
@@ -189,8 +270,9 @@ textarea:focus {
   color: var(--vsc-fg);
 }
 .table > thead > tr > th {
-  background: var(--vsc-bg-elevated);
+  background: var(--vsc-surface-3);
   border-bottom: 1px solid var(--vsc-border);
+  box-shadow: 0 1px 0 var(--vsc-border);
   color: var(--vsc-fg-muted);
   font-weight: 600;
   padding: 4px 10px;
@@ -264,18 +346,18 @@ textarea:focus {
 }
 .alert-success {
   background: var(--vsc-success-bg);
-  border-color: #2ea043;
+  border-color: var(--vsc-success-solid);
   color: var(--vsc-success);
 }
 .alert-warning {
   background: var(--vsc-warning-bg);
-  border-color: #8a6d00;
+  border-color: var(--vsc-warning-solid);
   color: var(--vsc-warning);
 }
 .alert-danger,
 .alert-error {
   background: var(--vsc-danger-bg);
-  border-color: #a1260d;
+  border-color: var(--vsc-danger-solid);
   color: var(--vsc-danger);
 }
 .alert-info {
@@ -285,6 +367,7 @@ textarea:focus {
 }
 .badge {
   background: #4d4d4d;
+  color: var(--vsc-fg);
   border-radius: 2px;
   font-weight: 500;
 }
@@ -299,10 +382,10 @@ textarea:focus {
   background-color: var(--vsc-accent);
 }
 .progress-bar-success {
-  background-color: #2ea043;
+  background-color: var(--vsc-success-solid);
 }
 .progress-bar-danger {
-  background-color: #a1260d;
+  background-color: var(--vsc-danger-solid);
 }
 
 /* ---------- 页签/分页 ---------- */
@@ -366,7 +449,7 @@ textarea:focus {
   color: var(--vsc-accent) !important;
 }
 .text-folder {
-  color: #dcb67a !important;
+  color: var(--vsc-highlight) !important;
 }
 code,
 pre,
@@ -395,17 +478,29 @@ html[data-theme="light"] {
   --vsc-success: #16825d;
   --vsc-warning: #b58900;
   --vsc-danger: #cd3131;
+  --vsc-success-solid: #107c41;
+  --vsc-warning-solid: #8a6d00;
+  --vsc-danger-solid: #a1260d;
   --vsc-success-bg: #e6f4ea;
   --vsc-warning-bg: #fff8e1;
   --vsc-danger-bg: #fdecea;
   --vsc-info-bg: #e8f2fb;
   --vsc-code-bg: #ffffff;
+  --vsc-highlight: #b58900;
   --vsc-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
   --vsc-activity-bg: #f3f3f3;
   --vsc-activity-border: #e5e5e5;
   --vsc-activity-fg: #616161;
   --vsc-activity-fg-active: #333333;
   --vsc-mask: rgba(0, 0, 0, 0.25);
+  --vsc-btn-bg: #f3f3f3;
+  --vsc-btn-bg-hover: #e6e6e6;
+  --vsc-btn-fg: #333333;
+  --vsc-placeholder: #6f6f6f;
+  --vsc-surface-1: #ffffff;
+  --vsc-surface-2: #f3f3f3;
+  --vsc-surface-3: #e8e8e8;
+  color-scheme: light;
 }
 html[data-theme="light"] ::selection {
   background: #add6ff;

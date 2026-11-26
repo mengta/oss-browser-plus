@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createRouter, createMemoryHistory } from 'vue-router';
 import { routes } from '@renderer/router/routes.js';
+import { createRendererRouter, routes as exportedRoutes } from '@renderer/router/index.js';
 
 function makeRouter() {
   return createRouter({ history: createMemoryHistory(), routes });
@@ -30,5 +31,31 @@ describe('renderer routes', () => {
     const source = readFileSync('app/renderer/router/routes.js', 'utf8');
     expect(source.indexOf('beforeEach')).toBe(-1);
     expect(routes.length).toBe(3);
+  });
+});
+
+describe('createRendererRouter', () => {
+  it('使用 hash 路由并挂载同一份路由表', async () => {
+    const router = createRendererRouter();
+
+    expect(exportedRoutes).toBe(routes);
+    expect(typeof router.push).toBe('function');
+    expect(router.options.history.base !== undefined || router.options.history.location !== undefined).toBe(true);
+
+    await router.push('/login');
+    expect(router.currentRoute.value.name).toBe('login');
+  });
+
+  it('三条路由全部注册且未知路径重定向到 /', async () => {
+    const router = createRendererRouter();
+
+    expect(router.getRoutes().map((route) => route.name).filter(Boolean).sort()).toEqual([
+      'files',
+      'login',
+    ]);
+
+    await router.push('/unknown/deep/path');
+    expect(router.currentRoute.value.name).toBe('files');
+    expect(router.currentRoute.value.path).toBe('/');
   });
 });

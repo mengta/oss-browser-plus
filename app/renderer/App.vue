@@ -1,8 +1,8 @@
 <template>
   <div class="vue-app-shell">
     <TopBar />
-    <ActivityBar v-if="loggedIn" />
-    <main class="vue-app-main" :class="{ 'with-activity': loggedIn }" data-testid="vue-app-main">
+    <div v-if="portNotice" class="vue-port-notice" role="alert" data-testid="port-unavailable-notice">{{ portNotice }}</div>
+    <main class="vue-app-main" data-testid="vue-app-main">
       <div v-if="loading" class="vue-boot-loading" role="status" aria-live="polite">
         <span class="vue-boot-spinner"></span>
       </div>
@@ -14,29 +14,33 @@
     <ToastHost />
     <StatusBar />
     <CommandPalette :commands="commands" />
+    <ThemePicker />
   </div>
 </template>
 
 <script setup>
 // B4-02/B4-03/B4-06：壳组装（TopBar + RouterView + ToastHost + ModalHost）、
 // 启动链（bootstrap.get → i18n → portReady 1.5s 门 → 隐藏 loading → #app-ready）、错误边界、升级启动检测。
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { init } from './bootstrap.js';
 import { portReady } from './services/api.js';
-import { useUiStore } from './stores/ui.js';
+import { reportError } from './services/renderer-log.js';
+import { useUiStore, disposeSystemTheme } from './stores/ui.js';
 import { useSettingsStore } from './stores/settings.js';
 import TopBar from './components/business/TopBar.vue';
 import ModalHost from './components/base/ModalHost.vue';
 import ToastHost from './components/base/ToastHost.vue';
 import StatusBar from './components/base/StatusBar.vue';
 import ErrorBoundary from './components/base/ErrorBoundary.vue';
-import ActivityBar from './components/business/ActivityBar.vue';
+
 import CommandPalette from './components/base/CommandPalette.vue';
+import ThemePicker from './components/base/ThemePicker.vue';
 import { useAuthStore } from './stores/auth.js';
 import { useFilesStore } from './stores/files.js';
 import { useTransferStore } from './stores/transfer.js';
+import { clearUserSession } from './services/session.js';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -45,6 +49,8 @@ const filesStore = useFilesStore();
 const transferStore = useTransferStore();
 const ui = useUiStore();
 const loading = ref(true);
+// P4（R-P4-01）：静态服务端口不可用时的可见提示（不使用默认端口）
+const portNotice = ref('');
 const bootError = ref(null);
 const boundaryKey = ref(0);
 const loggedIn = computed(() => authStore.isLoggedIn);
@@ -78,6 +84,7 @@ const commands = computed(() => {
     { id: 'fav', label: t('bookmarks'), icon: 'star', run: () => ui.open('fav-list') },
     { id: 'settings', label: t('settings'), icon: 'cog', run: () => ui.open('settings') },
     { id: 'about', label: t('about'), icon: 'info-circle', run: () => ui.open('about') },
+    { id: 'theme-pick', label: t('theme.picker.title'), icon: ui.themeMode === 'light' ? 'sun' : 'moon', shortcut: 'Ctrl+K Ctrl+T', run: () => ui.openThemePicker() },
     { id: 'theme-toggle', label: ui.themeMode === 'dark' ? '切换为浅色主题' : ui.themeMode === 'light' ? '跟随系统主题' : '切换为深色主题', icon: ui.themeMode === 'dark' ? 'sun' : ui.themeMode === 'light' ? 'monitor' : 'moon', run: () => ui.setTheme(ui.themeMode === 'dark' ? 'light' : ui.themeMode === 'light' ? 'system' : 'dark') },
     { id: 'theme-system', label: '主题：跟随系统', icon: 'monitor', run: () => ui.setTheme('system') },
     { id: 'transfer-open', label: '打开传输中心', icon: 'cloud-upload', run: () => transferStore.setVisible(true, 'upload') },
@@ -85,7 +92,7 @@ const commands = computed(() => {
     { id: 'transfer-resume', label: '恢复全部传输', icon: 'refresh', run: () => { [...transferStore.uploads, ...transferStore.downloads].filter((x) => x.status === 'paused' || x.status === 'stopped').forEach((x) => transferStore.resume(x.taskId)); } },
     { id: 'transfer-stop', label: '停止全部传输', icon: 'close', run: () => { transferStore.stopAll('upload'); transferStore.stopAll('download'); } },
     { id: 'transfer-clear', label: '清除已完成传输', icon: 'trash', run: () => { transferStore.clearCompleted('upload'); transferStore.clearCompleted('download'); } },
-    { id: 'logout', label: t('logout'), icon: 'power-off', run: () => { authStore.remove(); filesStore.reset(); router.push('/login').catch(() => {}); } },
+    { id: 'logout', label: t('logout'), icon: 'power-off', run: () => { clearUserSession(); router.push('/login').catch(() => {}); } },
   ];
 });
 
@@ -104,7 +111,16 @@ onMounted(async () => {
   try {
     await portReady();
   } catch (err) {
-    /* 端口未就绪：业务请求在需要时重试，不白屏 */
+    /* 端口未就绪：业务请求在需要时重试，不白屏；同时给出可见提示（不静默） */
+    portNotice.value = t('preview.serviceUnavailable');
+    reportError('port-unavailable', err);
+  }
+
+  // 传输中心：订阅 transfer:progress 并恢复历史任务，否则上传/下载进度与状态不更新
+  try {
+    await transferStore.init();
+  } catch (err) {
+    /* 传输初始化失败不阻断主功能 */
   }
 
   // 启动初始化 settings（触发 mailSender 等凭证惰性迁移；自动更新已移除）
@@ -125,6 +141,14 @@ onMounted(async () => {
 
 });
 
+// P7a（R-P7-05）：卸载时解绑系统主题监听与传输广播订阅，避免重复回调
+onBeforeUnmount(() => {
+  disposeSystemTheme();
+  try {
+    transferStore.dispose();
+  } catch (err) {}
+});
+
 void bootError;
 </script>
 
@@ -135,8 +159,15 @@ void bootError;
 .vue-app-main {
   padding: 35px 8px 30px;
 }
-.vue-app-main.with-activity {
-  padding-left: 52px;
+
+.vue-port-notice {
+  margin: 35px 8px 0;
+  padding: 6px 10px;
+  border: 1px solid var(--vsc-warning);
+  border-radius: 2px;
+  color: var(--vsc-warning);
+  background: var(--vsc-bg-elevated);
+  font-size: 12px;
 }
 .vue-boot-loading {
   display: flex;

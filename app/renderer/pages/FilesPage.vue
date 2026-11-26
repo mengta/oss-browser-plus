@@ -32,7 +32,7 @@
     </div>
 
     <!-- B3-13：auto-height（-130）包裹列表区，等价 files.html 的 file-list-box -->
-    <AutoHeightBox :offset="-130" class="file-list-box">
+    <AutoHeightBox :offset="-150" class="file-list-box">
       <div v-if="filesStore.isLoading" class="loading" data-testid="files-loading">…</div>
       <template v-else>
         <BucketList v-if="filesStore.isBucketList" @contextmenu="onBucketContextMenu" @spacer-contextmenu="onBucketSpacerMenu" />
@@ -112,14 +112,21 @@ const keepMoveOptions = ref(null);
 const menu = reactive({ visible: false, x: 0, y: 0, items: [], context: null });
 const isMac = typeof navigator !== 'undefined' && /Macintosh/.test(navigator.userAgent);
 
-function initSession() {
+async function initSession() {
   // 等价原版 goHome：预设 ossPath 优先，其次「保存为首页」的 auth.address
   const info = authStore.info || {};
+  if (!filesStore.region && info.region) {
+    filesStore.region = info.region;
+  }
   const osspath = info.osspath || info.address;
-  if (osspath) {
-    filesStore.navigate(osspath);
-  } else if (!filesStore.bucketsLoaded) {
-    filesStore.loadBuckets();
+  try {
+    if (osspath) {
+      await filesStore.navigate(osspath);
+    } else if (!filesStore.bucketsLoaded) {
+      await filesStore.loadBuckets();
+    }
+  } catch (err) {
+    // 失败已由 files store 统一 toast，避免重复提示
   }
 }
 
@@ -624,11 +631,20 @@ async function pickDownloadFolder(items) {
   display: flex;
   flex-direction: column;
   min-height: 100%;
+  gap: 0;
 }
 .section {
-  flex: 1;
-  min-height: 200px;
-  overflow: auto;
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: visible;
+}
+.file-list-box {
+  border-top: 1px solid var(--vsc-border-weak);
+}
+.file-list-box :deep(.table > thead > tr > th) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 .loading {
   padding: 24px;

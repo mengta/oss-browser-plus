@@ -82,7 +82,7 @@ function onCancel() {
   word-break: break-all;
 }
 .fav-remove {
-  color: #a1260d;
+  color: var(--vsc-danger);
 }
 .fav-btn {
   padding: 4px 14px;

@@ -67,8 +67,8 @@ function onSubmit() {
   font-size: 12px;
 }
 .st-btn-success {
-  background: var(#2ea043);
-  border-color: #2ea043;
+  background: var(--vsc-success-solid);
+  border-color: var(--vsc-success);
   color: var(--vsc-on-accent);
 }
 </style>

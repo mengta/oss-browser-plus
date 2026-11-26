@@ -1,10 +1,11 @@
 "use strict";
-var ALYD = require("aliyun-sdk");
+var log = require('../../lib/logger').logger('ossstore.index');
+var ALYD = require("../../capabilities/sdk/aliyun-sdk-adapter");
 var OSS = require("ali-oss");
 require("events").EventEmitter.prototype._maxListeners = 1000;
 // var TIMEOUT = 30000; //30秒
 var TIMEOUT = parseInt(localStorage.getItem("connectTimeout") || 60000); //30秒
-console.log("TIMEOUT: " + TIMEOUT);
+log.debug("TIMEOUT: " + TIMEOUT);
 //fix
 ALYD.util.isBrowser = function () {
   return false;
@@ -26,19 +27,19 @@ var DownloadJob = require("./download-job");
 
 function OssStore(config) {
   if (!config) {
-    console.log("需要 config");
+    log.debug("需要 config");
     return;
   }
   this._config = {};
   Object.assign(this._config, config);
 
   if (!this._config.aliyunCredential && !this._config.stsToken) {
-    console.log("需要 stsToken");
+    log.debug("需要 stsToken");
     return;
   }
 
   if (!this._config.endpoint) {
-    console.log("需要 endpoint");
+    log.debug("需要 endpoint");
     return;
   }
 
@@ -94,7 +95,7 @@ function OssStore(config) {
 
   var arr = this._config.endpoint.split("://");
   if (arr.length < 2) {
-    console.log("endpoint 格式错误");
+    log.debug("endpoint 格式错误");
     return;
   }
   this._config.endpoint = {

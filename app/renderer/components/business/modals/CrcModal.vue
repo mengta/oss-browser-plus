@@ -1,26 +1,26 @@
 <template>
-  <BaseModal :visible="true" title="CRC码" @close="onClose">
+  <BaseModal :visible="true" :title="t('crc.title')" @close="onClose">
     <div class="crc-modal" data-testid="crc-modal">
       <h5>CRC64: <code data-testid="crc-value">{{ crc64 }}</code></h5>
 
       <div class="crc-doc">
-        您可以下载后自行验证, 参考:
-        <a href="javascript:void(0)" data-testid="crc-doc-link" @click="openDoc">通过crc64校验数据传输的完整性</a>
+        {{ t('crc.desc') }}
+        <a href="javascript:void(0)" data-testid="crc-doc-link" @click="openDoc">{{ t('crc.link') }}</a>
       </div>
     </div>
     <template #footer>
-      <button type="button" class="st-btn" data-testid="crc-close" @click="onClose">关闭</button>
+      <button type="button" class="st-btn" data-testid="crc-close" @click="onClose">{{ t('close') }}</button>
     </template>
   </BaseModal>
 </template>
 
 <script setup>
-// 等价 crc-modal（app/main/files/modals/crc-modal.js + html）：
-// 打开即读对象 HEAD 信息，展示 HashCrc64ecma；文档链接经 system.openExternal。
-// 原版文案为硬编码中文，此处保持（未引入 i18n key）。
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import BaseModal from '../../base/BaseModal.vue';
 import { ossClient } from '../../../services/oss-client.js';
+
+const { t } = useI18n();
 
 const props = defineProps({
   item: { type: Object, required: true },

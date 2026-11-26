@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import AkHistoriesPanel from '@renderer/components/business/auth/AkHistoriesPanel.vue';
 import ImportConfigPanel from '@renderer/components/business/auth/ImportConfigPanel.vue';
@@ -135,6 +135,12 @@ describe('ImportConfigPanel', () => {
     const toast = useToastStore();
 
     const wrapper = mountWith(pinia, ImportConfigPanel);
+    const placeholder = wrapper.find('[data-testid="ic-text"]').attributes('placeholder');
+    expect(placeholder).toContain('JSON');
+    expect(placeholder).toContain('XML');
+    expect(placeholder).toContain('YAML');
+    expect(placeholder).toContain('key:value');
+    expect(wrapper.find('.ic-hint').exists()).toBe(false);
     await wrapper.find('[data-testid="ic-text"]').setValue(
       '{"accessKeyId":"LTAI_IMP","accessKeySecret":"imp-secret","region":"oss-cn-hangzhou"}'
     );
@@ -160,5 +166,20 @@ describe('ImportConfigPanel', () => {
     await wrapper.vm.$nextTick();
     expect(wrapper.find('[data-testid="ic-error"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="ic-import"]').attributes('disabled')).toBeDefined();
+  });
+
+  it('剪贴板为无效内容时不自动填充，保留格式占位提示', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const readText = vi.fn().mockResolvedValue({ ok: true, data: '正在加载更多...' });
+    window.ossBrowser = { system: { clipboardReadText: readText } };
+
+    const wrapper = mountWith(pinia, ImportConfigPanel);
+    await flushPromises();
+
+    expect(readText).toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="ic-text"]').element.value).toBe('');
+    expect(wrapper.find('[data-testid="ic-error"]').exists()).toBe(false);
+    delete window.ossBrowser;
   });
 });

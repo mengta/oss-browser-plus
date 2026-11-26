@@ -194,8 +194,8 @@ legend h5 {
   font-size: 13px;
 }
 .btn-success {
-  background: var(#2ea043);
-  border-color: #2ea043;
+  background: var(--vsc-success-solid);
+  border-color: var(--vsc-success);
   color: var(--vsc-on-accent);
   text-decoration: none;
   padding: 2px 8px;
@@ -229,6 +229,6 @@ legend h5 {
   border-radius: 0 3px 3px 0;
 }
 .text-danger {
-  color: #a1260d;
+  color: var(--vsc-danger);
 }
 </style>

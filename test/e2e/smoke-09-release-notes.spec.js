@@ -33,7 +33,7 @@ test('应用静态服务可达（dist/static 资源 HTTP 200 且非空）', asyn
     try {
       // 端口轮询为串行依赖（后一端口尝试取决于前一失败），循环内 await 为正当用法
       // eslint-disable-next-line no-await-in-loop
-      const res = await page.request.get(`http://127.0.0.1:${port}/jquery.min.js`);
+      const res = await page.request.get(`http://127.0.0.1:${port}/flv.js`);
       if (res.ok()) {
         // eslint-disable-next-line no-await-in-loop
         const body = await res.text();
@@ -60,6 +60,7 @@ test('release-notes 数据源存在且非空（about 弹窗 markdown 载体）',
 });
 
 test('窗口 navbar 语义断言（release-notes 载体应用在运行）', async () => {
-  const text = await page.textContent(SEL.navbarBrand);
-  expect(text.trim()).toBe(SEL.navbarBrandText);
+  const title = await page.getAttribute(SEL.navbarBrand, 'title');
+  expect(title).toBe(SEL.navbarBrandText);
+  expect(await page.locator(SEL.brandLogo).count()).toBe(1);
 });

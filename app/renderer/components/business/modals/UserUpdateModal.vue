@@ -173,10 +173,10 @@ function onCancel() {
   flex: 0 0 160px;
 }
 .st-invalid {
-  border-color: #a1260d;
+  border-color: var(--vsc-danger);
 }
 .st-error {
-  color: #a1260d;
+  color: var(--vsc-danger);
   font-size: 11px;
   width: 100%;
   text-align: right;
@@ -195,7 +195,7 @@ function onCancel() {
   color: var(--vsc-on-accent);
 }
 .red {
-  color: #a1260d;
+  color: var(--vsc-danger);
 }
 .st-actions {
   justify-content: flex-end;

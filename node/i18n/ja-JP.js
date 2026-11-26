@@ -77,7 +77,7 @@ module.exports = {
   "auth.secure": "HTTPS暗号化",
   "auth.keepLoggedIn": "ログインしたままにする",
 
-  "auth.importConfig": "設定を一括インポート",
+  "auth.importConfig": "設定のインポート",
   "auth.importConfig.hint":
     "設定内容を貼り付けると自動解析します。JSON(ネストした data を含む)、XML、YAML、key:value 形式に対応。クリップボードの内容は自動読み込み済みです",
   "auth.importConfig.import": "解析してインポート",
@@ -85,7 +85,30 @@ module.exports = {
   "auth.importConfig.error.invalid":
     "有効な設定が見つかりません。AccessKeyId、AccessKeySecret などのフィールドが必要です",
   "auth.importConfig.placeholder":
-    'JSON / XML / YAML / key:value 形式の設定を貼り付けてください。例:\n{"accessKeyId":"STS.xxx","accessKeySecret":"xxx","securityToken":"xxx","ossPath":"oss://bucket/path"}',
+    'JSON(ネストした data を含む)、XML、YAML、key:value 形式に対応し、貼り付けると自動解析します。例:\naccessKeyId=STS.xxx\naccessKeySecret=xxx\nsecurityToken=xxx\nossPath=oss://bucket/path',
+
+  "clearAll": "すべてクリア",
+  "error.render": "ページの描画に失敗しました",
+  "crc.title": "CRC コード",
+  "crc.desc": "ダウンロード後にご自身で検証できます。参考:",
+  "crc.link": "crc64 でデータ転送の整合性を検証する",
+  "settings.historiesLength": "保存する履歴の長さ",
+
+  "login.brand.subtitle": "クラウドストレージを管理",
+  "login.form.title": "ストレージアカウントに接続",
+  "login.provider": "サービスプロバイダー",
+  "login.provider.aliyun": "Alibaba Cloud OSS",
+  "login.status.disconnected": "未接続",
+  "login.securityNote": "認証情報はローカルに暗号化保存されます。ログイン前に接続テストが可能です",
+  "login.mode": "ログイン方法",
+  "login.mode.akDesc": "AccessKey で接続",
+  "login.mode.tokenDesc": "認証トークンで接続",
+  "login.feature.multiCloud": "マルチクラウドストレージ管理",
+  "login.feature.multiCloudDesc": "複数の Bucket を一元管理",
+  "login.feature.secureCredential": "安全な認証情報管理",
+  "login.feature.secureCredentialDesc": "認証情報はローカルで暗号化保存され、AK 履歴から再利用できます",
+  "login.feature.batchOps": "効率的な一括操作",
+  "login.feature.batchOpsDesc": "一括アップロード・ダウンロード、コピー、移動、削除",
 
   "auth.authToken": "認証トークン",
   "auth.authToken.tooltip": "ドキュメントの表示",
@@ -143,9 +166,7 @@ module.exports = {
   goUp: "上がる",
   refresh: "更新",
   home: "ホーム",
-  saveAsHome: "ホームページに設定",
   saveToFav: "ブックマークに保存",
-  "saveAsHome.success": "ホームページに設定しました",
 
   "bookmark.remove.success": "ブックマークを削除しました",
   "bookmark.add.error1":
@@ -181,6 +202,21 @@ module.exports = {
 
   loading: "ロード中...",
   nodata: "データなし",
+  "no.data": "データがありません",
+  "common.back": "戻る",
+  "common.ahead": "進む",
+  "common.listView": "リスト表示",
+  "common.blockView": "グリッド表示",
+  storageClass: "ストレージクラス",
+  warn: "警告",
+  all: "すべて",
+  search: "検索",
+  loadMore: "さらに読み込む",
+  accessKeyId: "AccessKey ID",
+  "user.name.error": "ユーザー名の形式が正しくありません",
+  phone: "電話番号",
+  "user.email.error": "メールアドレスの形式が正しくありません",
+  submit: "送信",
 
   "delete.multiparts.title": "マルチパートの削除",
   "delete.multiparts.message":
@@ -250,11 +286,18 @@ module.exports = {
   "settings.other.list.object.max.number": "Objectの最大数を列挙",
 
   //bookmark
+  "bookmarks.add": "ブックマークを追加",
+  "bookmarks.remove": "ブックマークを削除",
+  "bookmarks.add.success": "ブックマークを追加しました",
+  "bookmarks.full": "ブックマークが上限に達しました",
   "bookmarks.title": "ブックマーク",
   time: "時間",
   "bookmarks.delete.success": "ブックマークを削除しました",
 
   "opensource.address": "オープンするソース",
+  "about.releaseNotes": "リリースノート",
+  "about.releaseNotesFailed": "リリースノートの読み込みに失敗しました",
+  "preview.serviceUnavailable": "プレビューサービスが利用できません（ポート使用中）",
   foundNewVersion: "新しいバージョンがあります",
   clickToDownload: "クリックしてダウンロード",
   currentIsLastest: "これは最新バージョンです",
@@ -408,6 +451,9 @@ module.exports = {
   "status.running.downloading": "ダウンロード中",
   "status.running": "実行中",
   "status.stopped": "停止",
+  "status.paused": "一時停止中",
+  "status.canceled": "キャンセル済み",
+  "status.started": "転送中",
   "status.failed": "失敗",
   "status.finished": "完了",
   "status.waiting": "待機中",
@@ -461,8 +507,16 @@ module.exports = {
   hide: "非表示",
   "can.not.get.accessKeySecret": "AccessKeySecret を取得できません",
 
+  "settings.subtitle.appearance": "外観",
   "settings.subtitle.updown": "転送設定",
   "settings.subtitle.sys": "システム設定",
+  "settings.theme": "カラーテーマ",
+  "theme.dark": "ダーク (Dark+)",
+  "theme.light": "ライト (Light+)",
+  "theme.system": "システムに従う",
+  "theme.picker.title": "ユーザー設定: カラーテーマ",
+  "theme.picker.placeholder": "カラーテーマを選択",
+  "theme.picker.systemDesc": "オペレーティングシステムの外観に従う",
   "settings.subtitle.email": "メール送信設定",
   "settings.mailSmtp.addr": "SMTP アドレス",
   "settings.mailSmtp.ssl": "SSL を使用する",

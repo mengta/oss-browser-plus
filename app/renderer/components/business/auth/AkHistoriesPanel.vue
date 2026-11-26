@@ -1,6 +1,6 @@
 <template>
   <div class="ak-histories-panel" data-testid="ak-histories-panel">
-    <input v-model="keyword" class="akh-search" placeholder="搜索" data-testid="akh-search" />
+    <input v-model="keyword" type="text" class="akh-search" :placeholder="t('search')" data-testid="akh-search" />
     <ul class="akh-list">
       <li v-for="h in filtered" :key="h.id" class="akh-item" data-testid="akh-item">
         <span class="akh-id">{{ h.id }}</span>
@@ -8,14 +8,14 @@
         <span class="akh-region">{{ regionText(h) }}</span>
         <span v-if="h.requestpaystatus === 'YES'" class="akh-tag" data-testid="akh-requestpay">{{ t('requestPay') }}</span>
         <button type="button" class="akh-btn" data-testid="akh-toggle" @click="toggleSecret(h)">
-          {{ showSecrets[h.id] ? '隐藏' : '显示' }}
+          {{ showSecrets[h.id] ? t('hide') : t('show') }}
         </button>
-        <button type="button" class="akh-btn" data-testid="akh-use" @click="use(h)">使用</button>
-        <button type="button" class="akh-btn" data-testid="akh-remove" @click="remove(h)">删除</button>
+        <button type="button" class="akh-btn" data-testid="akh-use" @click="use(h)">{{ t('use') }}</button>
+        <button type="button" class="akh-btn" data-testid="akh-remove" @click="remove(h)">{{ t('delete') }}</button>
       </li>
     </ul>
     <div class="akh-actions">
-      <button type="button" class="akh-btn" data-testid="akh-cleanall" @click="cleanAll">清空全部</button>
+      <button type="button" class="akh-btn" data-testid="akh-cleanall" @click="cleanAll">{{ t('clearAll') }}</button>
     </div>
 
     <BaseModal v-if="pending" :visible="true" :title="pending.title" :result="false" @close="pending = null">
@@ -118,6 +118,16 @@ function confirmPending() {
   padding: 6px 8px;
   border: 1px solid var(--vsc-border);
   border-radius: 2px;
+  background: var(--vsc-bg-input);
+  color: var(--vsc-fg);
+  font-size: 12px;
+}
+.akh-search::placeholder {
+  color: var(--vsc-fg-dim);
+}
+.akh-search:focus {
+  border-color: var(--vsc-accent);
+  outline: 1px solid var(--vsc-accent);
 }
 .akh-list {
   list-style: none;
@@ -140,7 +150,13 @@ function confirmPending() {
 }
 .akh-secret {
   min-width: 140px;
-  color: var(--vsc-fg-muted);
+  padding: 1px 6px;
+  border: 1px solid var(--vsc-border-weak);
+  border-radius: 2px;
+  background: var(--vsc-bg-input);
+  color: var(--vsc-fg);
+  font-family: var(--vsc-mono);
+  font-size: 12px;
 }
 .akh-region {
   min-width: 90px;
@@ -148,7 +164,7 @@ function confirmPending() {
 }
 .akh-tag {
   padding: 1px 6px;
-  border: 1px solid var(--vsc-warning);
+  border: 1px solid var(--vsc-warning-solid);
   border-radius: 2px;
   background: var(--vsc-warning-bg);
   color: var(--vsc-warning);
@@ -158,9 +174,13 @@ function confirmPending() {
   padding: 2px 6px;
   border: 1px solid var(--vsc-border-weak);
   background: var(--vsc-bg-elevated);
+  color: var(--vsc-fg);
   border-radius: 2px;
   cursor: pointer;
   font-size: 12px;
+}
+.akh-btn:hover {
+  background: var(--vsc-bg-hover);
 }
 .akh-actions {
   display: flex;

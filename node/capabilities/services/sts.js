@@ -1,80 +1,88 @@
-angular.module('web').factory('stsSvs', [
-  '$q',
-  '$state',
-  'AuthInfo',
-  'Toast',
-  'Const',
-  function($q, $state, AuthInfo, Toast, Const) {
-    var ALYD = require('aliyun-sdk');
+'use strict';
 
-    return {
-      assumeRole: assumeRole
-    };
+// P6a（R-P6-01/R-P6-06）：STS 服务去 Angular 化。
+// 显式上下文 ctx（{ auth }）+ 原生 Promise；错误归一化保留 code/message 语义，
+// 登录跳转与 toast 由渲染层依据错误码处理（不在主进程做 UI 动作）。
+const ALYD = require('../sdk/aliyun-sdk-adapter');
 
-    /**
-    * @param roleArn RoleArn表示的是需要扮演的角色ID，角色的ID可以在 角色管理 > 角色详情 中找到。
-                     格式如： "acs:ram::1894189769722283:role/ramtestappreadonly"
-    * @param policyStr 表示的是在扮演角色的时候额外加上的一个权限限制。
-                     格式如：'{"Version":"1","Statement":[{"Effect":"Allow", "Action":"*", "Resource":"*"}]}'
-    * @param seconds  DurationSeconds指的是临时凭证的有效期，单位是s，最小为900，最大为3600。
-    */
-    function assumeRole(roleArn, policyStr, seconds) {
-      var sts = getClient();
-      var df = $q.defer();
+function codedError(code, message) {
+  const err = new Error(message || code);
+  err.code = code;
+  return err;
+}
 
-      // 构造AssumeRole请求
-      sts.assumeRole(
-          {
-            Action: 'AssumeRole',
-            // 指定角色Arn
-            RoleArn: roleArn,
-            // 设置Token的附加Policy，可以在获取Token时，通过额外设置一个Policy进一步减小Token的权限；
-            Policy: policyStr, // '{"Version":"1","Statement":[{"Effect":"Allow", "Action":"*", "Resource":"*"}]}',
-            // 设置Token有效期，可选参数，默认3600秒；
-            DurationSeconds: seconds || 3600,
-            RoleSessionName: 'oss-browser' // RoleSessionName是一个用来标示临时凭证的名称，一般来说建议使用不同的应用程序用户来区分。usr001
-          },
-          function(err, result) {
-            if (err) {
-              df.reject(err);
-              handleError(err);
-            } else {
-              df.resolve(result);
-            }
-          }
-      );
-
-      return df.promise;
-    }
-
-    function handleError(err) {
-      if (err.code == 'InvalidAccessKeyId') {
-        $state.go('login');
-      } else {
-        if (!err.code) {
-          if (err.message.indexOf('Failed to fetch') != -1) {
-            err = { code: 'Error', message: '无法连接' };
-          } else { err = { code: 'Error', message: err.message }; }
-        } else if (
-          err.message.indexOf('You are not authorized to do this action') != -1
-        ) {
-          err = { code: 'Error', message: '没有权限, ' + err.message };
-        }
-
-        Toast.error(err.code + ': ' + err.message);
-      }
-    }
-
-    function getClient() {
-      var authInfo = AuthInfo.get();
-      var ram = new ALYD.STS({
-        accessKeyId: authInfo.id,
-        secretAccessKey: authInfo.secret,
-        endpoint: 'https://sts.aliyuncs.com',
-        apiVersion: '2015-04-01'
-      });
-
-      return ram;
-    }
+// 等价原 handleError：InvalidAccessKeyId 原样保留 code（渲染层据此回登录页）；
+// 无 code 且 Failed to fetch → Error/无法连接；权限不足 → Error/没有权限, <message>。
+function normalizeError(err) {
+  const raw = err || {};
+  const code = raw.code || 'Error';
+  let message = String(raw.message || raw.code || 'unknown error');
+  if (!raw.code && message.indexOf('Failed to fetch') !== -1) {
+    message = '无法连接';
+  } else if (raw.code && message.indexOf('You are not authorized to do this action') !== -1) {
+    message = '没有权限, ' + message;
   }
-]);
+  const out = codedError(code, message);
+  if (raw.requestId) out.requestId = raw.requestId;
+  if (raw.statusCode) out.statusCode = raw.statusCode;
+  return out;
+}
+
+function resolveAuth(ctx) {
+  const source = ctx && ctx.auth ? ctx.auth : ctx || {};
+  const id = source.id || source.accessKeyId;
+  const secret = source.secret || source.accessKeySecret;
+  if (!id || typeof id !== 'string' || !secret || typeof secret !== 'string') {
+    throw codedError('InvalidAccessKeyId', 'auth is required');
+  }
+  return { id: id, secret: secret };
+}
+
+function createClient(auth) {
+  return new ALYD.STS({
+    accessKeyId: auth.id,
+    secretAccessKey: auth.secret,
+    endpoint: 'https://sts.aliyuncs.com',
+    apiVersion: '2015-04-01',
+  });
+}
+
+/**
+ * @param ctx { auth: {id,secret} } 显式凭证上下文
+ * @param roleArn 角色 ID（acs:ram::<account>:role/<name>）
+ * @param policyStr 附加权限限制（JSON 字符串）
+ * @param seconds 有效期（900~3600，默认 3600）
+ */
+function assumeRole(ctx, roleArn, policyStr, seconds) {
+  return new Promise((resolve, reject) => {
+    if (typeof roleArn !== 'string' || !roleArn) {
+      reject(codedError('INVALID_ARG', 'roleArn is required'));
+      return;
+    }
+    let client;
+    try {
+      client = createClient(resolveAuth(ctx));
+    } catch (err) {
+      reject(normalizeError(err));
+      return;
+    }
+    client.assumeRole(
+      {
+        Action: 'AssumeRole',
+        RoleArn: roleArn,
+        Policy: policyStr,
+        DurationSeconds: seconds || 3600,
+        RoleSessionName: 'oss-browser',
+      },
+      function (err, result) {
+        if (err) {
+          reject(normalizeError(err));
+        } else {
+          resolve(result);
+        }
+      }
+    );
+  });
+}
+
+module.exports = { assumeRole };

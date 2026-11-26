@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { watch } from 'vue';
+import { defineAsyncComponent, watch } from 'vue';
 import { useUiStore } from '../../stores/ui.js';
 import { useFilesStore } from '../../stores/files.js';
 import { useRouter } from 'vue-router';
@@ -51,11 +51,12 @@ import GetAddressModal from '../business/modals/GetAddressModal.vue';
 import GrantTokenModal from '../business/modals/GrantTokenModal.vue';
 import GrantModalCode from '../business/modals/GrantModalCode.vue';
 import GrantModal from '../business/modals/GrantModal.vue';
-import PictureModal from '../business/preview/PictureModal.vue';
-import MediaModal from '../business/preview/MediaModal.vue';
-import DocModal from '../business/preview/DocModal.vue';
-import OthersModal from '../business/preview/OthersModal.vue';
-import CodeModal from '../business/preview/CodeModal.vue';
+// 预览类弹窗按需加载：首屏不必解析图片/媒体/文档/代码预览代码
+const PictureModal = defineAsyncComponent(() => import('../business/preview/PictureModal.vue'));
+const MediaModal = defineAsyncComponent(() => import('../business/preview/MediaModal.vue'));
+const DocModal = defineAsyncComponent(() => import('../business/preview/DocModal.vue'));
+const OthersModal = defineAsyncComponent(() => import('../business/preview/OthersModal.vue'));
+const CodeModal = defineAsyncComponent(() => import('../business/preview/CodeModal.vue'));
 
 // 弹窗宿主：渲染 ui.stack。
 // dialog-* 项由 ConfirmDialog 承载；业务弹窗按 registry 注册表渲染。

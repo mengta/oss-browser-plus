@@ -6,11 +6,10 @@
     @dblclick="onTitlebarDblClick"
   >
     <div class="navbar-header">
-      <a class="navbar-brand" href="javascript:void(0)" data-testid="topbar-brand" @click="openModal('about')">
+      <a class="navbar-brand" href="javascript:void(0)" data-testid="topbar-brand" :title="appName" @click="openModal('about')">
         <img v-if="logo" :src="logo" width="18" class="brand-logo" alt="" />
-        {{ appName }}
       </a>
-      <label class="app-version" data-testid="topbar-version" @click="openModal('about')">v{{ version }}</label>
+
     </div>
 
     <div v-if="loggedIn" class="collapse navbar-collapse" data-testid="topbar-nav">
@@ -89,22 +88,22 @@ import HintTooltip from '../base/HintTooltip.vue';
 import WindowControls from '../base/WindowControls.vue';
 import { useAuthStore } from '../../stores/auth.js';
 import { useBootstrapStore } from '../../stores/bootstrap.js';
-import { useFilesStore } from '../../stores/files.js';
 import { useUiStore } from '../../stores/ui.js';
 import { formatDateTime } from '../../services/formatters.js';
+import { clearUserSession } from '../../services/session.js';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const bootstrapStore = useBootstrapStore();
-const filesStore = useFilesStore();
+
 const ui = useUiStore();
 
 
 const snapshot = computed(() => bootstrapStore.snapshot || {});
 const appName = computed(() => t('app.name'));
-const version = computed(() => snapshot.value.appVersion || '');
+
 const logo = computed(() => snapshot.value.logo || '');
 const authInfo = computed(() => authStore.info || {});
 const loggedIn = computed(() => authStore.isLoggedIn);
@@ -180,8 +179,7 @@ async function logout() {
     cls: 'primary',
   });
   if (!confirmed) return;
-  authStore.remove();
-  filesStore.reset();
+  clearUserSession();
   router.push('/login').catch(() => {});
 }
 </script>
@@ -210,6 +208,11 @@ async function logout() {
   align-items: center;
   float: none !important;
   margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+.navbar-nav > li {
+  list-style: none;
 }
 .navbar-nav.navbar-right {
   float: none !important;
@@ -267,16 +270,7 @@ async function logout() {
   height: var(--vsc-titlebar-h, 35px);
   float: none;
 }
-.app-version {
-  display: inline-flex;
-  align-items: center;
-  height: var(--vsc-titlebar-h, 35px);
-  padding: 0;
-  line-height: 1;
-  margin: 0 0 0 6px;
-  font-size: 11px;
-  cursor: pointer;
-}
+
 .navbar-nav > li > a,
 .navbar-nav > li > router-link {
   display: inline-flex;
@@ -289,9 +283,7 @@ async function logout() {
   width: 13px;
   height: 13px;
 }
-.navbar-form {
-  margin: 3px 8px 0 0;
-}
+
 .mini-link {
   display: inline-flex;
   align-items: center;
@@ -327,14 +319,7 @@ async function logout() {
 .tb-temp:hover {
   background: var(--vsc-bg-hover);
 }
-.app-version {
-  display: inline-block;
-  margin-left: 8px;
-  color: var(--vsc-fg-muted);
-  font-size: 12px;
-  cursor: pointer;
-  font-weight: normal;
-}
+
 .topbar-right {
   margin-right: 10px;
 }
@@ -345,12 +330,11 @@ async function logout() {
 }
 .navbar-nav > li.active > a {
   color: var(--vsc-on-accent);
-  background: #080808;
+  background: var(--vsc-bg);
 }
 .mini-link {
   color: var(--vsc-border);
-  font-weight: bold;
-  margin-right: 10px;
+
   text-decoration: none;
 }
 
@@ -383,6 +367,8 @@ async function logout() {
   margin: 0;
 }
 .navbar-form .mini-link {
-  height: var(--vsc-titlebar-h, 35px);
+  height: calc(var(--vsc-titlebar-h, 35px) - 7px);
+  padding: 0 8px;
+  border-radius: 2px;
 }
 </style>

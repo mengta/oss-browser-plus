@@ -16,7 +16,7 @@ function currentAuth() {
   }
   try {
     const info = JSON.parse(str);
-    return info && typeof info === 'object' ? info : {};
+    return info && typeof info === 'object' && !Array.isArray(info) ? info : {};
   } catch (err) {
     return {};
   }

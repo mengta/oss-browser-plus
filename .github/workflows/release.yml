@@ -219,7 +219,10 @@ jobs:
           if [ -n "$ASAR_PATH" ]; then ARGS="$ARGS --asar=${ASAR_PATH}"; fi
           if [ -n "$PREV_PATH" ]; then ARGS="$ARGS --prev=${PREV_PATH}"; fi
           echo "gate-size: $ARGS"
-          node tools/gate-size.mjs $ARGS
+          if ! node tools/gate-size.mjs $ARGS 2>gate-size.err; then
+            echo "::error::size gate failed: $(tail -8 gate-size.err | tr '\n' ' ' | cut -c1-900)"
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

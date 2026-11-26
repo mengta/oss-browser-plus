@@ -145,10 +145,13 @@ if (ZIP) {
   }
 
   if (entries.length) {
-    const hasExe = entries.some((n) => /(^|\/)oss-browser\.exe$/i.test(n));
+    const hasExecutable = entries.some((n) => {
+      const p = n.replace(/\\/g, '/');
+      return /(^|\/)oss-browser(\.exe)?$/i.test(p) || /(^|\/)oss-browser\.app\//i.test(p);
+    });
     const hasCustom = entries.some((n) => n.replace(/\\/g, '/').endsWith('resources/custom/index.js'));
     const hasAsar = entries.some((n) => n.replace(/\\/g, '/').endsWith('resources/app.asar'));
-    if (!hasExe) problems.push('GATE_CORE_MISSING: oss-browser.exe');
+    if (!hasExecutable) problems.push('GATE_CORE_MISSING: oss-browser');
     if (!hasCustom) problems.push('GATE_CORE_MISSING: resources/custom/index.js');
     if (!hasAsar) problems.push('GATE_CORE_MISSING: resources/app.asar');
   }

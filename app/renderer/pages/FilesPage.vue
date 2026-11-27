@@ -87,7 +87,7 @@ import DropZone from '../components/base/DropZone.vue';
 import TransferDock from '../components/business/transfer/TransferDock.vue';
 import AutoHeightBox from '../components/base/AutoHeightBox.vue';
 import ContextMenu from '../components/base/ContextMenu.vue';
-import { useFilesStore } from '../stores/files.js';
+import { useFilesStore, headToItem } from '../stores/files.js';
 import { useAuthStore } from '../stores/auth.js';
 import { useTransferStore } from '../stores/transfer.js';
 import { useToastStore } from '../stores/toast.js';
@@ -120,6 +120,21 @@ async function initSession() {
   }
   const osspath = info.osspath || info.address;
   try {
+    const raw = String(osspath || '');
+    const matched = raw.match(/^oss:\/\/([^/]+)\/(.+)$/);
+    if (matched && matched[2] && !matched[2].endsWith('/')) {
+      const bucket = matched[1];
+      const key = matched[2];
+      const region = filesStore.region || info.region || '';
+      try {
+        // 单文件权限账号：head 可直接判定并按“单文件列表”展示，不依赖 ListObjects
+        const data = await ossClient.checkFileExists(region, bucket, key);
+        filesStore.openSingleFile(headToItem(data, key), { bucket, region });
+        return;
+      } catch (err) {
+        // 不是文件或无 head 权限：回退按目录导航
+      }
+    }
     if (osspath) {
       await filesStore.navigate(osspath);
     } else if (!filesStore.bucketsLoaded) {

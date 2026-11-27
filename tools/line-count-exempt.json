@@ -40,9 +40,9 @@
     },
     {
       "file": "app/renderer/pages/FilesPage.vue",
-      "lines": 673,
+      "lines": 688,
       "batch": "6e-未纳入",
-      "reason": "Q-2 默认不纳入（页面 composable 抽离为后续项），长期豁免；本批次新增上传完成自动刷新当前目录"
+      "reason": "Q-2 默认不纳入（页面 composable 抽离为后续项），长期豁免；本批次新增上传完成自动刷新与单文件预设路径探测"
     },
     {
       "file": "main.js",

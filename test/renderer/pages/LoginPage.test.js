@@ -130,6 +130,36 @@ describe('LoginPage', () => {
     expect(router.currentRoute.value.path).toBe('/');
   });
 
+  it('仅目录权限账号 ListBuckets 被拒仍可登录', async () => {
+    const original = window.ossBrowser.oss.listAllBuckets;
+    window.ossBrowser.oss.listAllBuckets = () =>
+      Promise.resolve({
+        ok: false,
+        code: 'AccessDenied',
+        message: 'You are forbidden to oss:ListBuckets',
+      });
+    const router = makeRouter();
+    await router.push('/login');
+    const wrapper = mountPage(router);
+
+    await wrapper.find('[data-testid="login-id"]').setValue('LTAI5tDemo');
+    await wrapper.find('[data-testid="login-secret"]').setValue('demo-secret');
+    await wrapper.find('[data-testid="login-osspath"]').setValue('oss://bucket-a/only-dir/');
+    const regionSelect = wrapper.find('[data-testid="login-region"]');
+    expect(regionSelect.exists()).toBe(true);
+    await regionSelect.setValue(regionSelect.findAll('option')[0].attributes('value'));
+    await wrapper.find('[data-testid="login-submit"]').trigger('click');
+    await new Promise((r) => setTimeout(r, 0));
+    await wrapper.vm.$nextTick();
+
+    expect(router.currentRoute.value.path).toBe('/');
+    const { useAuthStore } = await import('@renderer/stores/auth.js');
+    const auth = useAuthStore();
+    expect(auth.listBucketsDenied).toBe(true);
+    expect(auth.info.osspath).toBe('oss://bucket-a/only-dir/');
+    window.ossBrowser.oss.listAllBuckets = original;
+  });
+
   it('登录失败提示 code:message 且不跳转', async () => {
     globalThis.__testOssFail = true;
     const router = makeRouter();

@@ -52,6 +52,8 @@ export const useAuthStore = defineStore('auth', {
     remembered: getJson(AUTH_KEEP),
     authToken: SecureStore.get(KEY_AUTHTOKEN, '', { legacyPlain: true }),
     lastError: null,
+    // 仅目录/对象权限账号：ListBuckets 被拒（AccessDenied）时仍允许登录
+    listBucketsDenied: false,
   }),
   getters: {
     isLoggedIn: (state) => !!(state.info && state.info.id && state.info.secret),
@@ -135,16 +137,34 @@ export const useAuthStore = defineStore('auth', {
       const opts = options || {};
       const payload = Object.assign({}, credentials);
       const api = ossApi();
+      this.listBucketsDenied = false;
       if (!api || typeof api.listAllBuckets !== 'function') {
         this.lastError = { code: 'UNAVAILABLE', message: 'oss bridge unavailable' };
         throw new Error('oss bridge unavailable');
       }
-      const verified = await api.listAllBuckets(payload);
+      let verified = null;
+      try {
+        verified = await api.listAllBuckets(payload);
+      } catch (err) {
+        const code = String((err && err.code) || '');
+        // proxy 会把 {ok:false} 转为 reject；仅目录/对象权限账号仍允许登录
+        if (!/^(AccessDenied|Forbidden)$/i.test(code)) {
+          this.lastError = { code: code || 'Error', message: (err && err.message) || code };
+          throw err;
+        }
+        this.listBucketsDenied = true;
+      }
       if (verified && verified.ok === false) {
-        this.lastError = { code: verified.code, message: verified.message };
-        const err = new Error(verified.message || verified.code);
-        err.code = verified.code;
-        throw err;
+        const code = String(verified.code || '');
+        // 仅目录/对象权限账号无法列举 Bucket：不阻断登录，由预设 ossPath 直接访问
+        const denied = /^(AccessDenied|Forbidden)$/i.test(code);
+        if (!denied) {
+          this.lastError = { code: verified.code, message: verified.message };
+          const err = new Error(verified.message || verified.code);
+          err.code = verified.code;
+          throw err;
+        }
+        this.listBucketsDenied = true;
       }
       this.lastError = null;
       this.save(payload);

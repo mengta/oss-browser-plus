@@ -66,12 +66,29 @@ function mergeSortedItems(current, incoming, cmp) {
   return mergeTwoSorted(curFolders, newFolders, cmp).concat(mergeTwoSorted(curFiles, newFiles, cmp));
 }
 
+export function headToItem(data, key) {
+  const headers = (data && data.res && data.res.headers) || {};
+  const name = String(key || '').split('/').pop() || key;
+  return {
+    name,
+    path: key,
+    isFile: true,
+    isFolder: false,
+    size: Number(headers['content-length'] || (data && data.size) || 0),
+    lastModified: headers['last-modified'] || (data && data.lastModified) || '',
+    type: headers['content-type'] || (data && data.type) || '',
+    etag: String(headers.etag || (data && data.etag) || '').replace(/"/g, ''),
+    storageClass: headers['x-oss-storage-class'] || (data && data.storageClass) || '',
+  };
+}
+
 export const useFilesStore = defineStore('files', {
   state: () => ({
     buckets: [],
     bucketsLoaded: false,
     items: [],
     marker: null,
+    singleFile: null,
     isLoading: false,
     region: '',
     bucket: '',
@@ -102,6 +119,7 @@ export const useFilesStore = defineStore('files', {
   getters: {
     isBucketList: (state) => !state.bucket,
     hasMore: (state) => !!state.marker,
+    isSingleFile: (state) => !!state.singleFile,
     objectCount: (state) => state.items.length,
     filteredBuckets(state) {
       const kw = (state.bucketFilter || '').toLowerCase();
@@ -172,7 +190,49 @@ export const useFilesStore = defineStore('files', {
     },
 
     // ---------- 对象列表 ----------
+    // 仅单文件权限：预设路径指向文件时，用 head 结果构造单文件列表（不依赖 ListObjects）
+    openSingleFile(item, info) {
+      const path = String((item && item.path) || '');
+      const parent = path.slice(0, path.lastIndexOf('/') + 1);
+      this.bucket = (info && info.bucket) || this.bucket;
+      this.region = (info && info.region) || this.region;
+      this.prefix = parent;
+      this.singleFile = item;
+      this.items = [item];
+      this.marker = null;
+      this.searchKeyword = '';
+      this.clearSelection();
+    },
+
+    refreshSingleFile() {
+      const file = this.singleFile;
+      if (!file) return Promise.resolve(this.items);
+      this.isLoading = true;
+      return ossClient
+        .checkFileExists(this.region, this.bucket, file.path)
+        .then((data) => {
+          const item = headToItem(data, file.path);
+          this.singleFile = item;
+          this.items = [item];
+          return this.items;
+        })
+        .catch((err) => {
+          const code = String((err && err.code) || '');
+          if (code === 'NoSuchKey' || code === 'NotFound' || (err && err.status === 404)) {
+            this.singleFile = null;
+            this.items = [];
+          }
+          return this.items;
+        })
+        .finally(() => {
+          this.isLoading = false;
+        });
+    },
+
     loadObjects(reset = true) {
+      if (this.singleFile) {
+        return this.refreshSingleFile();
+      }
       if (!this.bucket) {
         return Promise.resolve([]);
       }
@@ -227,6 +287,9 @@ export const useFilesStore = defineStore('files', {
       const parsed = parseOssAddress(address);
       if (!parsed || !parsed.bucket) {
         return null;
+      }
+      if (this.singleFile && this.singleFile.path !== parsed.key) {
+        this.singleFile = null;
       }
       this.bucket = parsed.bucket;
       this.prefix = parsed.key || '';
@@ -351,6 +414,7 @@ export const useFilesStore = defineStore('files', {
       this.bucketsLoaded = false;
       this.items = [];
       this.marker = null;
+      this.singleFile = null;
       this.isLoading = false;
       this.region = '';
       this.bucket = '';

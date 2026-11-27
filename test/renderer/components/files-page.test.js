@@ -26,6 +26,9 @@ function installFilesOss(handlers) {
   window.ossBrowser.oss = {
     listAllBuckets: handlers.listAllBuckets || (() => Promise.resolve({ ok: true, data: [] })),
     listFiles: handlers.listFiles || (() => Promise.resolve({ ok: true, data: { data: [], marker: null } })),
+    checkFileExists:
+      handlers.checkFileExists ||
+      (() => Promise.reject(Object.assign(new Error('NoSuchKey'), { code: 'NoSuchKey' }))),
   };
 }
 
@@ -392,6 +395,56 @@ describe('FilesPage：会话初始化', () => {
     expect(wrapper.findComponent(FileToolbar).props('pastePending')).toBe(false);
   });
 });
+describe('预设 OSS 路径指向单个文件', () => {
+  it('head 成功时进入单文件模式（不依赖 ListObjects）', async () => {
+    const checkFileExists = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        data: {
+          res: {
+            headers: {
+              'content-length': '12',
+              'content-type': 'text/plain',
+              'last-modified': 'Thu, 01 Jan 2026 00:00:00 GMT',
+            },
+          },
+        },
+      }));
+    const { wrapper } = await mountObjectPage({
+      info: { osspath: 'oss://bucket-a/only/a.txt' },
+      handlers: { checkFileExists },
+    });
+    const files = useFilesStore();
+    await flushPromises();
+
+    const call = checkFileExists.mock.calls[0];
+    expect(call.slice(1)).toEqual(['oss-cn-hangzhou', 'bucket-a', 'only/a.txt']);
+    expect(files.singleFile).toBeTruthy();
+    expect(files.prefix).toBe('only/');
+    expect(files.items.length).toBe(1);
+    expect(files.items[0].name).toBe('a.txt');
+    expect(files.items[0].size).toBe(12);
+  });
+
+  it('head 失败时回退按目录导航', async () => {
+    const checkFileExists = vi.fn(() =>
+      Promise.reject(Object.assign(new Error('NoSuchKey'), { code: 'NoSuchKey' })));
+    const listFiles = vi.fn(() =>
+      Promise.resolve({ ok: true, data: { data: [ITEM_FILE], marker: null } }));
+    const { wrapper } = await mountObjectPage({
+      info: { osspath: 'oss://bucket-a/only/' },
+      handlers: { checkFileExists, listFiles },
+    });
+    const files = useFilesStore();
+    await flushPromises();
+
+    expect(checkFileExists).not.toHaveBeenCalled();
+    expect(listFiles).toHaveBeenCalled();
+    expect(files.singleFile).toBe(null);
+    expect(files.bucket).toBe('bucket-a');
+  });
+});
+
 describe('上传完成自动刷新当前目录', () => {
   it('当前目录上传完成后 400ms 自动重新加载列表', async () => {
     const { wrapper } = await mountObjectPage({ items: [ITEM_FILE] });

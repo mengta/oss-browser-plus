@@ -98,7 +98,7 @@ module.exports = {
   "login.brand.subtitle": "Manage your cloud storage",
   "login.form.title": "Connect a storage account",
   "login.provider": "Provider",
-  "login.provider.aliyun": "Alibaba Cloud OSS",
+  "login.provider.aliyun": "Alibaba Cloud",
 
   "login.mode": "Sign-in method",
   "login.mode.akDesc": "Connect with AccessKey",

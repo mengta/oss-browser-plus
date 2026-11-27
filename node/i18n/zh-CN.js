@@ -95,7 +95,7 @@ module.exports = {
   "login.brand.subtitle": "管理你的云存储",
   "login.form.title": "连接存储账户",
   "login.provider": "服务商",
-  "login.provider.aliyun": "阿里云 OSS",
+  "login.provider.aliyun": "阿里云",
 
   "login.mode": "登录方式",
   "login.mode.akDesc": "使用 AccessKey 连接",

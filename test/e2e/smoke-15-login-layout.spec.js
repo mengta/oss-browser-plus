@@ -36,7 +36,7 @@ test('品牌区展示产品名与三项特性', async () => {
   await expect(page.locator(SEL.loginBrandName)).toContainText('OSS');
   expect(await page.locator(SEL.loginFeature).count()).toBe(3);
   expect(await page.locator(SEL.loginStatus).count()).toBe(0);
-  await expect(page.locator(SEL.loginProvider)).toContainText('阿里云 OSS');
+  await expect(page.locator(SEL.loginProvider)).toContainText('阿里云');
 });
 
 test('登录方式 tab 语义清晰且可切换', async () => {

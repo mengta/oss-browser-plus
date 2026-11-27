@@ -9,7 +9,29 @@
           <div class="login-provider" data-testid="login-provider">
             <span class="lp-label">{{ t('login.provider') }}</span>
             <span class="lp-value">
-              <span class="lp-oss-badge" aria-hidden="true">OSS</span>
+              <svg
+                class="lp-aliyun"
+                viewBox="0 0 62 20"
+                width="34"
+                height="11"
+                role="img"
+                aria-label="Alibaba Cloud"
+                data-testid="login-provider-logo"
+              >
+                <path
+                  d="M13.2 16.5H6.1A4.1 4.1 0 0 1 2 12.4c0-2 1.5-3.7 3.4-4A5.6 5.6 0 0 1 16.7 7a3.8 3.8 0 0 1-.6 7.5h-2.9z"
+                  fill="#FF6A00"
+                />
+                <text
+                  x="20"
+                  y="15.6"
+                  font-family="Arial, Helvetica, sans-serif"
+                  font-size="11.5"
+                  font-weight="700"
+                  letter-spacing="0.2"
+                  fill="#FF6A00"
+                >aliyun</text>
+              </svg>
               {{ t('login.provider.aliyun') }}
             </span>
           </div>
@@ -367,20 +389,11 @@ async function onSubmit() {
   background: var(--vsc-bg-elevated);
   color: var(--vsc-fg);
 }
-.lp-oss-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-  height: 14px;
-  padding: 0 3px;
-  border-radius: 2px;
-  background: #ff6a00;
-  color: #fff;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.3px;
+.lp-aliyun {
+  width: 34px;
+  height: 11px;
+  display: inline-block;
+  flex: 0 0 auto;
 }
 
 

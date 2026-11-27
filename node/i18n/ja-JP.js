@@ -97,7 +97,7 @@ module.exports = {
   "login.brand.subtitle": "クラウドストレージを管理",
   "login.form.title": "ストレージアカウントに接続",
   "login.provider": "サービスプロバイダー",
-  "login.provider.aliyun": "Alibaba Cloud OSS",
+  "login.provider.aliyun": "アリババクラウド",
 
   "login.mode": "ログイン方法",
   "login.mode.akDesc": "AccessKey で接続",

@@ -216,7 +216,7 @@ describe('FileList：信息密度', () => {
 });
 
 describe('FilesPage：登录态守卫与骨架', () => {
-  function mountPage() {
+  function mountPage(authInfo) {
     const i18n = createRendererI18n();
     const router = createRouter({
       history: createWebHashHistory(),
@@ -227,6 +227,7 @@ describe('FilesPage：登录态守卫与骨架', () => {
     });
     const pinia = createPinia();
     setActivePinia(pinia);
+    if (authInfo) useAuthStore().info = authInfo;
     const wrapper = mount(FilesPage, {
       global: { plugins: [pinia, router, i18n] },
     });
@@ -250,9 +251,11 @@ describe('FilesPage：登录态守卫与骨架', () => {
           data: { data: [{ name: 'f.txt', path: 'f.txt', isFile: true }], marker: null },
         }),
     });
-    const { wrapper, pinia } = mountPage();
-    const auth = useAuthStore();
-    auth.info = { id: 'LTAI', secret: 'sk', osspath: 'oss://granted-b/root/' };
+    const { wrapper } = mountPage({
+      id: 'LTAI',
+      secret: 'sk',
+      osspath: 'oss://granted-b/root/',
+    });
     await flushPromises();
     const files = useFilesStore();
     expect(files.bucket).toBe('granted-b');

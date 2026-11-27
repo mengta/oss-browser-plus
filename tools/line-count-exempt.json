@@ -34,15 +34,15 @@
     },
     {
       "file": "app/renderer/stores/transfer.js",
-      "lines": 770,
+      "lines": 780,
       "batch": "6e-未纳入",
-      "reason": "Q-2 默认不纳入（transfer store 拆分为后续项），长期豁免；本批次新增订阅异步信封退订与登出清理"
+      "reason": "Q-2 默认不纳入（transfer store 拆分为后续项），长期豁免；本批次新增订阅异步信封退订、登出清理与上传完成事件"
     },
     {
       "file": "app/renderer/pages/FilesPage.vue",
-      "lines": 654,
+      "lines": 673,
       "batch": "6e-未纳入",
-      "reason": "Q-2 默认不纳入（页面 composable 抽离为后续项），长期豁免"
+      "reason": "Q-2 默认不纳入（页面 composable 抽离为后续项），长期豁免；本批次新增上传完成自动刷新当前目录"
     },
     {
       "file": "main.js",

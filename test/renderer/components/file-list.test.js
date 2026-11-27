@@ -111,6 +111,23 @@ describe('FileList：列表视图', () => {
     expect(rows[3].find('[data-testid="file-row-restore"]').exists()).toBe(true);
   });
 
+  it('点击行内复选框可正常选中（click 不冒泡二次切换）', async () => {
+    const store = await seeded();
+    const wrapper = mountWith(FileList);
+    await flushPromises();
+    const checkbox = wrapper.findAll('[data-testid="file-row"]')[1].find('input[type="checkbox"]');
+
+    const spy = vi.spyOn(store, 'selectChanged');
+    await checkbox.trigger('click');
+    // @click.stop：复选框的 click 不应冒泡触发行选中（修复前会二次切换导致无法选中）
+    expect(spy).not.toHaveBeenCalled();
+
+    checkbox.element.checked = true;
+    await checkbox.trigger('change');
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(store.selectedMap['i_1']).toBe(true);
+  });
+
   it('单击选中 shift 区间；名称链接进入目录 / 打开文件 emit', async () => {
     const store = await seeded();
     const wrapper = mountWith(FileList);

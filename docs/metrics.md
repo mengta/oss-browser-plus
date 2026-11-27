@@ -29,9 +29,9 @@
 <!-- metrics:tests:start -->
 | 套件 | passed | skipped | failed | total | 采集时间 |
 | --- | --- | --- | --- | --- | --- |
-| ava | 95 | 0 | 0 | 95 | 2026-11-27 14:53 |
-| Vitest | 613 | 0 | 0 | 613 | 2026-11-27 14:53 |
-| Playwright | 未采集 | 未采集 | 未采集 | 未采集 | 2026-11-27 14:53 |
+| ava | 96 | 0 | 0 | 96 | 2026-11-27 15:29 |
+| Vitest | 614 | 0 | 0 | 614 | 2026-11-27 15:29 |
+| Playwright | 未采集 | 未采集 | 未采集 | 未采集 | 2026-11-27 15:29 |
 <!-- metrics:tests:end -->
 
 维护命令：`node tools/measure-tests.mjs --write` / `--check`（门禁 ⑬）。

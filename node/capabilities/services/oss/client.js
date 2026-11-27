@@ -5,22 +5,8 @@
 // eslint-disable-next-line no-unused-vars
 const { $state, Toast, ALY, AliOSS, USER_AGENT, log, state, rootScope, currentAuth, currentCtx, connectTimeout } = require('./context');
     function getClient2(opt) {
-      var options = prepaireOptions(opt);
-      const OSS = require('ali-oss/dist/aliyun-oss-sdk');
-      var client = new OSS({
-        accessKeyId: options.accessKeyId,
-        accessKeySecret: options.secretAccessKey,
-        endpoint: options.endpoint,
-        bucket: opt.bucket,
-        stsToken: options.securityToken,
-        cname: options.cname,
-        isRequestPay: options.isRequestPayer,
-        sldEnable: options.sldEnable
-      });
-
-      client.userAgent = USER_AGENT;
-
-      return client;
+      // P6c/P7b：禁止浏览器 UMD bundle（ali-oss/dist/aliyun-oss-sdk 在 Node 引用 window），统一走 ali-oss 主入口
+      return getClient3(opt);
     }
 
 
@@ -233,18 +219,11 @@ const { $state, Toast, ALY, AliOSS, USER_AGENT, log, state, rootScope, currentAu
 
 
     function signatureUrl(region, bucket, key, expiresSec) {
-      var client = getClient({
+      // ali-oss（Node）签名，避免 aliyun-sdk 浏览器分支差异
+      return getClient3({
         region: region,
         bucket: bucket
-      });
-
-      var url = client.getSignedUrl('getObject', {
-        Bucket: bucket,
-        Key: key,
-        Expires: expiresSec || 60
-      });
-
-      return url;
+      }).signatureUrl(key, { expires: expiresSec || 60 });
     }
 
 

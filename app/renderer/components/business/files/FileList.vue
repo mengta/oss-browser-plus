@@ -12,6 +12,7 @@
                 type="checkbox"
                 :checked="filesStore.selectedAll"
                 data-testid="file-check-all"
+                @click.stop
                 @change="filesStore.selectAll()"
               />
             </th>
@@ -35,7 +36,7 @@
             @contextmenu.prevent.stop="onContext($event, row.item, row.index)"
           >
             <td class="col-check">
-              <input type="checkbox" :checked="isSelected(row.index)" @change="filesStore.selectChanged(row.index, false)" />
+              <input type="checkbox" :checked="isSelected(row.index)" @click.stop @change="filesStore.selectChanged(row.index, false)" />
             </td>
             <td class="col-name">
               <span class="name-cell">
@@ -121,6 +122,7 @@
             type="checkbox"
             class="card-check"
             :checked="isSelected(index)"
+            @click.stop
             @change="filesStore.selectChanged(index, false)"
           />
           <CardThumb

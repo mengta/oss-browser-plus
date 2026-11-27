@@ -1,4 +1,5 @@
 "use strict";
+const appSettings = require('../../lib/app-settings');
 var log = require('../../lib/logger').logger('ossstore.download-job');
 
 var Base = require("./base");
@@ -71,7 +72,7 @@ class DownloadJob extends Base {
     //log.debug('created download job');
 
     this.maxConcurrency = parseInt(
-      localStorage.getItem("downloadConcurrecyPartSize") || 5
+      appSettings.get('downloadConcurrecyPartSize', 5)
     );
 
     this.crc64Promise = [];

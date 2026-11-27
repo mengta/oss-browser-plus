@@ -14,9 +14,11 @@ import { stubLocalStorage } from '../../helpers/env-stubs.js';
 import { stubModule, stubModuleByPath, unstubAll } from '../../helpers/module-stubs.js';
 
 const require = createRequire(import.meta.url);
+const appSettings = require('../../../node/lib/app-settings.js');
 
 function setup(uploadPartSizeMb) {
   const storage = stubLocalStorage({});
+  appSettings.set('uploadPartSize', uploadPartSizeMb || 10);
   if (uploadPartSizeMb) {
     storage.setItem('uploadPartSize', String(uploadPartSizeMb));
   }

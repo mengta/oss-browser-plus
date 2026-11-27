@@ -154,14 +154,23 @@ void bootError;
 
 <style scoped>
 .vue-app-shell {
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.vue-app-shell :deep(.my-nav) {
+  flex: 0 0 auto;
 }
 .vue-app-main {
-  padding: 35px 8px 30px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 0 var(--vsc-statusbar-h, 22px);
 }
 
 .vue-port-notice {
-  margin: 35px 8px 0;
+  margin: 0 8px;
   padding: 6px 10px;
   border: 1px solid var(--vsc-warning);
   border-radius: 2px;

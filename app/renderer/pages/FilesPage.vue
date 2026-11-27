@@ -52,7 +52,7 @@
       v-if="filesStore.bucket"
       type="text"
       class="mock-uploads"
-      ng-model="mock.uploads"
+
       data-testid="mock-uploads"
       @change="onMockUploads"
     />
@@ -75,7 +75,7 @@
 <script setup>
 // B3-02：文件页骨架（等价 files.html 顶层布局）。
 // 未登录 onMounted 判定跳 /login（无全局守卫）；账号切换先 filesStore.reset() 再重写会话。
-import { onMounted, reactive, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import AddressBar from '../components/business/files/AddressBar.vue';
@@ -151,6 +151,25 @@ watch(
     }
   }
 );
+
+// 上传完成：仅当完成对象属于当前目录时自动刷新（400ms 合并多文件完成事件）
+let uploadRefreshTimer = null;
+watch(
+  () => transferStore.lastUploadFinished,
+  (done) => {
+    if (!done || !filesStore.bucket || done.bucket !== filesStore.bucket) return;
+    const prefix = filesStore.prefix || '';
+    if (prefix && String(done.key || '').indexOf(prefix) !== 0) return;
+    if (uploadRefreshTimer) clearTimeout(uploadRefreshTimer);
+    uploadRefreshTimer = setTimeout(() => {
+      uploadRefreshTimer = null;
+      filesStore.loadObjects(true).catch(() => {});
+    }, 400);
+  }
+);
+onBeforeUnmount(() => {
+  if (uploadRefreshTimer) clearTimeout(uploadRefreshTimer);
+});
 
 // 工具栏动作分发：上传/下载经 B3-06/07 链路；删除/新建目录/重命名/复制/移动/粘贴由 B3-09 承接；
 // 恢复/软链/授权/地址/HTTP 头等弹窗由 B3-10~B3-13 后续批次承接（暂静默）。

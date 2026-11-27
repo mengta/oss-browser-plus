@@ -29,6 +29,7 @@
           @update:remember="remember = $event"
           @update:keep-logged-in="keepLoggedIn = $event"
           @update:secure="secure = $event"
+          @input-change="dismissLoginError"
           @submit="onSubmit"
         >
           <template #footer>
@@ -138,6 +139,22 @@ const secure = ref(localStorage.getItem(SHOW_SECURE) || 'YES');
 const credentialForm = ref(null);
 const loading = ref(false);
 
+// 登录失败提示：长驻 60s，输入内容变化时立即消失
+const LOGIN_ERROR_TTL = 60000;
+const loginErrorToastId = ref(null);
+function showLoginError(code, message) {
+  if (loginErrorToastId.value != null) {
+    toast.remove(loginErrorToastId.value);
+  }
+  loginErrorToastId.value = toast.push(code + ':' + message, 'danger', LOGIN_ERROR_TTL);
+}
+function dismissLoginError() {
+  if (loginErrorToastId.value != null) {
+    toast.remove(loginErrorToastId.value);
+    loginErrorToastId.value = null;
+  }
+}
+
 // AK 历史 / 一键导入弹窗（等价原 loginCtrl 的 showHistories / showImportConfig）
 const historiesOpen = ref(false);
 const importOpen = ref(false);
@@ -176,6 +193,11 @@ const authToken = ref(auth.authToken || '');
 const authTokenInfo = ref(authToken.value ? decodeAuthToken(authToken.value) : null);
 const tokenWriter = createAuthTokenWriter();
 
+// 任意表单/授权码输入变化即清除登录失败提示
+watch(item, dismissLoginError, { deep: true });
+watch(authToken, dismissLoginError);
+watch(loginMode, dismissLoginError);
+
 function onAuthTokenInput(value) {
   authToken.value = value || '';
   tokenWriter.schedule(authToken.value);
@@ -186,6 +208,7 @@ async function onTokenSubmit() {
   if (!authTokenInfo.value || loading.value) {
     return;
   }
+  dismissLoginError();
   loading.value = true;
   localStorage.removeItem(PRIVATE_LINK);
   toast.push(t('logining'), 'info', 1000);
@@ -199,7 +222,7 @@ async function onTokenSubmit() {
   } catch (err) {
     const code = (err && err.code) || (auth.lastError && auth.lastError.code) || 'Error';
     const message = (err && err.message) || (auth.lastError && auth.lastError.message) || '';
-    toast.push(code + ':' + message, 'danger', 3000);
+    showLoginError(code, message);
   } finally {
     loading.value = false;
   }
@@ -240,6 +263,7 @@ async function onSubmit() {
   if (loading.value) {
     return;
   }
+  dismissLoginError();
   // 等价原 form1.$valid 校验（必填/协议前缀/oss:// 前缀/区域必选）
   if (credentialForm.value && credentialForm.value.validate() === false) {
     return;
@@ -271,7 +295,7 @@ async function onSubmit() {
   } catch (err) {
     const code = (err && err.code) || (auth.lastError && auth.lastError.code) || 'Error';
     const message = (err && err.message) || (auth.lastError && auth.lastError.message) || '';
-    toast.push(code + ':' + message, 'danger', 3000);
+    showLoginError(code, message);
   } finally {
     loading.value = false;
   }
@@ -282,7 +306,8 @@ async function onSubmit() {
 .login-page {
   display: flex;
   align-items: stretch;
-  min-height: calc(100vh - var(--vsc-titlebar-h, 35px));
+  height: calc(100vh - var(--vsc-titlebar-h, 35px) - var(--vsc-statusbar-h, 22px));
+  overflow: hidden;
   max-width: none;
   margin: 0;
   padding: 0;

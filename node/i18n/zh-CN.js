@@ -96,8 +96,7 @@ module.exports = {
   "login.form.title": "连接存储账户",
   "login.provider": "服务商",
   "login.provider.aliyun": "阿里云 OSS",
-  "login.status.disconnected": "未连接",
-  "login.securityNote": "凭证仅保存在本机，登录前可先测试连接",
+
   "login.mode": "登录方式",
   "login.mode.akDesc": "使用 AccessKey 连接",
   "login.mode.tokenDesc": "使用授权码连接",

@@ -6,6 +6,7 @@
       class="toast-item"
       data-testid="toast-item"
       :class="'toast-' + item.type"
+
     >
       <span class="toast-kind" :data-testid="'toast-' + item.type" />
       {{ item.message }}
@@ -42,6 +43,9 @@ const toast = useToastStore();
   color: var(--vsc-on-accent);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   word-break: break-all;
+  pointer-events: auto;
+  cursor: text;
+  user-select: text;
 }
 .toast-success {
   background: var(--vsc-success-solid);

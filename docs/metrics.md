@@ -29,14 +29,16 @@
 <!-- metrics:tests:start -->
 | 套件 | passed | skipped | failed | total | 采集时间 |
 | --- | --- | --- | --- | --- | --- |
-| ava | 90 | 0 | 0 | 90 | 2026-11-26 23:33 |
-| Vitest | 606 | 0 | 0 | 606 | 2026-11-26 23:33 |
-| Playwright | 21 | 7 | 0 | 28 | 2026-11-26 23:33 |
+| ava | 95 | 0 | 0 | 95 | 2026-11-27 09:26 |
+| Vitest | 606 | 0 | 0 | 606 | 2026-11-27 09:26 |
+| Playwright | 21 | 7 | 0 | 28 | 2026-11-27 09:26 |
 <!-- metrics:tests:end -->
 
 维护命令：`node tools/measure-tests.mjs --write` / `--check`（门禁 ⑬）。
 
 **覆盖率（2026-11-26 完善单测后）**：命令 `npm run test:coverage`（`vitest run --coverage --no-file-parallelism`）。门槛：statements 82 / lines 84 / branches 70 / functions 75；实测 statements 84.05%、lines 86.05%、branches 73.12%、functions 77.47%（含 `app/**/*.{js,vue}`，排除 `app/renderer/main.js` 与 `app/preload/api-manifest.js`）。新增 `test/preload/` 8 文件覆盖 11 个 preload 能力域（invokeChannel 信封、TIMEOUT、storage 原子写、credentials GCM/v1、net-bridge 装配与降级），渲染层补 FilesPage 交互、sts/ram client、user-ak-store、file-actions、SubAddressBar、HomePage、登录页左右分栏与 tab 语义、列表页存储类型列与视图切换图标等。
+
+**P6c（2026-11-27）**：`node/capabilities/services/oss2.js`（2125 行）拆分为 `services/oss/{index,context,client,list,object,delete,copy,acl,multipart}.js`（均 <500 行），移除 angular-stub 与 global.localStorage；`verify-no-angular` PASS（12 文件，白名单 0）；ava 95（新增 context-isolation 4、allowlist-parity 2，删除 angular-stub-settings 1）；USER_AGENT 在源码回退根 package.json、dist 读取 services/package.json（均含 1.21.14）。
 
 > **已修复（2026-11-26）**：`test/renderer/transfer.test.js`（「渲染任务行…筛选与清空」）原在全量并行时偶发失败。根因：store 裸 `setTimeout`（100ms `checkStart`、`saveProgress`/`saveDownloadProgress` 防抖）跨用例未清理，叠加用例内 fake/real timer 切换。修复：store 新增 `schedule()/clearTimers()` 并在 `dispose()` 清理（含 `_saveTimer`/`_saveDownTimer`）；测试新增 `beforeEach vi.useRealTimers()` 与 `afterEach dispose()+vi.useRealTimers()`；`confirm` 断言改用 `vi.waitFor`。复验：单文件 **5/5**、全量 **3/3**（359 passed）稳定。
 

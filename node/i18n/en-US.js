@@ -99,8 +99,7 @@ module.exports = {
   "login.form.title": "Connect a storage account",
   "login.provider": "Provider",
   "login.provider.aliyun": "Alibaba Cloud OSS",
-  "login.status.disconnected": "Not connected",
-  "login.securityNote": "Credentials are stored locally; you can test the connection before signing in",
+
   "login.mode": "Sign-in method",
   "login.mode.akDesc": "Connect with AccessKey",
   "login.mode.tokenDesc": "Connect with authorization token",

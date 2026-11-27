@@ -1,4 +1,5 @@
 "use strict";
+const appSettings = require('../../lib/app-settings');
 var log = require('../../lib/logger').logger('ossstore.upload-job-util');
 
 var fs = require("fs");
@@ -235,13 +236,13 @@ function prepareChunks(filePath, checkPoints, fn) {
  */
 function getSensibleChunkSize(size) {
   log.warn(
-    `localStorage uploadPartSize: " ${
-      localStorage.getItem("uploadPartSize") || 10
+    `appSettings uploadPartSize: " ${
+      appSettings.get('uploadPartSize', 10)
     }M`
   );
 
   var chunkSize =
-    parseInt(localStorage.getItem("uploadPartSize") || 10) * 1024 * 1024;
+    parseInt(appSettings.get('uploadPartSize', 10), 10) * 1024 * 1024;
 
   if (size < chunkSize) {
     return size;

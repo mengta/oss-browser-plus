@@ -1,3 +1,4 @@
+const appSettings = require('../../lib/app-settings');
 var log = require('../../lib/logger').logger('ossstore.download-job-util');
 var fs = require('fs');
 // var crypto = require('crypto');
@@ -222,13 +223,13 @@ function headObject(self, objOpt) {
 
 function getSensibleChunkSize(size) {
   log.warn(
-    `localStorage uploadPartSize: " ${
-      localStorage.getItem("uploadPartSize") || 10
+    `appSettings uploadPartSize: " ${
+      appSettings.get('uploadPartSize', 10)
     }M`
   );
 
   var chunkSize =
-    parseInt(localStorage.getItem("uploadPartSize") || 10) * 1024 * 1024;
+    parseInt(appSettings.get('uploadPartSize', 10), 10) * 1024 * 1024;
 
   if (size < chunkSize) {
     return size;
@@ -264,7 +265,7 @@ function getSensibleChunkSize(size) {
 //根据网速调整下载并发量
 function computeMaxConcurrency(speed, chunkSize, lastConcurrency) {
   var downloadConcurrecyPartSize = parseInt(
-    localStorage.getItem("downloadConcurrecyPartSize") || 5
+    appSettings.get('downloadConcurrecyPartSize', 5)
   );
   return downloadConcurrecyPartSize;
 }

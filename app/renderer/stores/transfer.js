@@ -60,6 +60,8 @@ export const useTransferStore = defineStore('transfer', {
     stopCreating: false,
     searchText: '',
     lastErrorDetail: null,
+    // 上传完成事件（FilesPage 据此自动刷新当前目录）
+    lastUploadFinished: null,
     // P7a 延伸：可清理的调度定时器（避免实例销毁后的迟到回调污染状态）
     timerIds: [],
   }),
@@ -190,6 +192,14 @@ export const useTransferStore = defineStore('transfer', {
       }
       if (task.status === 'finished') {
         task.prog = { loaded: task.prog.total, total: task.prog.total };
+        if (prev !== 'finished' && task.type === 'upload') {
+          this.lastUploadFinished = {
+            taskId: task.taskId,
+            bucket: (task.to && task.to.bucket) || '',
+            key: (task.to && task.to.key) || '',
+            at: Date.now(),
+          };
+        }
       }
       if (task.type === 'download') {
         this.saveDownloadProgress();

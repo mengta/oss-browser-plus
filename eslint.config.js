@@ -31,7 +31,7 @@ const sourceBlock = {
       ...globals.browser,
       ...globals.node,
       ...globals.es2021,
-      angular: 'readonly',
+
       moment: 'readonly',
       dayjs: 'readonly',
       CodeMirror: 'readonly',
@@ -712,8 +712,7 @@ const nodeSourceBlock = {
       ...globals.node,
       ...globals.browser,
       ...globals.es2021,
-      // P6 前主进程 capability 仍依赖 angular stub（去化在 P6 收口）
-      angular: 'readonly',
+
     },
   },
   rules: {

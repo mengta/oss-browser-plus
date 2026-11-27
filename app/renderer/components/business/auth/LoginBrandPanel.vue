@@ -34,13 +34,6 @@
       </ul>
     </div>
 
-    <div class="lb-footer">
-      <div class="lb-status" data-testid="login-status">
-        <span class="lb-dot" />
-        {{ t('login.status.disconnected') }}
-      </div>
-      <p class="lb-note">{{ t('login.securityNote') }}</p>
-    </div>
   </aside>
 </template>
 
@@ -139,34 +132,7 @@ const logo = computed(() => {
   line-height: 1.5;
   color: var(--vsc-fg-muted);
 }
-.lb-footer {
-  margin-top: 32px;
-  padding-top: 18px;
-  border-top: 1px solid var(--vsc-border-weak);
-  width: 100%;
-  max-width: 340px;
-  margin-left: auto;
-  margin-right: auto;
-}
-.lb-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  color: var(--vsc-fg-muted);
-}
-.lb-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--vsc-fg-dim);
-}
-.lb-note {
-  margin: 8px 0 0;
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--vsc-fg-dim);
-}
+
 
 @media (max-width: 900px) {
   .login-brand {
@@ -191,8 +157,7 @@ const logo = computed(() => {
   .lb-subtitle {
     margin-top: 2px;
   }
-  .lb-features,
-  .lb-footer {
+  .lb-features {
     display: none;
   }
 }

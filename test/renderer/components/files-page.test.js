@@ -392,3 +392,32 @@ describe('FilesPage：会话初始化', () => {
     expect(wrapper.findComponent(FileToolbar).props('pastePending')).toBe(false);
   });
 });
+describe('上传完成自动刷新当前目录', () => {
+  it('当前目录上传完成后 400ms 自动重新加载列表', async () => {
+    const { wrapper } = await mountObjectPage({ items: [ITEM_FILE] });
+    const files = useFilesStore();
+    const transfer = useTransferStore();
+    vi.useFakeTimers();
+    const spy = vi.spyOn(files, 'loadObjects').mockResolvedValue([]);
+    transfer.lastUploadFinished = { taskId: 'u1', bucket: 'bucket-a', key: 'a.txt', at: Date.now() };
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(400);
+    expect(spy).toHaveBeenCalledWith(true);
+    wrapper.unmount();
+    vi.useRealTimers();
+  });
+
+  it('其他 Bucket 上传完成不触发刷新', async () => {
+    const { wrapper } = await mountObjectPage({ items: [ITEM_FILE] });
+    const files = useFilesStore();
+    const transfer = useTransferStore();
+    vi.useFakeTimers();
+    const spy = vi.spyOn(files, 'loadObjects').mockResolvedValue([]);
+    transfer.lastUploadFinished = { taskId: 'u2', bucket: 'other', key: 'a.txt', at: Date.now() };
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(400);
+    expect(spy).not.toHaveBeenCalled();
+    wrapper.unmount();
+    vi.useRealTimers();
+  });
+});

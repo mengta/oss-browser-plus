@@ -1,32 +1,14 @@
 'use strict';
 
 const path = require('path');
-const { angularStub } = require('./angular-stub');
-
-const stub = angularStub();
-
-if (!global.angular) global.angular = stub.angular;
+const accountCtx = require('../lib/account-context');
 
 const SERVICES_DIR = path.join(__dirname, 'services');
 
-
-if (!global.localStorage) {
-  const store = new Map();
-  global.localStorage = {
-    getItem: function (key) {
-      return store.has(key) ? store.get(key) : null;
-    },
-    setItem: function (key, value) {
-      store.set(key, String(value));
-    },
-    removeItem: function (key) {
-      store.delete(key);
-    },
-    clear: function () {
-      store.clear();
-    },
-  };
-}
+// P6c（T-P6c-04）：服务改为 require 直连，删除 angular-stub 与 global.localStorage 桩
+const ossService = require(path.join(SERVICES_DIR, 'oss'));
+const ramService = require(path.join(SERVICES_DIR, 'ram'));
+const stsService = require(path.join(SERVICES_DIR, 'sts'));
 
 const transferModule = require('./transfer');
 const upgradeModule = require('./upgrade');
@@ -38,10 +20,20 @@ function codedError(code, message) {
 }
 
 
-const services = {};
-let loaded = false;
+const services = { oss: ossService, ram: ramService, sts: stsService };
+let loaded = true;
 // Vue3-B3-09：oss 批量删除/复制的进度回传通道（renderer → preload → main 单向 invoke 之外的事件流）
 let progressSender = null;
+
+function buildContext(normalized) {
+  return {
+    auth: normalized,
+    requestPayer: normalized.requestpaystatus === 'YES' ? 'requester' : undefined,
+    privateLink: normalized.privateLink || normalized.private_link || '',
+    connectTimeout: typeof normalized.connectTimeout === 'number' ? normalized.connectTimeout : 30000,
+    listObjectNum: normalized.listObjectNum || null,
+  };
+}
 
 function record(message) {
   if (!global.__capabilityDiagnostics) global.__capabilityDiagnostics = [];
@@ -82,24 +74,7 @@ function normalizeServiceError(err) {
 }
 
 function serviceOf(domain) {
-  if (!loaded) {
-    loaded = true;
-    for (const file of ['oss2', 'ram', 'sts']) {
-      try {
-        require(path.join(SERVICES_DIR, file + '.js'));
-      } catch (err) {
-        record('load ' + file + ': ' + ((err && err.message) || String(err)));
-      }
-    }
-    for (const pair of [['oss', 'ossSvs2'], ['ram', 'ramSvs'], ['sts', 'stsSvs']]) {
-      try {
-        services[pair[0]] = stub.resolve(pair[1]);
-      } catch (err) {
-        record('resolve ' + pair[1] + ': ' + ((err && err.message) || String(err)));
-      }
-      if (!services[pair[0]]) record('missing service ' + pair[1]);
-    }
-  }
+
   return services[domain];
 }
 
@@ -119,7 +94,8 @@ function normalizeAuth(auth) {
 
 function dispatch(domain, method, auth, args) {
   const normalized = normalizeAuth(auth);
-  return stub.authStore.run(normalized, async function () {
+  const ctx = buildContext(normalized);
+  return accountCtx.run(ctx, async function () {
     const callArgs = Array.isArray(args) ? args : [];
     if (domain === 'transfer') {
       const api = transferModule.api;
@@ -149,10 +125,7 @@ function dispatch(domain, method, auth, args) {
       throw codedError('UNAVAILABLE', domain + '.' + method + ' is unavailable');
     }
     // P6a/P6b（R-P6-01）：STS/RAM 已去 Angular 依赖，统一以 ctx 作为首参
-    const ctx = {
-      auth: normalized,
-      requestPayer: normalized.requestpaystatus === 'YES' ? 'requester' : undefined,
-    };
+
     if (domain === 'sts' || domain === 'ram') {
       try {
         return await service[method].apply(service, [ctx].concat(callArgs));

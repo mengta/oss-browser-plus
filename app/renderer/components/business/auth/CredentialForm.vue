@@ -1,5 +1,5 @@
 <template>
-  <form class="credential-form" data-testid="credential-form" @submit.prevent="onFormSubmit">
+  <form class="credential-form" data-testid="credential-form" @submit.prevent="onFormSubmit" @input="emit('input-change')" @change="emit('input-change')">
     <div class="cf-row">
       <label class="cf-label" :class="{ 'cf-error-text': touched && errors.endpoint }">
         <span class="red">*</span> Endpoint:
@@ -175,6 +175,7 @@ const emit = defineEmits([
   'update:remember',
   'update:keepLoggedIn',
   'update:secure',
+  'input-change',
   'submit',
 ]);
 

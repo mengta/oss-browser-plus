@@ -31,11 +31,11 @@ test('左右分栏：品牌区在左、表单卡片在右且占满剩余宽度',
   expect(Math.abs(brand.x + brand.width - panel.x)).toBeLessThanOrEqual(2);
 });
 
-test('品牌区展示产品名、三项特性与连接状态', async () => {
+test('品牌区展示产品名与三项特性', async () => {
   await page.waitForSelector(SEL.loginBrandName, { timeout: 30000 });
   await expect(page.locator(SEL.loginBrandName)).toContainText('OSS');
   expect(await page.locator(SEL.loginFeature).count()).toBe(3);
-  await expect(page.locator(SEL.loginStatus)).toContainText('未连接');
+  expect(await page.locator(SEL.loginStatus).count()).toBe(0);
   await expect(page.locator(SEL.loginProvider)).toContainText('阿里云 OSS');
 });
 
@@ -75,4 +75,20 @@ test('窄窗口下品牌区折叠为顶部条，表单仍可用', async () => {
   expect(panel.width).toBeGreaterThanOrEqual(700);
   expect(panel.y).toBeGreaterThanOrEqual(brand.y);
   await expect(page.locator(SEL.loginSubmit)).toBeVisible();
+});
+test('登录页一屏展示，无纵向滚动与右侧滚动条', async () => {
+  await page.waitForSelector(SEL.loginPanel, { timeout: 30000 });
+  const metrics = await page.evaluate(() => {
+    const main = document.querySelector('[data-testid="vue-app-main"]');
+    return {
+      bodyScroll: document.scrollingElement.scrollHeight,
+      innerHeight: window.innerHeight,
+      mainScroll: main ? main.scrollHeight : 0,
+      mainClient: main ? main.clientHeight : 0,
+      mainBar: main ? main.offsetWidth - main.clientWidth : 0,
+    };
+  });
+  expect(metrics.bodyScroll).toBeLessThanOrEqual(metrics.innerHeight + 1);
+  expect(metrics.mainScroll).toBeLessThanOrEqual(metrics.mainClient + 1);
+  expect(metrics.mainBar).toBeLessThanOrEqual(0);
 });

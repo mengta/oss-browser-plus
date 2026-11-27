@@ -1,4 +1,5 @@
 "use strict";
+const appSettings = require('../../lib/app-settings');
 var log = require('../../lib/logger').logger('ossstore.upload-job');
 
 var Base = require("./base");
@@ -13,8 +14,8 @@ var commonUtil = require("./util");
 var RETRYTIMES = commonUtil.getRetryTimes();
 
 // isLog==1 open else close
-var isLog = localStorage.getItem("logFile") || 0;
-var isLogInfo = localStorage.getItem("logFileInfo") || 0;
+var isLog = appSettings.get('logFile', 0);
+var isLogInfo = appSettings.get('logFileInfo', 0);
 //本地日志收集模块
 
 var { ipcRenderer } = require("electron");

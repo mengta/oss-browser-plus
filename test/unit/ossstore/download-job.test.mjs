@@ -13,8 +13,11 @@ import { stubModule, stubModuleByPath, unstubAll } from '../../helpers/module-st
 
 const require = createRequire(import.meta.url);
 
+const appSettings = require('../../../node/lib/app-settings.js');
+
 function setupDownloadPartSize(value) {
   const storage = stubLocalStorage({});
+  appSettings.set('downloadConcurrecyPartSize', value || 5);
   if (value) {
     storage.setItem('downloadConcurrecyPartSize', String(value));
   }

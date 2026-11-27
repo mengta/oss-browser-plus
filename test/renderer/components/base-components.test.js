@@ -31,6 +31,17 @@ describe('ToastHost', () => {
     expect(items[0].classes()).toContain('toast-danger');
     expect(items[1].classes()).toContain('toast-success');
   });
+
+  it('点击/选择文案不会移除提示（允许复制，60s 自动消失）', async () => {
+    const toast = useToastStore();
+    toast.clear();
+    toast.push('copy-me', 'danger', 60000);
+    const wrapper = mount(ToastHost);
+    const item = wrapper.find('[data-testid="toast-item"]');
+    await item.trigger('click');
+    expect(toast.items.some((x) => x.message === 'copy-me')).toBe(true);
+    expect(toast.items[0].ttl).toBe(60000);
+  });
 });
 
 describe('LoadingOverlay', () => {

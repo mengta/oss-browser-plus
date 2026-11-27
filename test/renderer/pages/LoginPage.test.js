@@ -52,7 +52,7 @@ describe('LoginPage', () => {
     expect(wrapper.find('[data-testid="login-brand-name"]').text()).toBe('OSS浏览器');
     expect(wrapper.find('[data-testid="login-form-title"]').text()).toBe('连接存储账户');
     expect(wrapper.findAll('[data-testid="login-feature"]').length).toBe(3);
-    expect(wrapper.find('[data-testid="login-status"]').text()).toContain('未连接');
+    expect(wrapper.find('[data-testid="login-status"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="login-provider"]').text()).toContain('阿里云 OSS');
   });
 
@@ -143,8 +143,15 @@ describe('LoginPage', () => {
     await wrapper.vm.$nextTick();
 
     const toast = useToastStore();
-    expect(toast.items.some((item) => item.message.indexOf('InvalidAccessKeyId') >= 0)).toBe(true);
+    const errorItem = toast.items.find((item) => item.message.indexOf('InvalidAccessKeyId') >= 0);
+    expect(errorItem).toBeTruthy();
+    expect(errorItem.ttl).toBe(60000);
     expect(router.currentRoute.value.path).toBe('/login');
+
+    // 输入内容变化时错误提示立即消失
+    await wrapper.find('[data-testid="login-id"]').setValue('LTAI-NEW');
+    await wrapper.vm.$nextTick();
+    expect(toast.items.some((item) => item.message.indexOf('InvalidAccessKeyId') >= 0)).toBe(false);
   });
 
   it('渲染 AK 历史与配置导入入口（含历史数徽标）', async () => {

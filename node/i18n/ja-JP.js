@@ -98,8 +98,7 @@ module.exports = {
   "login.form.title": "ストレージアカウントに接続",
   "login.provider": "サービスプロバイダー",
   "login.provider.aliyun": "Alibaba Cloud OSS",
-  "login.status.disconnected": "未接続",
-  "login.securityNote": "認証情報はローカルに暗号化保存されます。ログイン前に接続テストが可能です",
+
   "login.mode": "ログイン方法",
   "login.mode.akDesc": "AccessKey で接続",
   "login.mode.tokenDesc": "認証トークンで接続",

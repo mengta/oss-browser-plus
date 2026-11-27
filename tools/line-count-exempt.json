@@ -8,11 +8,11 @@
       "batch": "P2",
       "reason": "emscripten 生成代码（CRC64 纯 JS 兜底），不手工维护"
     },
-    {
-      "file": "node/capabilities/services/oss2.js",
-      "lines": 2125,
-      "batch": "P6c",
-      "reason": "P6c 拆分为 services/oss/* 8 个文件后移除本条（本批次新增 logger 注入 1 行）"
+{
+      "file": "node/ossstore/lib/upload-job.js",
+      "lines": 380,
+      "batch": "P6a",
+      "reason": "ossstore 既有任务实现（来源复制，不手工重构）"
     },
     {
       "file": "app/preload/api-manifest.js",
@@ -28,9 +28,9 @@
     },
     {
       "file": "node/ossstore/lib/download-job.js",
-      "lines": 764,
+      "lines": 765,
       "batch": "不计入",
-      "reason": "ossstore 下载任务状态机，超出本批次范围（logger 注入 1 行）"
+      "reason": "ossstore 下载任务状态机，超出本批次范围（logger 注入 1 行 + 设置读取改造 1 行）"
     },
     {
       "file": "app/renderer/stores/transfer.js",
@@ -70,9 +70,9 @@
     },
     {
       "file": "app/renderer/styles/vscode-theme.css",
-      "lines": 591,
+      "lines": 595,
       "batch": "长期",
-      "reason": "主题变量与组件覆盖集中定义，色值单一来源；本批次新增 surface/btn/placeholder 变量与 checkbox 自绘"
+      "reason": "主题变量与组件覆盖集中定义，色值单一来源；本批次新增 surface/btn/placeholder 变量、checkbox 自绘、html/body 归零与一屏布局"
     }
   ]
 }

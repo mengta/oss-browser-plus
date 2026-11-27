@@ -97,7 +97,10 @@ describe('DeleteFilesModal：确认 → 进度 → 结果', () => {
     const deleteCall = calls.find((c) => c[0] === 'deleteFiles');
     expect(deleteCall[1]).toBe('r');
     expect(deleteCall[2]).toBe('b');
-    expect(deleteCall[3]).toEqual(ITEMS);
+    expect(deleteCall[3]).toEqual([
+      { path: 'pre/a.txt', name: 'a.txt', isFolder: false, isFile: true },
+      { path: 'pre/dir/', name: 'dir', isFolder: true, isFile: false },
+    ]);
     expect(wrapper.find('[data-testid="delete-files-success"]').text()).toContain('删除成功');
     expect(wrapper.text()).toContain('1 / 2');
   });
@@ -122,6 +125,23 @@ describe('DeleteFilesModal：确认 → 进度 → 结果', () => {
     expect(wrapper.find('[data-testid="delete-files-failures"]').text()).toContain('部分目录或文件无法删除');
     expect(wrapper.find('[data-testid="delete-files-failures"]').text()).toContain('......');
     expect(wrapper.find('[data-testid="delete-files-success"]').exists()).toBe(false);
+  });
+
+  it('同步异常不卡在进度页，转为失败结果', async () => {
+    installOss({
+      deleteFiles: () => {
+        throw new Error('clone failed');
+      },
+    });
+    const wrapper = mountWith(DeleteFilesModal, { items: ITEMS, currentInfo: CURRENT_INFO });
+    await flushPromises();
+    await wrapper.find('[data-testid="delete-files-confirm"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.findAll('[data-testid="delete-files-failure"]').length).toBe(1);
+    expect(wrapper.find('[data-testid="delete-files-failure"]').html()).toContain('clone failed');
+    expect(wrapper.find('[data-testid="delete-files-success"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="delete-files-close"]').exists()).toBe(true);
   });
 
   it('停止按钮调 stopDeleteFiles 并禁用', async () => {

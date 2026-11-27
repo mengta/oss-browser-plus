@@ -219,6 +219,7 @@ describe('transfer store：广播与调度回流', () => {
     progressCb({ taskId: task.taskId, status: 'finished', prog: { loaded: 10, total: 10 } });
     expect(task.status).toBe('finished');
     expect(task.prog.loaded).toBe(10);
+    expect(store.lastUploadFinished).toMatchObject({ taskId: task.taskId, bucket: 'b' });
   });
 
   it('失败任务携带 ecCode/requestId/message；retry 换新 taskId 并回到 waiting', async () => {

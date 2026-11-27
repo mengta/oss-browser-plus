@@ -1,3 +1,4 @@
+const appSettings = require('../../lib/app-settings');
 var log = require('../../lib/logger').logger('ossstore.util');
 var path = require("path");
 var fs = require("fs");
@@ -6,8 +7,8 @@ var crypto = require("crypto");
 var CRC64 = require("../../crc64/index.js");
 
 // isLog==1 open else close
-var isLog = localStorage.getItem("logFile") || 0;
-var isLogInfo = localStorage.getItem("logFileInfo") || 0;
+var isLog = appSettings.get('logFile', 0);
+var isLogInfo = appSettings.get('logFileInfo', 0);
 //本地日志收集模块
 
 module.exports = {

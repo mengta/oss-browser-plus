@@ -6,8 +6,8 @@ const OssStore = require(path.join(__dirname, '..', 'ossstore', 'lib', 'index.js
 
 const jobs = new Map();
 let seq = 0;
-let store = null;
-let storeKey = '';
+const stores = new Map();
+const MAX_STORES = 4;
 let sender = null;
 
 function codedError(code, message) {
@@ -27,27 +27,29 @@ function broadcast(payload) {
   } catch (err) {}
 }
 
-// Vue3-B3-09+：渲染层 auth 中的 requestpaystatus 同步到主进程 localStorage（ossstore 构造 client 时读取）
+// P6c（T-P6c-05）：requestPayer 作为 ctx 语义返回，不再写 global.localStorage
 function applyRequestPay(auth) {
-  const flag = auth && auth.requestpaystatus === 'YES' ? 'YES' : 'NO';
-  if (global.localStorage && typeof global.localStorage.setItem === 'function') {
-    global.localStorage.setItem('show-request-pay', flag);
-  }
-  return flag;
+  return auth && auth.requestpaystatus === 'YES' ? 'YES' : 'NO';
 }
 
 function storeFor(auth) {
-  // Vue3-B3 前置：支持渲染层传入的 securityToken（STS）与显式 endpoint（getOssEndpoint 已含内网/自定义域名解析）
+  // P6c（T-P6c-05）：Map<key, slot> + LRU 4；key 不含 accessKeySecret
+  const requestPayer = applyRequestPay(auth) === 'YES';
   const key = [
     auth.accessKeyId,
-    auth.accessKeySecret,
-    auth.securityToken || '',
+    auth.securityToken ? 'sts' : '',
     auth.endpoint || '',
-    applyRequestPay(auth),
+    requestPayer ? 'payer' : '',
   ].join('|');
-  if (store && storeKey === key) return store;
+  if (stores.has(key)) {
+    const cached = stores.get(key);
+    stores.delete(key);
+    stores.set(key, cached);
+    return cached;
+  }
   const opts = {
     endpoint: auth.endpoint || 'https://' + (auth.region || 'oss-cn-hangzhou') + '.aliyuncs.com',
+    requestPayer: requestPayer,
   };
   if (auth.securityToken) {
     opts.stsToken = {
@@ -60,9 +62,12 @@ function storeFor(auth) {
   } else {
     opts.aliyunCredential = { accessKeyId: auth.accessKeyId, secretAccessKey: auth.accessKeySecret };
   }
-  store = new OssStore(opts);
-  storeKey = key;
-  return store;
+  const created = new OssStore(opts);
+  stores.set(key, created);
+  while (stores.size > MAX_STORES) {
+    stores.delete(stores.keys().next().value);
+  }
+  return created;
 }
 
 function snapshot(taskId, entry) {

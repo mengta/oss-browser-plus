@@ -141,16 +141,36 @@ function refreshList() {
   setTimeout(() => filesStore.loadObjects(true), 300);
 }
 
+function toPlainItem(item) {
+  const isFolder = !!(item && item.isFolder);
+  return {
+    path: String((item && item.path) || ''),
+    name: String((item && item.name) || ''),
+    isFolder,
+    isFile: item && item.isFile !== undefined ? !!item.isFile : !isFolder,
+  };
+}
+
 function start() {
   step.value = 2;
   isStop.value = false;
   failures.value = [];
   progress.value = { current: 0, total: 0, errorCount: 0 };
   const info = props.currentInfo || {};
-  ossClient
-    .deleteFiles(info.region, info.bucket, props.items, (prog) => {
+  // 传纯对象给 IPC（Vue reactive/Proxy 或附加字段可能导致结构化克隆失败而卡住）
+  const items = props.items.map(toPlainItem);
+  let request;
+  try {
+    request = ossClient.deleteFiles(info.region, info.bucket, items, (prog) => {
       progress.value = Object.assign({ current: 0, total: 0, errorCount: 0 }, prog || {});
-    })
+    });
+  } catch (err) {
+    failures.value = normalizeFailures(err);
+    step.value = 3;
+    refreshList();
+    return;
+  }
+  request
     .then(() => {
       failures.value = [];
     })

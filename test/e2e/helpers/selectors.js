@@ -48,8 +48,8 @@ module.exports = {
   dangerConfirm: '[data-testid="delete-files-confirm"]',
   alertSuccess: '[data-testid="toast-success"]',
 
-  // 上传（等价原版 mock.uploads 调试入口，Vue FilesPage 提供同名 ng-model 属性）
-  uploadInput: '[ng-model="mock.uploads"]',
+  // 上传（等价原版 mock.uploads 调试入口，Vue FilesPage 以 data-testid 提供）
+  uploadInput: '[data-testid="mock-uploads"]',
 
   // B2 迁移弹窗（Vue 承载，data-testid 见各 SFC；入口按钮属 top 栏 Angular，B4 迁移时改写）
   settingsModal: '[data-testid="settings-modal"]',

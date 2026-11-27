@@ -1,10 +1,11 @@
 "use strict";
+const appSettings = require('../../lib/app-settings');
 var log = require('../../lib/logger').logger('ossstore.index');
 var ALYD = require("../../capabilities/sdk/aliyun-sdk-adapter");
 var OSS = require("ali-oss");
 require("events").EventEmitter.prototype._maxListeners = 1000;
 // var TIMEOUT = 30000; //30秒
-var TIMEOUT = parseInt(localStorage.getItem("connectTimeout") || 60000); //30秒
+var TIMEOUT = parseInt(appSettings.get('connectTimeout', 60000)); //30秒
 log.debug("TIMEOUT: " + TIMEOUT);
 //fix
 ALYD.util.isBrowser = function () {
@@ -56,7 +57,7 @@ function OssStore(config) {
       },
       cname: this._config.cname,
       isRequestPayer:
-        localStorage.getItem("show-request-pay") === "YES" ? true : false,
+        this._config.requestPayer === true,
     });
     this.aliOSS = new OSS({
       accessKeyId: this._config.stsToken.Credentials.AccessKeyId,
@@ -66,7 +67,7 @@ function OssStore(config) {
       cname: this._config.cname,
       timeout: TIMEOUT,
       isRequestPay:
-        localStorage.getItem("show-request-pay") === "YES" ? true : false,
+        this._config.requestPayer === true,
     });
   } else {
     this.oss = new ALYD.OSS({
@@ -80,7 +81,7 @@ function OssStore(config) {
       },
       cname: this._config.cname,
       isRequestPayer:
-        localStorage.getItem("show-request-pay") === "YES" ? true : false,
+        this._config.requestPayer === true,
     });
     this.aliOSS = new OSS({
       accessKeyId: this._config.aliyunCredential.accessKeyId,
@@ -89,7 +90,7 @@ function OssStore(config) {
       cname: this._config.cname,
       timeout: TIMEOUT,
       isRequestPay:
-        localStorage.getItem("show-request-pay") === "YES" ? true : false,
+        this._config.requestPayer === true,
     });
   }
 
@@ -119,7 +120,7 @@ OssStore.prototype.setStsToken = function (stsToken) {
     },
     cname: this._config.cname,
     isRequestPayer:
-      localStorage.getItem("show-request-pay") === "YES" ? true : false,
+      this._config.requestPayer === true,
   });
 };
 

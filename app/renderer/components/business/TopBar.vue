@@ -189,6 +189,8 @@ async function logout() {
 .my-nav {
   display: flex;
   align-items: center;
+  height: var(--vsc-titlebar-h, 35px);
+  box-sizing: border-box;
 }
 .navbar-header {
   flex: 0 0 auto;

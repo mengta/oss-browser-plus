@@ -1,6 +1,6 @@
 {
   "name": "oss-browser",
-  "version": "1.21.14",
+  "version": "2.0.0",
   "description": "Aliyun OSS / Apsara Stack OSS desktop browser (Electron + Vue 3)",
   "license": "Apache-2.0",
   "author": "mengta",

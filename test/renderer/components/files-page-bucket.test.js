@@ -301,8 +301,7 @@ describe('FilesPage：预览分发与行内操作', () => {
 
     wrapper.findComponent(FileList).vm.$emit('action', { type: 'download', item: ITEM_FILE });
     await flushPromises();
-
-    expect(createDownloadJobs).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(createDownloadJobs).toHaveBeenCalledTimes(1), { timeout: 5000 });
     const [jobs, targetDir, info] = createDownloadJobs.mock.calls[0];
     expect(jobs).toEqual([ITEM_FILE]);
     expect(targetDir).toBe('C:/dl');
@@ -334,8 +333,9 @@ describe('FilesPage：上传与下载链路', () => {
     const loadObjects = vi.spyOn(files, 'loadObjects').mockResolvedValue(undefined);
     const push = vi.spyOn(useToastStore(), 'push');
 
-    wrapper.findComponent(FileToolbar).vm.$emit('upload', false);
+    await wrapper.find('[data-testid="file-upload"]').trigger('click');
     await flushPromises();
+    await vi.waitFor(() => expect(createUploadJobs).toHaveBeenCalledTimes(1), { timeout: 5000 });
 
     expect(showOpenDialog).toHaveBeenCalledWith({
       title: 'Upload',
@@ -358,8 +358,9 @@ describe('FilesPage：上传与下载链路', () => {
       Promise.resolve({ ok: true, data: { canceled: true, filePaths: [] } }));
     const { wrapper } = await mountObjectPage({ handlers: { showOpenDialog } });
 
-    wrapper.findComponent(FileToolbar).vm.$emit('upload', true);
+    await wrapper.find('[data-testid="file-upload-folder"]').trigger('click');
     await flushPromises();
+    await vi.waitFor(() => expect(showOpenDialog).toHaveBeenCalledTimes(1), { timeout: 5000 });
 
     expect(showOpenDialog).toHaveBeenCalledWith({
       title: 'Upload',

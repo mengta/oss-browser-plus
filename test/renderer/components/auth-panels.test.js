@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import AkHistoriesPanel from '@renderer/components/business/auth/AkHistoriesPanel.vue';
 import ImportConfigPanel from '@renderer/components/business/auth/ImportConfigPanel.vue';
+import HintTooltip from '@renderer/components/base/HintTooltip.vue';
 import { useAuthStore } from '@renderer/stores/auth.js';
 import { useToastStore } from '@renderer/stores/toast.js';
 import { createRendererI18n } from '@renderer/i18n/index.js';
@@ -125,6 +126,41 @@ describe('AkHistoriesPanel', () => {
     expect(raw.indexOf('ak9')).toBe(-1);
     expect(raw.indexOf('enc:v2:')).toBe(0);
     expect(auth.listHistories().length).toBe(1);
+  });
+
+  it('备注为第一列：显示原文、空值显示 "-"，超长文本经 HintTooltip 提示', async () => {
+    const pinia = createPinia();
+    const longDesc = '生产环境只读子账号，用于日常排查与报表导出';
+    setUp(pinia, [
+      { id: 'A', secret: 's', desc: longDesc },
+      { id: 'B', secret: 's' },
+    ]);
+    const wrapper = mountWith(pinia, AkHistoriesPanel);
+    const rows = wrapper.findAll('[data-testid="akh-item"]');
+    const rowA = rows.find((r) => r.find('.akh-id').text() === 'A');
+    const rowB = rows.find((r) => r.find('.akh-id').text() === 'B');
+
+    expect(wrapper.findAll('.akh-head > span').length).toBe(6);
+    expect(rowA.element.firstElementChild.contains(rowA.find('[data-testid="akh-desc"]').element)).toBe(true);
+    expect(rowA.find('[data-testid="akh-desc"]').text()).toBe(longDesc);
+    expect(rowB.find('[data-testid="akh-desc"]').text()).toBe('-');
+
+    expect(rowA.findAllComponents(HintTooltip)[0].props('text')).toBe(longDesc);
+    expect(rowB.findAllComponents(HintTooltip)[0].props('text')).toBe('-');
+  });
+
+  it('各列统一使用网格单元包裹，密钥列提示随显示/隐藏切换', async () => {
+    const pinia = createPinia();
+    setUp(pinia, [{ id: 'LTAI_A', secret: 'secret-a' }]);
+    const wrapper = mountWith(pinia, AkHistoriesPanel);
+
+    expect(wrapper.findAll('[data-testid="akh-item"] > .akh-cell').length).toBe(5);
+    expect(wrapper.findAll('[data-testid="akh-item"] > .akh-ops').length).toBe(1);
+
+    const tips = wrapper.findAllComponents(HintTooltip);
+    expect(tips[2].props('text').indexOf('****')).toBeGreaterThan(-1);
+    await wrapper.find('[data-testid="akh-toggle"]').trigger('click');
+    expect(wrapper.findAllComponents(HintTooltip)[2].props('text')).toBe('secret-a');
   });
 });
 

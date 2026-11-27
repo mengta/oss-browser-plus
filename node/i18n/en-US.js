@@ -70,6 +70,7 @@ module.exports = {
   "auth.region.placeholder": "Optional",
   "auth.description": "Description",
   "auth.description.placeholder": "Optional, Up to 30 words",
+  "auth.secret": "AccessKey Secret",
   "auth.remember": "Remember",
   "auth.login": "Login",
   "auth.akHistories": "AK Histories",

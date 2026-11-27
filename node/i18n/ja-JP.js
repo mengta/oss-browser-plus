@@ -69,6 +69,7 @@ module.exports = {
   "auth.region.placeholder": "オプション",
   "auth.description": "説明",
   "auth.description.placeholder": "オプション、最大 30 文字",
+  "auth.secret": "AccessKey Secret",
   "auth.remember": "入力情報の保存",
   "auth.login": "ログイン",
   "auth.akHistories": "AK 履歴",

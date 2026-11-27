@@ -67,6 +67,7 @@ module.exports = {
   "auth.region.placeholder": "可选",
   "auth.description": "备注",
   "auth.description.placeholder": "可以为空，最多30个字",
+  "auth.secret": "AccessKey Secret",
   "auth.remember": "记住秘钥",
   "auth.login": "登入",
   "auth.akHistories": "AK历史",

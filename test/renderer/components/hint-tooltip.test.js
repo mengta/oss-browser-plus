@@ -87,11 +87,17 @@ describe('HintTooltip：帮助浮窗', () => {
     expect(openSpy).toHaveBeenCalledWith('https://help.aliyun.com/document_detail/91337.html');
   });
 
-  it('AK 历史含 requestpaystatus=YES 时显示「请求者付费」标签', async () => {
+  it('AK 历史展示 OSS 路径列，不再展示请求者付费状态', async () => {
     const pinia = getActivePinia();
-    useAuthStore(pinia).addHistory({ id: 'LTAI-test', secret: 'sk', requestpaystatus: 'YES' });
+    useAuthStore(pinia).addHistory({
+      id: 'LTAI-test',
+      secret: 'sk',
+      osspath: 'oss://bucket/prefix/',
+      requestpaystatus: 'YES',
+    });
     const wrapper = mountWith(AkHistoriesPanel);
     await flushPromises();
-    expect(wrapper.find('[data-testid="akh-requestpay"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="akh-osspath"]').text()).toBe('oss://bucket/prefix/');
+    expect(wrapper.find('[data-testid="akh-requestpay"]').exists()).toBe(false);
   });
 });

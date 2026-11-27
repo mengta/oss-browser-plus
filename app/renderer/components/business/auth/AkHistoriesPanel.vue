@@ -7,7 +7,7 @@
         <span class="akh-ellipsis">{{ t('ak') }}</span>
         <span class="akh-ellipsis">{{ t('auth.secret') }}</span>
         <span class="akh-ellipsis">{{ t('region') }}</span>
-        <span class="akh-ellipsis">{{ t('requestPay') }}</span>
+        <span class="akh-ellipsis">{{ t('auth.presetOssPath') }}</span>
         <span class="akh-ellipsis">{{ t('actions') }}</span>
       </div>
       <ul class="akh-list">
@@ -24,11 +24,9 @@
           <HintTooltip class="akh-cell" :text="regionText(h)" :max-width="220">
             <span class="akh-ellipsis akh-region">{{ regionText(h) }}</span>
           </HintTooltip>
-          <span class="akh-cell akh-rp">
-            <HintTooltip v-if="h.requestpaystatus === 'YES'" :text="t('requestPay')" :max-width="220">
-              <span class="akh-ellipsis akh-tag" data-testid="akh-requestpay">{{ t('requestPay') }}</span>
-            </HintTooltip>
-          </span>
+          <HintTooltip class="akh-cell" :text="pathText(h)" :max-width="360">
+            <span class="akh-ellipsis akh-path" data-testid="akh-osspath">{{ pathText(h) }}</span>
+          </HintTooltip>
           <span class="akh-ops">
             <button type="button" class="akh-btn" data-testid="akh-toggle" @click="toggleSecret(h)">
               {{ showSecrets[h.id] ? t('hide') : t('show') }}
@@ -106,6 +104,11 @@ function secretText(item) {
   return showSecrets.value[item.id] ? String(item.secret || '') : maskSecret(item.secret);
 }
 
+function pathText(item) {
+  const osspath = String(item.osspath || '').trim();
+  return osspath || '-';
+}
+
 function use(item) {
   emit('use', item);
   emit('close');
@@ -171,10 +174,10 @@ function confirmPending() {
 .akh-head,
 .akh-item {
   display: grid;
-  grid-template-columns: 110px 130px 126px 92px 84px 168px;
+  grid-template-columns: 100px 124px 118px 84px 170px 168px;
   gap: 8px;
   align-items: center;
-  min-width: 726px;
+  min-width: 764px;
 }
 .akh-head {
   position: sticky;
@@ -231,18 +234,8 @@ function confirmPending() {
 .akh-region {
   color: var(--vsc-fg-muted);
 }
-.akh-rp {
-  display: flex;
-  align-items: center;
-}
-.akh-tag {
-  box-sizing: border-box;
-  padding: 1px 6px;
-  border: 1px solid var(--vsc-warning-solid);
-  border-radius: 2px;
-  background: var(--vsc-warning-bg);
-  color: var(--vsc-warning);
-  font-size: 11px;
+.akh-path {
+  color: var(--vsc-fg-muted);
 }
 .akh-ops {
   display: flex;

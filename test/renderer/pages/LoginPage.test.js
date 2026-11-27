@@ -54,6 +54,7 @@ describe('LoginPage', () => {
     expect(wrapper.findAll('[data-testid="login-feature"]').length).toBe(3);
     expect(wrapper.find('[data-testid="login-status"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="login-provider"]').text()).toContain('阿里云 OSS');
+    expect(wrapper.find('[data-testid="login-provider"] .lp-oss-badge').text()).toBe('OSS');
   });
 
   it('登录方式 tab 具备可访问语义并可切换', async () => {

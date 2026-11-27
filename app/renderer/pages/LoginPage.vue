@@ -9,7 +9,7 @@
           <div class="login-provider" data-testid="login-provider">
             <span class="lp-label">{{ t('login.provider') }}</span>
             <span class="lp-value">
-              <AppIcon name="cloud-upload" class="lp-icon" />
+              <span class="lp-oss-badge" aria-hidden="true">OSS</span>
               {{ t('login.provider.aliyun') }}
             </span>
           </div>
@@ -98,7 +98,7 @@
 import { reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import AppIcon from '../components/base/AppIcon.vue';
+
 import LoginBrandPanel from '../components/business/auth/LoginBrandPanel.vue';
 import LoginModeTabs from '../components/business/auth/LoginModeTabs.vue';
 import CredentialForm from '../components/business/auth/CredentialForm.vue';
@@ -367,10 +367,20 @@ async function onSubmit() {
   background: var(--vsc-bg-elevated);
   color: var(--vsc-fg);
 }
-.lp-icon {
-  width: 12px;
-  height: 12px;
-  color: var(--vsc-accent);
+.lp-oss-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 2px;
+  background: #ff6a00;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.3px;
 }
 
 

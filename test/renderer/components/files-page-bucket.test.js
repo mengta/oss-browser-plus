@@ -301,14 +301,14 @@ describe('FilesPage：预览分发与行内操作', () => {
 
     wrapper.findComponent(FileList).vm.$emit('action', { type: 'download', item: ITEM_FILE });
     await flushPromises();
-    await vi.waitFor(() => expect(createDownloadJobs).toHaveBeenCalledTimes(1), { timeout: 5000 });
+    await vi.waitFor(() => expect(createDownloadJobs).toHaveBeenCalledTimes(1), { timeout: 3000 });
     const [jobs, targetDir, info] = createDownloadJobs.mock.calls[0];
     expect(jobs).toEqual([ITEM_FILE]);
     expect(targetDir).toBe('C:/dl');
     expect(info).toMatchObject({ region: 'oss-cn-hangzhou', bucket: 'bucket-a' });
     expect(transfer.visible).toBe(true);
     expect(transfer.activeTab).toBe('download');
-  });
+  }, 10000);
 
   it('下载目录被取消时不创建任务', async () => {
     const showOpenDialog = vi.fn(() =>

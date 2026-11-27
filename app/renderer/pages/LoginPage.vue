@@ -11,26 +11,18 @@
             <span class="lp-value">
               <svg
                 class="lp-aliyun"
-                viewBox="0 0 62 20"
-                width="34"
-                height="11"
+                viewBox="0 0 1024 1024"
+                width="14"
+                height="14"
                 role="img"
-                aria-label="Alibaba Cloud"
+                :aria-label="t('login.provider.aliyun')"
                 data-testid="login-provider-logo"
               >
+                <path d="M512 64a448 448 0 1 1 0 896A448 448 0 0 1 512 64z" fill="#FF6A00" />
                 <path
-                  d="M13.2 16.5H6.1A4.1 4.1 0 0 1 2 12.4c0-2 1.5-3.7 3.4-4A5.6 5.6 0 0 1 16.7 7a3.8 3.8 0 0 1-.6 7.5h-2.9z"
-                  fill="#FF6A00"
+                  d="M324.8 602.624a26.752 26.752 0 0 1-21.312-25.92v-142.72a27.712 27.712 0 0 1 21.376-25.984l132.416-28.672 13.952-56.896H317.312a97.6 97.6 0 0 0-98.24 96.96v169.344c0.384 54.08 44.16 97.856 98.24 98.176h153.92l-13.888-56.512-132.544-27.776zM710.4 322.432c54.016 0.128 97.92 43.584 98.56 97.6v170.176a98.368 98.368 0 0 1-98.56 98.048H555.328l14.08-56.832 132.608-28.736a27.84 27.84 0 0 0 21.376-25.92v-142.72a26.88 26.88 0 0 0-21.376-25.984l-132.544-28.8-14.08-56.832zM570.368 497.92v13.952H457.28v-13.952h113.088z"
+                  fill="#FFFFFF"
                 />
-                <text
-                  x="20"
-                  y="15.6"
-                  font-family="Arial, Helvetica, sans-serif"
-                  font-size="11.5"
-                  font-weight="700"
-                  letter-spacing="0.2"
-                  fill="#FF6A00"
-                >aliyun</text>
               </svg>
               {{ t('login.provider.aliyun') }}
             </span>
@@ -390,8 +382,8 @@ async function onSubmit() {
   color: var(--vsc-fg);
 }
 .lp-aliyun {
-  width: 34px;
-  height: 11px;
+  width: 14px;
+  height: 14px;
   display: inline-block;
   flex: 0 0 auto;
 }
